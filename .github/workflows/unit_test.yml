@@ -19,7 +19,7 @@ jobs:
             !~/.cache/pip/log
           key: ${{ runner.os }}-pip-${{ hashFiles('pyproject.toml') }}
           restore-keys: |
-            ${{ runner.os }}-pip-
+            ${{ runner.os }}-pip-${{ hashFiles('pyproject.toml') }}
       - name: Install Python Dependencies
         run: |
           pip install -e .

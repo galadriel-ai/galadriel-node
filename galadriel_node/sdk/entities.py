@@ -28,6 +28,7 @@ class InferenceMessage:
 @dataclass_json
 @dataclass
 class InferenceRequest:
+    id: str
     model: str
     messages: List[InferenceMessage]
 
@@ -35,5 +36,6 @@ class InferenceRequest:
 @dataclass_json
 @dataclass
 class InferenceResponse:
+    request_id: str
     content: str
     finish_reason: Optional[str] = None

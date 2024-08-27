@@ -22,10 +22,38 @@ MAX_RETRIES = 5
 BACKOFF_MIN = 1  # Minimum backoff time in seconds
 
 
+async def process_request(
+    request: InferenceRequest,
+    websocket,
+    llm_base_url: str,
+    debug: bool,
+    send_lock: asyncio.Lock,
+):
+    """
+    Handles a single inference request and sends the response back in chunks.
+    """
+    try:
+        if debug:
+            print(f"REQUEST {request.id} START")
+        async for chunk in llm.execute(request, llm_base_url):
+            if debug:
+                print(f"Sending chunk: {chunk}")
+            async with send_lock:
+                await websocket.send(chunk.to_json())
+        if debug:
+            print(f"REQUEST {request.id} END")
+    except Exception as e:
+        if debug:
+            traceback.print_exc()
+        print(f"Error occurred while processing inference request: {e}")
+
+
 async def connect_and_process(uri: str, headers: dict, llm_base_url: str, debug: bool):
     """
-    Establishes the WebSocket connection and processes incoming requests.
+    Establishes the WebSocket connection and processes incoming requests concurrently.
     """
+    send_lock = asyncio.Lock()
+
     async with websockets.connect(uri, extra_headers=headers) as websocket:
         print(f"Connected to {uri}")
         while True:
@@ -34,11 +62,9 @@ async def connect_and_process(uri: str, headers: dict, llm_base_url: str, debug:
                 data = json.loads(message)
                 request = InferenceRequest.from_dict(data)
 
-                # Process request and send response
-                async for chunk in llm.execute(request, llm_base_url):
-                    if debug:
-                        print(f"Sending chunk: {chunk}")
-                    await websocket.send(chunk.to_json())
+                asyncio.create_task(
+                    process_request(request, websocket, llm_base_url, debug, send_lock)
+                )
             except websockets.ConnectionClosed as e:
                 print(f"Connection closed: {e}. Exiting loop.")
                 break

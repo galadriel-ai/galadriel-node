@@ -38,7 +38,6 @@ Run vLLM
 python3 -m venv venv
 source venv/bin/activate
 pip install vllm
-pip install jinja2
 
 mkdir logs
 
@@ -58,6 +57,12 @@ ssh-keygen -t rsa -b 4096
 # Add public key to repo "deploy keys"
 # clone repo
 cd galadriel-node
+
+# deactivate other venv 
+# deactivate
+python3 -m venv venv
+source venv/bin/activate
+
 pip install -e .
 ```
 

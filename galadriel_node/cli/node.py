@@ -22,7 +22,13 @@ MAX_RETRIES = 5
 BACKOFF_MIN = 1  # Minimum backoff time in seconds
 
 
-async def process_request(request: InferenceRequest, websocket, llm_base_url: str, debug: bool, send_lock: asyncio.Lock):
+async def process_request(
+    request: InferenceRequest,
+    websocket,
+    llm_base_url: str,
+    debug: bool,
+    send_lock: asyncio.Lock,
+):
     """
     Handles a single inference request and sends the response back in chunks.
     """
@@ -56,7 +62,9 @@ async def connect_and_process(uri: str, headers: dict, llm_base_url: str, debug:
                 data = json.loads(message)
                 request = InferenceRequest.from_dict(data)
 
-                asyncio.create_task(process_request(request, websocket, llm_base_url, debug, send_lock))
+                asyncio.create_task(
+                    process_request(request, websocket, llm_base_url, debug, send_lock)
+                )
             except websockets.ConnectionClosed as e:
                 print(f"Connection closed: {e}. Exiting loop.")
                 break

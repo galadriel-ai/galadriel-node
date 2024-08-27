@@ -23,6 +23,7 @@ class Llm:
             )
             async for chunk in completion:
                 yield InferenceResponse(
+                    request_id=request.id,
                     content=chunk.choices[0].delta.content or "",
                     finish_reason=chunk.choices[0].finish_reason,
                 )

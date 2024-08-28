@@ -11,6 +11,7 @@ class Llm:
     async def execute(
         self, request: InferenceRequest, inference_base_url: str
     ) -> AsyncGenerator[InferenceResponse, None]:
+        print(f"Running inference, id={request.id}", flush=True)
         base_url: str = urljoin(inference_base_url, "/v1")
         client = openai.AsyncOpenAI(base_url=base_url, api_key="sk-no-key-required")
         try:
@@ -24,8 +25,7 @@ class Llm:
             async for chunk in completion:
                 yield InferenceResponse(
                     request_id=request.id,
-                    content=chunk.choices[0].delta.content or "",
-                    finish_reason=chunk.choices[0].finish_reason,
+                    chunk=chunk,
                 )
         except Exception as exc:
             print(exc)

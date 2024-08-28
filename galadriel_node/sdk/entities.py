@@ -41,7 +41,6 @@ class InferenceResponse:
     chunk: ChatCompletionChunk
 
     def to_json(self):
-        return json.dumps({
-            "request_id": self.request_id,
-            "chunk": self.chunk.to_dict()
-        })
+        return json.dumps(
+            {"request_id": self.request_id, "chunk": self.chunk.to_dict()}
+        )

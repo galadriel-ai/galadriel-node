@@ -1,7 +1,9 @@
+import json
 from dataclasses import dataclass
-from dataclasses_json import dataclass_json
 from typing import List
-from typing import Optional
+
+from dataclasses_json import dataclass_json
+from openai.types.chat import ChatCompletionChunk
 
 
 @dataclass
@@ -33,9 +35,12 @@ class InferenceRequest:
     messages: List[InferenceMessage]
 
 
-@dataclass_json
 @dataclass
 class InferenceResponse:
     request_id: str
-    content: str
-    finish_reason: Optional[str] = None
+    chunk: ChatCompletionChunk
+
+    def to_json(self):
+        return json.dumps(
+            {"request_id": self.request_id, "chunk": self.chunk.to_dict()}
+        )

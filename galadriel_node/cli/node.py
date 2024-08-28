@@ -59,8 +59,7 @@ async def connect_and_process(uri: str, headers: dict, llm_base_url: str, debug:
         while True:
             try:
                 message = await websocket.recv()
-                data = json.loads(message)
-                request = InferenceRequest.from_dict(data)
+                request = InferenceRequest.from_json(message)
 
                 asyncio.create_task(
                     process_request(request, websocket, llm_base_url, debug, send_lock)
@@ -122,3 +121,14 @@ def node_run(
     Entry point for running the node with retry logic and connection handling.
     """
     asyncio.run(retry_connection(rpc_url, api_key, llm_base_url, debug))
+
+
+if __name__ == "__main__":
+    asyncio.run(
+        retry_connection(
+            config.GALADRIEL_RPC_URL,
+            "asdasd-asd123",
+            config.GALADRIEL_LLM_BASE_URL,
+            True,
+        )
+    )

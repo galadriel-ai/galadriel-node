@@ -14,14 +14,10 @@ class Llm:
         print(f"Running inference, id={request.id}", flush=True)
         base_url: str = urljoin(inference_base_url, "/v1")
         client = openai.AsyncOpenAI(base_url=base_url, api_key="sk-no-key-required")
+        # Force streaming
+        request.chat_request["stream"] = True
         try:
-            messages = _get_messages_dict(request)
-            completion = await client.chat.completions.create(
-                model=request.model,
-                temperature=0,
-                messages=messages,
-                stream=True,
-            )
+            completion = await client.chat.completions.create(**request.chat_request)
             async for chunk in completion:
                 yield InferenceResponse(
                     request_id=request.id,

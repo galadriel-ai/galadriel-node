@@ -1,6 +1,6 @@
 import json
 from dataclasses import dataclass
-from typing import List
+from typing import Dict
 
 from dataclasses_json import dataclass_json
 from openai.types.chat import ChatCompletionChunk
@@ -31,8 +31,15 @@ class InferenceMessage:
 @dataclass
 class InferenceRequest:
     id: str
-    model: str
-    messages: List[InferenceMessage]
+    chat_request: Dict
+
+    @staticmethod
+    def from_json(message):
+        try:
+            data = json.loads(message)
+            return InferenceRequest(id=data["id"], chat_request=data["chat_request"])
+        except:
+            return None
 
 
 @dataclass

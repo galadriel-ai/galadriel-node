@@ -3,8 +3,10 @@ from urllib.parse import urljoin
 
 import openai
 
+from galadriel_node.sdk.entities import InferenceError
 from galadriel_node.sdk.entities import InferenceRequest
 from galadriel_node.sdk.entities import InferenceResponse
+from galadriel_node.sdk.entities import InferenceStatusCodes
 
 
 class Llm:
@@ -23,12 +25,22 @@ class Llm:
                     request_id=request.id,
                     chunk=chunk,
                 )
+        except openai.APIStatusError as exc:
+            yield InferenceResponse(
+                request_id=request.id,
+                error=InferenceError(
+                    status_code=exc.status_code,
+                    message=str(exc),
+                ),
+            )
         except Exception as exc:
-            print(exc)
-
-
-def _get_messages_dict(request: InferenceRequest):
-    return [{"role": i.role, "content": i.content.value} for i in request.messages]
+            yield InferenceResponse(
+                request_id=request.id,
+                error=InferenceError(
+                    status_code=InferenceStatusCodes.UNKNOWN_ERROR,
+                    message=str(exc),
+                ),
+            )
 
 
 if __name__ == "__main__":

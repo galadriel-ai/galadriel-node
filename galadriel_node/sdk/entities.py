@@ -1,30 +1,28 @@
 import json
 from dataclasses import dataclass
+from enum import Enum
 from typing import Dict
+from typing import Optional
 
 from dataclasses_json import dataclass_json
 from openai.types.chat import ChatCompletionChunk
 
 
+class InferenceStatusCodes(Enum):
+    BAD_REQUEST = 400
+    AUTHENTICATION_ERROR = 401
+    PERMISSION_DENIED = 403
+    NOT_FOUND = 404
+    CONFLICT = 409
+    UNPROCESSABLE_ENTITY = 422
+    RATE_LIMIT = 429
+    UNKNOWN_ERROR = 500
+
+
 @dataclass
-class Error:
-    error_code: int
+class InferenceError:
+    status_code: InferenceStatusCodes
     message: str
-    raw_log: str
-
-
-@dataclass_json
-@dataclass
-class InferenceContent:
-    type: str
-    value: str
-
-
-@dataclass_json
-@dataclass
-class InferenceMessage:
-    role: str
-    content: InferenceContent
 
 
 @dataclass_json
@@ -37,7 +35,9 @@ class InferenceRequest:
     def from_json(message):
         try:
             data = json.loads(message)
-            return InferenceRequest(id=data["id"], chat_request=data["chat_request"])
+            return InferenceRequest(
+                id=data["id"], type=data["type"], chat_request=data["chat_request"]
+            )
         except:
             return None
 
@@ -45,9 +45,14 @@ class InferenceRequest:
 @dataclass
 class InferenceResponse:
     request_id: str
-    chunk: ChatCompletionChunk
+    chunk: Optional[ChatCompletionChunk] = None
+    error: Optional[InferenceStatusCodes] = None
 
     def to_json(self):
         return json.dumps(
-            {"request_id": self.request_id, "chunk": self.chunk.to_dict()}
+            {
+                "request_id": self.request_id,
+                "error": self.error,
+                "chunk": self.chunk.to_dict(),
+            }
         )

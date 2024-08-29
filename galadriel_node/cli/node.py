@@ -28,7 +28,7 @@ async def process_request(
     llm_base_url: str,
     debug: bool,
     send_lock: asyncio.Lock,
-):
+) -> None:
     """
     Handles a single inference request and sends the response back in chunks.
     """
@@ -91,6 +91,9 @@ async def retry_connection(rpc_url: str, api_key: str, llm_base_url: str, debug:
         except websockets.ConnectionClosedError as e:
             retries += 1
             print(f"WebSocket connection closed: {e}. Retrying...")
+        except websockets.InvalidStatusCode as e:
+            print("Invalid status code:", e, flush=True)
+            break
         except Exception as e:
             retries += 1
             if debug:

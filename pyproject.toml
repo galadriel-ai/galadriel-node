@@ -20,6 +20,7 @@ websockets = "^13.0"
 [tool.poetry.dev-dependencies]
 black = "^24.8.0"
 pytest = "^8.3.2"
+pytest-asyncio = "^0.24.0"
 pytest-mock = "^3.14.0"
 
 [build-system]
@@ -28,3 +29,6 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
 galadriel = "galadriel_node.cli.app:app"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"

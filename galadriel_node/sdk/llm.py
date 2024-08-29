@@ -16,9 +16,7 @@ class Llm:
         client = openai.AsyncOpenAI(base_url=base_url, api_key="sk-no-key-required")
         # Force streaming and token usage inclusion
         request.chat_request["stream"] = True
-        request.chat_request["stream_options"] = {
-            "include_usage": True
-        }
+        request.chat_request["stream_options"] = {"include_usage": True}
         try:
             completion = await client.chat.completions.create(**request.chat_request)
             async for chunk in completion:

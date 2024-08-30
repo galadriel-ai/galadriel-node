@@ -1,25 +1,40 @@
 import os
-from typing import Dict, Any
+from pathlib import Path
+from typing import Any
+from typing import Dict
+
+from dotenv import load_dotenv
 
 
 class Config:
     def __init__(self):
+        env_path = Path(".") / ".env"
+        load_dotenv(dotenv_path=env_path)
+
+        self.GALADRIEL_ENVIRONMENT = os.getenv("GALADRIEL_ENVIRONMENT", "production")
+
         # Network settings
+        self.GALADRIEL_API_URL = os.getenv(
+            "GALADRIEL_API_URL", "http://localhost:5000/v1/node"
+        )
         self.GALADRIEL_RPC_URL = os.getenv(
             "GALADRIEL_RPC_URL", "ws://localhost:5000/v1/node"
         )
         self.GALADRIEL_API_KEY = os.getenv("GALADRIEL_API_KEY", None)
 
         # Other settings
-        self.GALADRIEL_MODEL_ID = "llama3"
-        self.GALADRIEL_LLM_BASE_URL = "http://localhost:11434"
-        self.GALADRIEL_MODEL_COMMIT_HASH = "db1f81ad4b8c7e39777509fac66c652eb0a52f91"
+        self.GALADRIEL_MODEL_ID = os.getenv(
+            "GALADRIEL_MODEL_ID", "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8"
+        )
+        self.GALADRIEL_LLM_BASE_URL = "http://10.132.0.33:11434"
+        self.GALADRIEL_MODEL_COMMIT_HASH = "3aed33c3d2bfa212a137f6c855d79b5426862b24"
 
     def as_dict(self) -> Dict[str, Any]:
         """
         Return the configuration as a dictionary.
         """
         return {
+            "GALADRIEL_ENVIRONMENT": self.GALADRIEL_ENVIRONMENT,
             "GALADRIEL_RPC_URL": self.GALADRIEL_RPC_URL,
             "GALADRIEL_API_KEY": self.GALADRIEL_API_KEY,
             "GALADRIEL_MODEL_ID": self.GALADRIEL_MODEL_ID,

@@ -1,14 +1,15 @@
 import asyncio
-import json
 import traceback
+from typing import Optional
 
 import typer
 import websockets
 from rich import print
 
 from galadriel_node.config import config
-from galadriel_node.sdk.llm import Llm
 from galadriel_node.sdk.entities import InferenceRequest
+from galadriel_node.sdk.llm import Llm
+from galadriel_node.sdk.system.report_hardware import report_hardware
 
 llm = Llm()
 
@@ -111,8 +112,18 @@ async def retry_connection(rpc_url: str, api_key: str, llm_base_url: str, debug:
             break
 
 
+async def run_node(
+    api_url: str, rpc_url: str, api_key: Optional[str], llm_base_url: str, debug: bool
+):
+    if not api_key:
+        raise Exception("GALADRIEL_API_KEY env variable not set")
+    await report_hardware(api_url, api_key)
+    await retry_connection(rpc_url, api_key, llm_base_url, debug)
+
+
 @node_app.command("run", help="Run the Galadriel node")
 def node_run(
+    api_url: str = typer.Option(config.GALADRIEL_API_URL, help="API url"),
     rpc_url: str = typer.Option(config.GALADRIEL_RPC_URL, help="RPC url"),
     api_key: str = typer.Option(config.GALADRIEL_API_KEY, help="API key"),
     llm_base_url: str = typer.Option(
@@ -123,14 +134,15 @@ def node_run(
     """
     Entry point for running the node with retry logic and connection handling.
     """
-    asyncio.run(retry_connection(rpc_url, api_key, llm_base_url, debug))
+    asyncio.run(run_node(api_url, rpc_url, api_key, llm_base_url, debug))
 
 
 if __name__ == "__main__":
     asyncio.run(
-        retry_connection(
+        run_node(
+            config.GALADRIEL_API_URL,
             config.GALADRIEL_RPC_URL,
-            "asdasd-asd123",
+            config.GALADRIEL_API_KEY,
             config.GALADRIEL_LLM_BASE_URL,
             True,
         )

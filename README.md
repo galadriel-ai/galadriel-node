@@ -42,8 +42,8 @@ pip install vllm
 mkdir logs
 
 HUGGING_FACE_HUB_TOKEN=<HUGGING_FACE_TOKEN> \
-nohup vllm serve hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4 \
-    --revision db1f81ad4b8c7e39777509fac66c652eb0a52f91 \
+nohup vllm serve neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8 \
+    --revision 3aed33c3d2bfa212a137f6c855d79b5426862b24 \
     --max-model-len 16384 \
     --gpu-memory-utilization 1 \
     --host localhost \

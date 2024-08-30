@@ -10,6 +10,7 @@ from galadriel_node.config import config
 from galadriel_node.sdk.entities import InferenceRequest
 from galadriel_node.sdk.llm import Llm
 from galadriel_node.sdk.system.report_hardware import report_hardware
+from galadriel_node.sdk.system.report_performance import report_performance
 
 llm = Llm()
 
@@ -118,6 +119,7 @@ async def run_node(
     if not api_key:
         raise Exception("GALADRIEL_API_KEY env variable not set")
     await report_hardware(api_url, api_key)
+    await report_performance(llm_base_url)
     await retry_connection(rpc_url, api_key, llm_base_url, debug)
 
 

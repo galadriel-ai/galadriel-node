@@ -11,9 +11,10 @@ from galadriel_node.sdk.entities import InferenceStatusCodes
 
 class Llm:
     async def execute(
-        self, request: InferenceRequest, inference_base_url: str
+        self, request: InferenceRequest, inference_base_url: str, is_benchmark: bool = False
     ) -> AsyncGenerator[InferenceResponse, None]:
-        print(f"Running inference, id={request.id}", flush=True)
+        if not is_benchmark:
+            print(f"Running inference, id={request.id}", flush=True)
         base_url: str = urljoin(inference_base_url, "/v1")
         client = openai.AsyncOpenAI(base_url=base_url, api_key="sk-no-key-required")
         # Force streaming and token usage inclusion

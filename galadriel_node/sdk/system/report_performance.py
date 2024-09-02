@@ -132,7 +132,7 @@ async def _make_inference_request(
             and chunk_data.usage.completion_tokens
         ):
             return chunk_data.usage.completion_tokens
-        if time.time() - benchmark_start < BENCHMARK_TIME_SECONDS:
+        if time.time() - benchmark_start > BENCHMARK_TIME_SECONDS:
             if chunk_data.usage and chunk_data.usage.completion_tokens:
                 return chunk_data.usage.completion_tokens
             break

@@ -75,9 +75,9 @@ async def _get_benchmark_tokens_per_sec(llm_base_url: str) -> float:
         results = await asyncio.gather(*tasks)
         benchmark_end = time.time()
 
-    total_tokens_all_threads = sum(results)
+    completion_tokens_all_threads = sum(results)
     time_elapsed = benchmark_end - benchmark_start
-    tokens_per_sec = total_tokens_all_threads / time_elapsed
+    tokens_per_sec = completion_tokens_all_threads / time_elapsed
     print(f"    Benchmarking done!", flush=True)
     print(f"    Time elapsed: {time_elapsed}", flush=True)
     print(f"    Average tokens/sec: {tokens_per_sec}", flush=True)
@@ -106,16 +106,16 @@ def _run_llm(
     benchmark_start: float, dataset: List[Dict], llm: Llm, llm_base_url: str
 ) -> int:
     i = 0
-    total_tokens = 0
+    completion_tokens = 0
     while time.time() - benchmark_start < BENCHMARK_TIME_SECONDS:
         request_data = {**BASE_REQUEST, "messages": dataset[i]["chat"]}
         request = InferenceRequest(id="test", chat_request=request_data)
         tokens = asyncio.run(
             _make_inference_request(benchmark_start, llm, request, llm_base_url)
         )
-        total_tokens += tokens
+        completion_tokens += tokens
         i += 1
-    return total_tokens
+    return completion_tokens
 
 
 async def _make_inference_request(
@@ -129,12 +129,12 @@ async def _make_inference_request(
         if (
             not len(chunk_data.choices)
             and chunk_data.usage
-            and chunk_data.usage.total_tokens
+            and chunk_data.usage.completion_tokens
         ):
-            return chunk_data.usage.total_tokens
+            return chunk_data.usage.completion_tokens
         if time.time() - benchmark_start < BENCHMARK_TIME_SECONDS:
-            if chunk_data.usage and chunk_data.usage.total_tokens:
-                return chunk_data.usage.total_tokens
+            if chunk_data.usage and chunk_data.usage.completion_tokens:
+                return chunk_data.usage.completion_tokens
             break
     print("        Request failed", flush=True)
     return 0

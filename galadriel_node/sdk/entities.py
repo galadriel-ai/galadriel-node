@@ -19,6 +19,7 @@ class InferenceStatusCodes(Enum):
     UNKNOWN_ERROR = 500
 
 
+@dataclass_json
 @dataclass
 class InferenceError:
     status_code: InferenceStatusCodes
@@ -52,7 +53,7 @@ class InferenceResponse:
         return json.dumps(
             {
                 "request_id": self.request_id,
-                "error": self.error,
-                "chunk": self.chunk.to_dict(),
+                "error": self.error.to_dict() if self.error else None,
+                "chunk": self.chunk.to_dict() if self.chunk else None,
             }
         )

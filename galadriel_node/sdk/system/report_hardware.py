@@ -22,7 +22,7 @@ SUPPORTED_GPUS = [
 
 async def report_hardware(api_url: str, api_key: str) -> None:
     if await _get_info(api_url, api_key):
-        print("Node info is already saved")
+        print("Node info is already saved", flush=True)
         return None
     if config.GALADRIEL_ENVIRONMENT == "local":
         node_info = NodeInfo(
@@ -111,7 +111,7 @@ async def _get_info(api_url: str, api_key: str):
             return response.status == 200
 
 
-async def _post_info(node_info: NodeInfo, api_url: str, api_key: str):
+async def _post_info(node_info: NodeInfo, api_url: str, api_key: str) -> None:
     async with aiohttp.ClientSession() as session:
         async with session.post(
             urljoin(api_url + "/", "info"),

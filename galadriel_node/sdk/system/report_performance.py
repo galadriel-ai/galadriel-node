@@ -14,7 +14,7 @@ from galadriel_node.sdk.entities import InferenceRequest
 from galadriel_node.sdk.llm import Llm
 
 BENCHMARK_TIME_SECONDS = 60
-NUM_THREADS = 5
+NUM_THREADS = 7
 BASE_REQUEST = {
     "model": config.GALADRIEL_MODEL_ID,
     "temperature": 0,

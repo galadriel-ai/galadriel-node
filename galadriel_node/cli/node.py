@@ -50,7 +50,9 @@ async def process_request(
         print(f"Error occurred while processing inference request: {e}", flush=True)
 
 
-async def connect_and_process(uri: str, headers: dict, llm_base_url: str, debug: bool):
+async def connect_and_process(
+    uri: str, headers: dict, llm_base_url: str, debug: bool
+) -> bool:
     """
     Establishes the WebSocket connection and processes incoming requests concurrently.
     """
@@ -67,13 +69,16 @@ async def connect_and_process(uri: str, headers: dict, llm_base_url: str, debug:
                     process_request(request, websocket, llm_base_url, debug, send_lock)
                 )
             except websockets.ConnectionClosed as e:
+                if e.code == 1008:
+                    print("Node with same API key already connected. Exiting...", flush=True)
+                    return False
                 print(f"Connection closed: {e}. Exiting loop.", flush=True)
-                break
+                return True
             except Exception as e:
                 if debug:
                     traceback.print_exc()
                 print(f"Error occurred while processing message: {e}", flush=True)
-                break
+                return True
 
 
 async def retry_connection(rpc_url: str, api_key: str, llm_base_url: str, debug: bool):
@@ -87,7 +92,9 @@ async def retry_connection(rpc_url: str, api_key: str, llm_base_url: str, debug:
 
     while retries < MAX_RETRIES:
         try:
-            await connect_and_process(uri, headers, llm_base_url, debug)
+            retry = await connect_and_process(uri, headers, llm_base_url, debug)
+            if not retry:
+                break
             retries = 0  # Reset retries on successful connection
             backoff_time = BACKOFF_MIN  # Reset backoff time
         except websockets.ConnectionClosedError as e:

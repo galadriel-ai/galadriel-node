@@ -160,3 +160,7 @@ async def _post_benchmark(
                 print("Successfully sent benchmark results", flush=True)
             else:
                 raise Exception("Failed to save benchmark results")
+
+
+if __name__ == "__main__":
+    asyncio.run(_get_benchmark_tokens_per_sec("http://localhost:11434"))

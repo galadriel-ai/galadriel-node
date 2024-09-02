@@ -70,7 +70,10 @@ async def connect_and_process(
                 )
             except websockets.ConnectionClosed as e:
                 if e.code == 1008:
-                    print("Node with same API key already connected. Exiting...", flush=True)
+                    print(
+                        "Node with same API key already connected. Exiting...",
+                        flush=True,
+                    )
                     return False
                 print(f"Connection closed: {e}. Exiting loop.", flush=True)
                 return True

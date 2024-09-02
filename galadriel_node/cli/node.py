@@ -36,18 +36,18 @@ async def process_request(
     """
     try:
         if debug:
-            print(f"REQUEST {request.id} START")
+            print(f"REQUEST {request.id} START", flush=True)
         async for chunk in llm.execute(request, llm_base_url):
             if debug:
-                print(f"Sending chunk: {chunk}")
+                print(f"Sending chunk: {chunk}", flush=True)
             async with send_lock:
                 await websocket.send(chunk.to_json())
         if debug:
-            print(f"REQUEST {request.id} END")
+            print(f"REQUEST {request.id} END", flush=True)
     except Exception as e:
         if debug:
             traceback.print_exc()
-        print(f"Error occurred while processing inference request: {e}")
+        print(f"Error occurred while processing inference request: {e}", flush=True)
 
 
 async def connect_and_process(uri: str, headers: dict, llm_base_url: str, debug: bool):
@@ -57,7 +57,7 @@ async def connect_and_process(uri: str, headers: dict, llm_base_url: str, debug:
     send_lock = asyncio.Lock()
 
     async with websockets.connect(uri, extra_headers=headers) as websocket:
-        print(f"Connected to {uri}")
+        print(f"Connected to {uri}", flush=True)
         while True:
             try:
                 message = await websocket.recv()
@@ -67,12 +67,12 @@ async def connect_and_process(uri: str, headers: dict, llm_base_url: str, debug:
                     process_request(request, websocket, llm_base_url, debug, send_lock)
                 )
             except websockets.ConnectionClosed as e:
-                print(f"Connection closed: {e}. Exiting loop.")
+                print(f"Connection closed: {e}. Exiting loop.", flush=True)
                 break
             except Exception as e:
                 if debug:
                     traceback.print_exc()
-                print(f"Error occurred while processing message: {e}")
+                print(f"Error occurred while processing message: {e}", flush=True)
                 break
 
 
@@ -92,7 +92,7 @@ async def retry_connection(rpc_url: str, api_key: str, llm_base_url: str, debug:
             backoff_time = BACKOFF_MIN  # Reset backoff time
         except websockets.ConnectionClosedError as e:
             retries += 1
-            print(f"WebSocket connection closed: {e}. Retrying...")
+            print(f"WebSocket connection closed: {e}. Retrying...", flush=True)
         except websockets.InvalidStatusCode as e:
             print("Invalid status code:", e, flush=True)
             break
@@ -101,7 +101,8 @@ async def retry_connection(rpc_url: str, api_key: str, llm_base_url: str, debug:
             if debug:
                 traceback.print_exc()
             print(
-                f"Connection failed ({retries}/{MAX_RETRIES}). Retrying in {backoff_time} seconds..."
+                f"Connection failed ({retries}/{MAX_RETRIES}). Retrying in {backoff_time} seconds...",
+                flush=True,
             )
 
         # Exponential backoff before retrying
@@ -109,7 +110,7 @@ async def retry_connection(rpc_url: str, api_key: str, llm_base_url: str, debug:
         backoff_time = min(backoff_time * 2, 60)  # Cap backoff time to 60 seconds
 
         if retries >= MAX_RETRIES:
-            print("Max retries reached. Exiting...")
+            print("Max retries reached. Exiting...", flush=True)
             break
 
 
@@ -119,7 +120,7 @@ async def run_node(
     if not api_key:
         raise Exception("GALADRIEL_API_KEY env variable not set")
     await report_hardware(api_url, api_key)
-    await report_performance(llm_base_url)
+    await report_performance(api_url, api_key, llm_base_url, config.GALADRIEL_MODEL_ID)
     await retry_connection(rpc_url, api_key, llm_base_url, debug)
 
 

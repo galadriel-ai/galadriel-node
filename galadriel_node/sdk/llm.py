@@ -11,7 +11,10 @@ from galadriel_node.sdk.entities import InferenceStatusCodes
 
 class Llm:
     async def execute(
-        self, request: InferenceRequest, inference_base_url: str, is_benchmark: bool = False
+        self,
+        request: InferenceRequest,
+        inference_base_url: str,
+        is_benchmark: bool = False,
     ) -> AsyncGenerator[InferenceResponse, None]:
         if not is_benchmark:
             print(f"Running inference, id={request.id}", flush=True)

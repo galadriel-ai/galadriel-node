@@ -19,11 +19,16 @@ class InferenceStatusCodes(Enum):
     UNKNOWN_ERROR = 500
 
 
-@dataclass_json
 @dataclass
 class InferenceError:
     status_code: InferenceStatusCodes
     message: str
+
+    def to_dict(self):
+        return {
+            "status_code": self.status_code.value,
+            "message": self.message,
+        }
 
 
 @dataclass_json

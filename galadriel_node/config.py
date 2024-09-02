@@ -26,7 +26,9 @@ class Config:
         self.GALADRIEL_MODEL_ID = os.getenv(
             "GALADRIEL_MODEL_ID", "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8"
         )
-        self.GALADRIEL_LLM_BASE_URL = "http://10.132.0.33:11434"
+        self.GALADRIEL_LLM_BASE_URL = os.getenv(
+            "GALADRIEL_LLM_BASE_URL", "http://10.132.0.33:11434"
+        )
         self.GALADRIEL_MODEL_COMMIT_HASH = "3aed33c3d2bfa212a137f6c855d79b5426862b24"
 
     def as_dict(self) -> Dict[str, Any]:

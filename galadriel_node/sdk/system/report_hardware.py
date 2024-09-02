@@ -16,7 +16,7 @@ MIN_RAM_MB = 2048
 SUPPORTED_GPUS = [
     # TODO: add more
     "NVIDIA GeForce RTX 4090",
-    "NVIDIA GeForce RTX 3090"
+    "NVIDIA GeForce RTX 3090",
 ]
 
 

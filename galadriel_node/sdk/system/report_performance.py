@@ -4,6 +4,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from typing import Dict
 from typing import List
+from typing import Optional
 from urllib.parse import urlencode
 from urllib.parse import urljoin
 
@@ -31,14 +32,25 @@ async def report_performance(
     llm_base_url: str,
     model_name: str,
 ) -> None:
-    if await _get_benchmark(model_name, api_url, api_key):
+    existing_tokens_per_second = await _get_benchmark(model_name, api_url, api_key)
+    if (
+        existing_tokens_per_second
+        and existing_tokens_per_second > config.MINIMUM_COMPLETIONS_TOKENS_PER_SECOND
+    ):
         print("Node benchmarking is already done", flush=True)
         return None
+    elif (
+        existing_tokens_per_second
+        and existing_tokens_per_second < config.MINIMUM_COMPLETIONS_TOKENS_PER_SECOND
+    ):
+        print("Node benchmarking results are too low, retrying", flush=True)
     tokens_per_sec = await _get_benchmark_tokens_per_sec(llm_base_url)
     await _post_benchmark(model_name, tokens_per_sec, api_url, api_key)
 
 
-async def _get_benchmark(model_name: str, api_url: str, api_key: str):
+async def _get_benchmark(
+    model_name: str, api_url: str, api_key: str
+) -> Optional[float]:
     query_params = {"model": model_name}
     encoded_params = urlencode(query_params)
 
@@ -47,7 +59,10 @@ async def _get_benchmark(model_name: str, api_url: str, api_key: str):
             urljoin(api_url + "/", "benchmark") + f"?{encoded_params}",
             headers={"Authorization": f"Bearer {api_key}"},
         ) as response:
-            return response.status == 200
+            if response.status != 200:
+                return None
+            response_json = await response.json()
+            return response_json.get("tokens_per_second")
 
 
 async def _get_benchmark_tokens_per_sec(llm_base_url: str) -> float:

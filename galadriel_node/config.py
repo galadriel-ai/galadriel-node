@@ -31,6 +31,8 @@ class Config:
         )
         self.GALADRIEL_MODEL_COMMIT_HASH = "3aed33c3d2bfa212a137f6c855d79b5426862b24"
 
+        self.MINIMUM_COMPLETIONS_TOKENS_PER_SECOND = 264
+
     def as_dict(self) -> Dict[str, Any]:
         """
         Return the configuration as a dictionary.

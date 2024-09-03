@@ -8,6 +8,10 @@ from dataclasses_json import dataclass_json
 from openai.types.chat import ChatCompletionChunk
 
 
+class SdkError(Exception):
+    pass
+
+
 class InferenceStatusCodes(Enum):
     BAD_REQUEST = 400
     AUTHENTICATION_ERROR = 401

@@ -11,7 +11,9 @@ from urllib.parse import urljoin
 import aiohttp
 
 from galadriel_node.config import config
+from galadriel_node.sdk import api
 from galadriel_node.sdk.entities import InferenceRequest
+from galadriel_node.sdk.entities import SdkError
 from galadriel_node.sdk.llm import Llm
 
 BENCHMARK_TIME_SECONDS = 60
@@ -52,17 +54,10 @@ async def _get_benchmark(
     model_name: str, api_url: str, api_key: str
 ) -> Optional[float]:
     query_params = {"model": model_name}
-    encoded_params = urlencode(query_params)
-
-    async with aiohttp.ClientSession() as session:
-        async with session.get(
-            urljoin(api_url + "/", "benchmark") + f"?{encoded_params}",
-            headers={"Authorization": f"Bearer {api_key}"},
-        ) as response:
-            if response.status != 200:
-                return None
-            response_json = await response.json()
-            return response_json.get("tokens_per_second")
+    response_status, response_json = await api.get(api_url, "info", api_key, query_params)
+    if response_status != 200:
+        return None
+    return response_json.get("tokens_per_second")
 
 
 async def _get_benchmark_tokens_per_sec(llm_base_url: str) -> float:
@@ -141,6 +136,8 @@ async def _make_inference_request(
 ) -> int:
     async for chunk in llm.execute(request, llm_base_url, is_benchmark=True):
         chunk_data = chunk.chunk
+        if not chunk_data:
+            raise SdkError(f"Failed to call LLM, make sure GALADRIEL_LLM_BASE_URL is correct")
         if (
             not len(chunk_data.choices)
             and chunk_data.usage
@@ -174,7 +171,7 @@ async def _post_benchmark(
             if response.status == 200:
                 print("Successfully sent benchmark results", flush=True)
             else:
-                raise Exception("Failed to save benchmark results")
+                raise SdkError("Failed to save benchmark results")
 
 
 if __name__ == "__main__":

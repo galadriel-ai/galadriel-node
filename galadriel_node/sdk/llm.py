@@ -34,7 +34,7 @@ class Llm:
             yield InferenceResponse(
                 request_id=request.id,
                 error=InferenceError(
-                    status_code=exc.status_code,
+                    status_code=InferenceStatusCodes(exc.status_code),
                     message=str(exc),
                 ),
             )

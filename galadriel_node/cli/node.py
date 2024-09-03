@@ -71,7 +71,7 @@ async def connect_and_process(
             except websockets.ConnectionClosed as e:
                 if e.code == 1008:
                     print(
-                        "Node with same API key already connected. Exiting...",
+                        f"Received error: {e.reason}. Exiting...",
                         flush=True,
                     )
                     return False
@@ -89,7 +89,7 @@ async def retry_connection(rpc_url: str, api_key: str, llm_base_url: str, debug:
     Attempts to reconnect to the Galadriel server with exponential backoff.
     """
     uri = f"{rpc_url}/ws"
-    headers = {"Authorization": f"Bearer {api_key}"}
+    headers = {"Authorization": f"Bearer {api_key}", "Model": config.GALADRIEL_MODEL_ID}
     retries = 0
     backoff_time = BACKOFF_MIN
 

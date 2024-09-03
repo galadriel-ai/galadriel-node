@@ -54,7 +54,9 @@ async def _get_benchmark(
     model_name: str, api_url: str, api_key: str
 ) -> Optional[float]:
     query_params = {"model": model_name}
-    response_status, response_json = await api.get(api_url, "info", api_key, query_params)
+    response_status, response_json = await api.get(
+        api_url, "info", api_key, query_params
+    )
     if response_status != 200:
         return None
     return response_json.get("tokens_per_second")
@@ -137,7 +139,9 @@ async def _make_inference_request(
     async for chunk in llm.execute(request, llm_base_url, is_benchmark=True):
         chunk_data = chunk.chunk
         if not chunk_data:
-            raise SdkError(f"Failed to call LLM, make sure GALADRIEL_LLM_BASE_URL is correct")
+            raise SdkError(
+                f"Failed to call LLM, make sure GALADRIEL_LLM_BASE_URL is correct"
+            )
         if (
             not len(chunk_data.choices)
             and chunk_data.usage

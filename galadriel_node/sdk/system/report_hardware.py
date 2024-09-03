@@ -78,9 +78,7 @@ def _get_gpu_info() -> Tuple[str, int]:
             gpu_name = gpu["name"]
             gpu_vram_mb = gpu["memory.total"] * 1.048576
             return gpu_name, int(gpu_vram_mb)
-    raise SdkError(
-        "No supported GPU found, make sure you have a supported NVIDIA GPU."
-    )
+    raise SdkError("No supported GPU found, make sure you have a supported NVIDIA GPU.")
 
 
 def _get_cpu_info() -> Tuple[str, int]:

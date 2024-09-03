@@ -121,7 +121,10 @@ async def retry_connection(rpc_url: str, api_key: str, llm_base_url: str, debug:
         backoff_time = min(backoff_time * 2, 60)  # Cap backoff time to 60 seconds
 
         if retries >= MAX_RETRIES:
-            print("Max retries reached. Make sure GALADRIEL_RPC_URL is set correctly. Exiting...", flush=True)
+            print(
+                "Max retries reached. Make sure GALADRIEL_RPC_URL is set correctly. Exiting...",
+                flush=True,
+            )
             break
 
 

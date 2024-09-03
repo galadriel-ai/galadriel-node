@@ -43,7 +43,7 @@ async def report_performance(
         existing_tokens_per_second
         and existing_tokens_per_second < config.MINIMUM_COMPLETIONS_TOKENS_PER_SECOND
     ):
-        print("Node benchmarking results are too low, retrying")
+        print("Node benchmarking results are too low, retrying", flush=True)
     tokens_per_sec = await _get_benchmark_tokens_per_sec(llm_base_url)
     await _post_benchmark(model_name, tokens_per_sec, api_url, api_key)
 

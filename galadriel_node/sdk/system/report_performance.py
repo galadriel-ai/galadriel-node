@@ -55,7 +55,7 @@ async def _get_benchmark(
 ) -> Optional[float]:
     query_params = {"model": model_name}
     response_status, response_json = await api.get(
-        api_url, "info", api_key, query_params
+        api_url, "node/benchmark", api_key, query_params
     )
     if response_status != 200:
         return None
@@ -164,7 +164,7 @@ async def _post_benchmark(
 ) -> None:
     async with aiohttp.ClientSession() as session:
         async with session.post(
-            urljoin(api_url + "/", "benchmark"),
+            urljoin(api_url + "/", "node/benchmark"),
             headers={"Authorization": f"Bearer {api_key}"},
             json={
                 "model_name": model_name,

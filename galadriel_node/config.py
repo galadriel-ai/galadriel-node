@@ -15,7 +15,7 @@ class Config:
 
         # Network settings
         self.GALADRIEL_API_URL = os.getenv(
-            "GALADRIEL_API_URL", "http://localhost:5000/v1/node"
+            "GALADRIEL_API_URL", "http://localhost:5000/v1"
         )
         self.GALADRIEL_RPC_URL = os.getenv(
             "GALADRIEL_RPC_URL", "ws://localhost:5000/v1/node"

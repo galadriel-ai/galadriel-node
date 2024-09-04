@@ -166,7 +166,7 @@ def node_status(
     api_url: str = typer.Option(config.GALADRIEL_API_URL, help="API url"),
     api_key: str = typer.Option(config.GALADRIEL_API_KEY, help="API key"),
 ):
-    status, response_json = asyncio.run(api.get(api_url, "info", api_key))
+    status, response_json = asyncio.run(api.get(api_url, "node/info", api_key))
     if status == 200 and response_json:
         run_status = response_json.get("status")
         if run_status:
@@ -194,7 +194,7 @@ def node_status(
     api_url: str = typer.Option(config.GALADRIEL_API_URL, help="API url"),
     api_key: str = typer.Option(config.GALADRIEL_API_KEY, help="API key"),
 ):
-    status, response_json = asyncio.run(api.get(api_url, "stats", api_key))
+    status, response_json = asyncio.run(api.get(api_url, "node/stats", api_key))
     if status == 200 and response_json:
         excluded_keys = ["completed_inferences"]
         for k, v in response_json.items():

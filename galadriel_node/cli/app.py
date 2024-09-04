@@ -2,6 +2,7 @@ import importlib.metadata
 
 import typer
 
+from galadriel_node.cli.network import network_app
 from galadriel_node.cli.node import node_app
 
 app = typer.Typer(
@@ -9,6 +10,7 @@ app = typer.Typer(
 )
 
 app.add_typer(node_app)
+app.add_typer(network_app)
 
 
 @app.callback(invoke_without_command=True)

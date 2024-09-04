@@ -8,6 +8,7 @@ from rich import print
 
 from galadriel_node.config import config
 from galadriel_node.sdk.entities import InferenceRequest
+from galadriel_node.sdk.entities import SdkError
 from galadriel_node.sdk.llm import Llm
 from galadriel_node.sdk.system.report_hardware import report_hardware
 from galadriel_node.sdk.system.report_performance import report_performance
@@ -111,7 +112,7 @@ async def retry_connection(rpc_url: str, api_key: str, llm_base_url: str, debug:
             if debug:
                 traceback.print_exc()
             print(
-                f"Connection failed ({retries}/{MAX_RETRIES}). Retrying in {backoff_time} seconds...",
+                f"Websocket connection failed ({retries}/{MAX_RETRIES}). Retrying in {backoff_time} seconds...",
                 flush=True,
             )
 
@@ -120,7 +121,10 @@ async def retry_connection(rpc_url: str, api_key: str, llm_base_url: str, debug:
         backoff_time = min(backoff_time * 2, 60)  # Cap backoff time to 60 seconds
 
         if retries >= MAX_RETRIES:
-            print("Max retries reached. Exiting...", flush=True)
+            print(
+                "Max retries reached. Make sure GALADRIEL_RPC_URL is set correctly. Exiting...",
+                flush=True,
+            )
             break
 
 
@@ -147,16 +151,28 @@ def node_run(
     """
     Entry point for running the node with retry logic and connection handling.
     """
-    asyncio.run(run_node(api_url, rpc_url, api_key, llm_base_url, debug))
+    try:
+        asyncio.run(run_node(api_url, rpc_url, api_key, llm_base_url, debug))
+    except SdkError as e:
+        print(f"Got an Exception when trying to run the node: \n{e}", flush=True)
+    except Exception:
+        print(f"Got an unexpected Exception when trying to run the node: ", flush=True)
+        traceback.print_exc()
 
 
 if __name__ == "__main__":
-    asyncio.run(
-        run_node(
-            config.GALADRIEL_API_URL,
-            config.GALADRIEL_RPC_URL,
-            config.GALADRIEL_API_KEY,
-            config.GALADRIEL_LLM_BASE_URL,
-            True,
+    try:
+        asyncio.run(
+            run_node(
+                config.GALADRIEL_API_URL,
+                config.GALADRIEL_RPC_URL,
+                config.GALADRIEL_API_KEY,
+                config.GALADRIEL_LLM_BASE_URL,
+                True,
+            )
         )
-    )
+    except SdkError as e:
+        print(f"Got an Exception when trying to run the node: \n{e}", flush=True)
+    except Exception as e:
+        print(f"Got an unexpected Exception when trying to run the node: ", flush=True)
+        traceback.print_exc()

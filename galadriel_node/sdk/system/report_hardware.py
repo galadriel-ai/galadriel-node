@@ -9,6 +9,8 @@ import speedtest
 from gpustat import GPUStatCollection
 
 from galadriel_node.config import config
+from galadriel_node.sdk import api
+from galadriel_node.sdk.entities import SdkError
 from galadriel_node.sdk.system.entities import NodeInfo
 
 MIN_CPU_CORES = 2
@@ -39,10 +41,10 @@ async def report_hardware(api_url: str, api_key: str) -> None:
         gpu_name, gpu_vram_mb = _get_gpu_info()
         cpu_model, cpu_count = _get_cpu_info()
         if cpu_count < MIN_CPU_CORES:
-            raise Exception(f"Not enough CPU cores, minimum {MIN_CPU_CORES} required")
+            raise SdkError(f"Not enough CPU cores, minimum {MIN_CPU_CORES} required")
         total_mem_mb = _get_ram()
         if total_mem_mb < MIN_RAM_MB:
-            raise Exception(f"Not enough RAM, minimum {MIN_RAM_MB}MB required")
+            raise SdkError(f"Not enough RAM, minimum {MIN_RAM_MB}MB required")
         download_speed_mbs, upload_speed_mbs = _get_network_speed()
 
         node_info = NodeInfo(
@@ -63,12 +65,12 @@ def _get_gpu_info() -> Tuple[str, int]:
         query = GPUStatCollection.new_query()
         data = query.jsonify()
     except Exception as e:
-        raise Exception(
+        raise SdkError(
             "No supported GPU found, make sure `nvidia-smi` works, NVIDIA driver versions must be R450.00 or higher."
         )
 
     if not len(data["gpus"]):
-        raise Exception(
+        raise SdkError(
             "No supported GPU found, make sure you have a supported NVIDIA GPU."
         )
     for gpu in data["gpus"]:
@@ -76,9 +78,7 @@ def _get_gpu_info() -> Tuple[str, int]:
             gpu_name = gpu["name"]
             gpu_vram_mb = gpu["memory.total"] * 1.048576
             return gpu_name, int(gpu_vram_mb)
-    raise Exception(
-        "No supported GPU found, make sure you have a supported NVIDIA GPU."
-    )
+    raise SdkError("No supported GPU found, make sure you have a supported NVIDIA GPU.")
 
 
 def _get_cpu_info() -> Tuple[str, int]:
@@ -103,12 +103,8 @@ def _get_network_speed() -> Tuple[float, float]:
 
 
 async def _get_info(api_url: str, api_key: str):
-    async with aiohttp.ClientSession() as session:
-        async with session.get(
-            urljoin(api_url + "/", "info"),
-            headers={"Authorization": f"Bearer {api_key}"},
-        ) as response:
-            return response.status == 200
+    response_status, _ = await api.get(api_url, "info", api_key)
+    return response_status == 200
 
 
 async def _post_info(node_info: NodeInfo, api_url: str, api_key: str) -> None:
@@ -131,4 +127,4 @@ async def _post_info(node_info: NodeInfo, api_url: str, api_key: str) -> None:
             if response.status == 200:
                 print("Successfully sent hardware info", flush=True)
             else:
-                raise Exception("Failed to save hardware info")
+                raise SdkError("Failed to save hardware info")

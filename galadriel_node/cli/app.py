@@ -1,3 +1,5 @@
+import importlib.metadata
+
 import typer
 
 from galadriel_node.cli.node import node_app
@@ -7,6 +9,19 @@ app = typer.Typer(
 )
 
 app.add_typer(node_app)
+
+
+@app.callback(invoke_without_command=True)
+def version(
+    v: bool = typer.Option(None, "--version", "-v", help="Show Galadriel version.")
+):
+    if v:
+        try:
+            app_version = importlib.metadata.version("galadriel-node")
+            print(f"Galadriel {app_version}", flush=True)
+        except:
+            print("Failed to get version")
+
 
 if __name__ == "__main__":
     app()

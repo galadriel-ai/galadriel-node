@@ -103,14 +103,14 @@ def _get_network_speed() -> Tuple[float, float]:
 
 
 async def _get_info(api_url: str, api_key: str):
-    response_status, _ = await api.get(api_url, "info", api_key)
+    response_status, _ = await api.get(api_url, "node/info", api_key)
     return response_status == 200
 
 
 async def _post_info(node_info: NodeInfo, api_url: str, api_key: str) -> None:
     async with aiohttp.ClientSession() as session:
         async with session.post(
-            urljoin(api_url + "/", "info"),
+            urljoin(api_url + "/", "node/info"),
             headers={"Authorization": f"Bearer {api_key}"},
             json={
                 "gpu_model": node_info.gpu_model,

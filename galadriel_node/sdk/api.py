@@ -15,7 +15,7 @@ async def get(
 ) -> Tuple[int, Dict]:
     if query_params:
         encoded_params = urlencode(query_params)
-        url = urljoin(api_url + "/", "benchmark") + f"?{encoded_params}"
+        url = urljoin(api_url + "/", endpoint) + f"?{encoded_params}"
     else:
         url = urljoin(api_url + "/", endpoint)
     try:

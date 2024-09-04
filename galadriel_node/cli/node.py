@@ -7,6 +7,7 @@ import websockets
 from rich import print
 
 from galadriel_node.config import config
+from galadriel_node.sdk import api
 from galadriel_node.sdk.entities import InferenceRequest
 from galadriel_node.sdk.entities import SdkError
 from galadriel_node.sdk.llm import Llm
@@ -158,6 +159,51 @@ def node_run(
     except Exception:
         print(f"Got an unexpected Exception when trying to run the node: ", flush=True)
         traceback.print_exc()
+
+
+@node_app.command("status", help="Get node status")
+def node_status(
+    api_url: str = typer.Option(config.GALADRIEL_API_URL, help="API url"),
+    api_key: str = typer.Option(config.GALADRIEL_API_KEY, help="API key"),
+):
+    status, response_json = asyncio.run(api.get(api_url, "node/info", api_key))
+    if status == 200 and response_json:
+        run_status = response_json.get("status")
+        if run_status:
+            if run_status == "online":
+                status_text = typer.style(run_status, fg=typer.colors.GREEN, bold=True)
+                typer.echo("status: " + status_text)
+            else:
+                status_text = typer.style(run_status, fg=typer.colors.RED, bold=True)
+                typer.echo("status: " + status_text)
+        run_duration = response_json.get("run_duration_seconds")
+        if run_duration:
+            print(f"run_duration_seconds: {run_duration}", flush=True)
+        excluded_keys = ["status", "run_duration_seconds"]
+        for k, v in response_json.items():
+            if k not in excluded_keys:
+                print(f"{k}: {v}", flush=True)
+    elif status == 404:
+        print("Node has not been registered yet..", flush=True)
+    else:
+        print("Failed to get node status..", flush=True)
+
+
+@node_app.command("stats", help="Get node stats")
+def node_status(
+    api_url: str = typer.Option(config.GALADRIEL_API_URL, help="API url"),
+    api_key: str = typer.Option(config.GALADRIEL_API_KEY, help="API key"),
+):
+    status, response_json = asyncio.run(api.get(api_url, "node/stats", api_key))
+    if status == 200 and response_json:
+        excluded_keys = ["completed_inferences"]
+        for k, v in response_json.items():
+            if k not in excluded_keys:
+                print(f"{k}: {v if v is not None else '<UNKNOWN>'}", flush=True)
+        if response_json.get("completed_inferences"):
+            print("Latest completed inferences:", flush=True)
+        for i in response_json.get("completed_inferences", []):
+            print(i, flush=True)
 
 
 if __name__ == "__main__":

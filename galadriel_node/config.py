@@ -48,7 +48,8 @@ class Config:
 
         # Other settings
         self.GALADRIEL_MODEL_ID = os.getenv(
-            "GALADRIEL_MODEL_ID", default_values["GALADRIEL_MODEL_ID"],
+            "GALADRIEL_MODEL_ID",
+            default_values["GALADRIEL_MODEL_ID"],
         )
         self.GALADRIEL_LLM_BASE_URL = os.getenv(
             "GALADRIEL_LLM_BASE_URL", default_values["GALADRIEL_LLM_BASE_URL"]

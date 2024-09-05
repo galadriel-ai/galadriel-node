@@ -56,7 +56,7 @@ class InferenceRequest:
 class InferenceResponse:
     request_id: str
     chunk: Optional[ChatCompletionChunk] = None
-    error: Optional[InferenceStatusCodes] = None
+    error: Optional[InferenceError] = None
 
     def to_json(self):
         return json.dumps(

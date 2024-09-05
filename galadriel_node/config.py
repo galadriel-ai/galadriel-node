@@ -23,7 +23,7 @@ DEFAULT_LOCAL_VALUES = {
 
 class Config:
     def __init__(
-        self, is_load_env: bool = False, environment: str = DEFAULT_ENVIRONMENT
+        self, is_load_env: bool = True, environment: str = DEFAULT_ENVIRONMENT
     ):
         if is_load_env:
             load_dotenv(dotenv_path=CONFIG_FILE_PATH)
@@ -45,7 +45,7 @@ class Config:
         # Other settings
         self.GALADRIEL_MODEL_ID = os.getenv(
             "GALADRIEL_MODEL_ID",
-            "hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4",
+            "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8",
         )
         self.GALADRIEL_LLM_BASE_URL = os.getenv(
             "GALADRIEL_LLM_BASE_URL", default_values["GALADRIEL_LLM_BASE_URL"]

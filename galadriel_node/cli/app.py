@@ -4,7 +4,7 @@ import typer
 
 from galadriel_node.cli.network import network_app
 from galadriel_node.cli.node import node_app
-from galadriel_node.config import config
+from galadriel_node import config
 from galadriel_node import config_initialiser
 
 app = typer.Typer(
@@ -17,7 +17,7 @@ app.add_typer(network_app)
 
 @app.command("init", help="Galadriel tool to initialise the node configurations")
 def init(
-    environment: str = typer.Option(config.GALADRIEL_ENVIRONMENT, help="Environment"),
+    environment: str = typer.Option(config.DEFAULT_ENVIRONMENT, help="Environment"),
 ):
     config_initialiser.execute(environment)
 

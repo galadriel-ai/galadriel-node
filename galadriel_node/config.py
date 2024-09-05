@@ -5,6 +5,8 @@ from typing import Optional
 
 from dotenv import load_dotenv
 
+from galadriel_node.sdk.entities import SdkError
+
 CONFIG_FILE_PATH = os.path.expanduser("~/.galadrielenv")
 
 DEFAULT_ENVIRONMENT = "production"
@@ -12,12 +14,14 @@ DEFAULT_PRODUCTION_VALUES = {
     "GALADRIEL_API_URL": "https://api.galadriel.com/v1",
     "GALADRIEL_RPC_URL": "wss://api.galadriel.com/v1/node",
     "GALADRIEL_LLM_BASE_URL": "http://localhost:11434",
+    "GALADRIEL_MODEL_ID": "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8",
 }
 
 DEFAULT_LOCAL_VALUES = {
     "GALADRIEL_API_URL": "http://localhost:5000/v1",
     "GALADRIEL_RPC_URL": "ws://localhost:5000/v1/node",
     "GALADRIEL_LLM_BASE_URL": "http://10.132.0.33:11434",
+    "GALADRIEL_MODEL_ID": "hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4",
 }
 
 
@@ -45,7 +49,7 @@ class Config:
         # Other settings
         self.GALADRIEL_MODEL_ID = os.getenv(
             "GALADRIEL_MODEL_ID",
-            "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8",
+            default_values["GALADRIEL_MODEL_ID"],
         )
         self.GALADRIEL_LLM_BASE_URL = os.getenv(
             "GALADRIEL_LLM_BASE_URL", default_values["GALADRIEL_LLM_BASE_URL"]
@@ -81,6 +85,17 @@ class Config:
         Return a string representation of the configuration.
         """
         return str(self.as_dict())
+
+    @staticmethod
+    def is_dotenv_present():
+        return os.path.isfile(CONFIG_FILE_PATH)
+
+    @staticmethod
+    def raise_if_no_dotenv():
+        if not config.is_dotenv_present():
+            raise SdkError(
+                "Galadriel not initialised. Please call `galadriel init` first"
+            )
 
 
 # Create a global instance of the Config class

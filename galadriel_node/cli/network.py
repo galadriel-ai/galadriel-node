@@ -17,6 +17,7 @@ def node_status(
     api_url: str = typer.Option(config.GALADRIEL_API_URL, help="API url"),
     api_key: str = typer.Option(config.GALADRIEL_API_KEY, help="API key"),
 ):
+    config.raise_if_no_dotenv()
     status, response_json = asyncio.run(api.get(api_url, "network/stats", api_key))
     if status == 200 and response_json:
         for k, v in response_json.items():

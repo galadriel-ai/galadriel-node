@@ -1,11 +1,11 @@
 import asyncio
+import importlib.resources
 import json
 import time
 from concurrent.futures import ThreadPoolExecutor
 from typing import Dict
 from typing import List
 from typing import Optional
-from urllib.parse import urlencode
 from urllib.parse import urljoin
 
 import aiohttp
@@ -97,9 +97,9 @@ async def _get_benchmark_tokens_per_sec(llm_base_url: str) -> float:
 
 
 def _load_dataset() -> List[Dict]:
-    with open(
-        "./galadriel_node/sdk/datasets/im_feeling_curious.jsonl", "r"
-    ) as json_file:
+    with importlib.resources.files("galadriel_node.sdk.datasets").joinpath(
+        "im_feeling_curious.jsonl"
+    ).open("r") as json_file:
         json_list = list(json_file)
 
     results = []

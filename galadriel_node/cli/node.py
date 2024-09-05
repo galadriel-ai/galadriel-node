@@ -152,6 +152,7 @@ def node_run(
     """
     Entry point for running the node with retry logic and connection handling.
     """
+    config.raise_if_no_dotenv()
     try:
         asyncio.run(run_node(api_url, rpc_url, api_key, llm_base_url, debug))
     except SdkError as e:
@@ -166,6 +167,7 @@ def node_status(
     api_url: str = typer.Option(config.GALADRIEL_API_URL, help="API url"),
     api_key: str = typer.Option(config.GALADRIEL_API_KEY, help="API key"),
 ):
+    config.raise_if_no_dotenv()
     status, response_json = asyncio.run(api.get(api_url, "node/info", api_key))
     if status == 200 and response_json:
         run_status = response_json.get("status")
@@ -194,6 +196,7 @@ def node_status(
     api_url: str = typer.Option(config.GALADRIEL_API_URL, help="API url"),
     api_key: str = typer.Option(config.GALADRIEL_API_KEY, help="API key"),
 ):
+    config.raise_if_no_dotenv()
     status, response_json = asyncio.run(api.get(api_url, "node/stats", api_key))
     if status == 200 and response_json:
         excluded_keys = ["completed_inferences"]

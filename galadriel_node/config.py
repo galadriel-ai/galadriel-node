@@ -14,14 +14,14 @@ DEFAULT_PRODUCTION_VALUES = {
     "GALADRIEL_API_URL": "https://api.galadriel.com/v1",
     "GALADRIEL_RPC_URL": "wss://api.galadriel.com/v1/node",
     "GALADRIEL_LLM_BASE_URL": "http://localhost:11434",
-    "GALADRIEL_MODEL_ID": "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8",
+    "GALADRIEL_MODEL_ID": "llama3.1:8b-instruct-q8_0",
 }
 
 DEFAULT_LOCAL_VALUES = {
     "GALADRIEL_API_URL": "http://localhost:5000/v1",
     "GALADRIEL_RPC_URL": "ws://localhost:5000/v1/node",
     "GALADRIEL_LLM_BASE_URL": "http://10.132.0.33:11434",
-    "GALADRIEL_MODEL_ID": "hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4",
+    "GALADRIEL_MODEL_ID": "llama3.1:8b-instruct-q8_0",
 }
 
 

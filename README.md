@@ -1,90 +1,105 @@
 # Galadriel inference node
 
-### Installation
+Run a Galadriel GPU node to provide LLM inference to the network.
 
-```shell
-# Setup venv or whatever environment you wish
-python3 -m venv venv
-source venv/bin/activate
+Check out the [documentation](https://galadriel.mintlify.app/).
 
-pip install -e .
-```
+## Requirements
 
-**Setup .env**
-```
-cp template.env .env
-# Update values according to your setup
-```
+### Hardware requirements
 
-**Run the node**
-```shell
-galadriel node run
-```
+- At least 4 CPU cores
+- At least 8GB RAM
+- A supported Nvidia GPU
 
-**Or run with nohup to run in the background**
-```shell
-nohup galadriel node run > logs.log 2>&1 &
-```
+### Software requirements
+- linux (Ubuntu recommended)
+- python (version 3.8+)
+- nvidia drivers, version > 450. nvidia-smi must work
 
-**Or include .env values in the command**
-```shell
-GALADRIEL_LLM_BASE_URL="http://localhost:8000" galadriel node run
-# or with nohup
-GALADRIEL_LLM_BASE_URL="http://localhost:8000" nohup galadriel node run > logs.log 2>&1 &
-```
+### API keys
+- A valid galadriel API key
 
 
-## LLM deployment
+### LLM deployment
+
+To run a Galadriel node, you must first run an LLM.
 
 **Make sure GPU exists and nvidia drivers are installed**
 ```shell
 nvidia-smi
 ```
 
-**Run vLLM natively**
+**Run ollama natively**
 
-Make sure you create a separate python env
 ```shell
-python3 -m venv venv
-source venv/bin/activate
-pip install vllm
+curl -fsSL https://ollama.com/install.sh | sh
+
+systemctl status ollama
+# If already running, skip this command
+nohup ollama serve > logs_llm.log 2>&1 &
+
+ollama pull llama3.1:8b-instruct-q8_0
 ```
 
-**Run vllm**
-
-This runs vllm on "http://localhost:11434", that is the default value 
+**Or run ollama in docker**
 ```shell
-HUGGING_FACE_HUB_TOKEN=<HUGGING_FACE_TOKEN> \
-nohup vllm serve neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8 \
-    --revision 3aed33c3d2bfa212a137f6c855d79b5426862b24 \
-    --max-model-len 16384 \
-    --gpu-memory-utilization 1 \
-    --host localhost \
-    --disable-frontend-multiprocessing \
-    --port 11434 > logs_llm.log 2>&1 &
+docker run -d -v ollama:/root/.ollama -p 11434:11434 --name ollama ollama/ollama
+docker exec -it ollama ollama pull llama3.1:8b-instruct-q8_0
 ```
 
-
-### TODO: remove this part, once node released
-### Development
-**Setup node**
+**Run ollama**  
+This runs ollama on "http://localhost:11434"  
+To see that it works, try calling it
+```shell
+curl http://0.0.0.0:11434/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: asd" \
+  -d '{
+    "model": "llama3.1:8b-instruct-q8_0",
+    "messages": [
+        {
+        "role": "system",
+        "content": "You are a helpful assistant."
+        },
+        {
+        "role": "user",
+        "content": "Whats up?"
+        }
+    ]
+}'
 ```
-ssh-keygen -t rsa -b 4096
-# Add public key to repo "deploy keys"
-# clone repo
-cd galadriel-node
 
-# deactivate other venv 
-# deactivate
-python3 -m venv venv
-source venv/bin/activate
+## Run a Galadriel-node
 
-pip install -e .
+**Install requirements**
+```shell
+pip install galadriel-node
 ```
 
-Run node
+**Setup the environment**  
+Only update values that are not the default ones, and make sure to set the API key
 ```
-GALADRIEL_API_KEY=<API KEY> \
-    GALADRIEL_RPC_URL=ws://34.78.190.171/v1/node \
-    nohup galadriel node run > logs.log 2>&1 &
+galadriel init
+```
+
+**Run the node**
+```shell
+galadriel node run
+# Or in the background
+nohup galadriel node run > logs.log 2>&1 &
+```
+
+**Environment values can be overwritten in the run command**
+```shell
+GALADRIEL_LLM_BASE_URL="http://localhost:8000" galadriel node run
+# or with nohup
+GALADRIEL_LLM_BASE_URL="http://localhost:8000" nohup galadriel node run > logs.log 2>&1 &
+```
+
+**Check the node status and metrics**
+```shell
+galadriel node status
+
+galadriel node stats
 ```

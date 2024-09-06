@@ -43,7 +43,7 @@ pip install vllm==0.5.5
 HUGGING_FACE_HUB_TOKEN=<HUGGING_FACE_TOKEN> \
   nohup vllm serve neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8 \
   --revision 3aed33c3d2bfa212a137f6c855d79b5426862b24 \
-  --max-model-len 16384 \
+  --max-model-len 8192 \
   --gpu-memory-utilization 1 \
   --host 127.0.0.1 \
   --disable-frontend-multiprocessing \

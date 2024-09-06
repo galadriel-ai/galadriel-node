@@ -74,7 +74,7 @@ def _get_gpu_info() -> Tuple[str, int]:
             "No supported GPU found, make sure you have a supported NVIDIA GPU."
         )
     for gpu in data["gpus"]:
-        if gpu["name"] in SUPPORTED_GPUS:
+        if "NVIDIA" in gpu["name"]:
             gpu_name = gpu["name"]
             gpu_vram_mb = gpu["memory.total"] * 1.048576
             return gpu_name, int(gpu_vram_mb)

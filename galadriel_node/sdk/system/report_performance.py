@@ -17,7 +17,7 @@ from galadriel_node.sdk.entities import SdkError
 from galadriel_node.sdk.llm import Llm
 
 BENCHMARK_TIME_SECONDS = 60
-NUM_THREADS = 16
+NUM_THREADS = 10
 BASE_REQUEST = {
     "model": config.GALADRIEL_MODEL_ID,
     "temperature": 0,
@@ -104,7 +104,9 @@ def _load_dataset() -> List[Dict]:
 
     results = []
     for json_str in json_list:
-        results.append(json.loads(json_str))
+        new_line = json.loads(json_str)
+        new_line["chat"] = [new_line["chat"][0]]
+        results.append(new_line)
     return results
 
 
@@ -136,6 +138,7 @@ async def _make_inference_request(
     request: InferenceRequest,
     llm_base_url: str,
 ) -> int:
+    completion_tokens_count = 0
     async for chunk in llm.execute(request, llm_base_url, is_benchmark=True):
         chunk_data = chunk.chunk
         if not chunk_data:
@@ -143,17 +146,16 @@ async def _make_inference_request(
                 f"Failed to call LLM, make sure GALADRIEL_LLM_BASE_URL is correct"
             )
         if (
-            not len(chunk_data.choices)
-            and chunk_data.usage
-            and chunk_data.usage.completion_tokens
+            chunk_data.choices
+            and len(chunk_data.choices)
+            and chunk_data.choices[0].finish_reason != "stop"
         ):
-            return chunk_data.usage.completion_tokens
+            completion_tokens_count += 1
         if time.time() - benchmark_start > BENCHMARK_TIME_SECONDS:
-            if chunk_data.usage and chunk_data.usage.completion_tokens:
-                return chunk_data.usage.completion_tokens
-            break
-    print("        Request failed", flush=True)
-    return 0
+            return completion_tokens_count
+    if not completion_tokens_count:
+        print("        Request failed", flush=True)
+    return completion_tokens_count
 
 
 async def _post_benchmark(

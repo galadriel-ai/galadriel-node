@@ -13,14 +13,25 @@ network_app = typer.Typer(
 
 
 @network_app.command("stats", help="Get current network stats")
-def node_status(
+def network_stats(
     api_url: str = typer.Option(config.GALADRIEL_API_URL, help="API url"),
     api_key: str = typer.Option(config.GALADRIEL_API_KEY, help="API key"),
 ):
     config.raise_if_no_dotenv()
     status, response_json = asyncio.run(api.get(api_url, "network/stats", api_key))
     if status == 200 and response_json:
-        for k, v in response_json.items():
-            print(f"{k}: {v}", flush=True)
+        print_network_status(response_json)
     else:
         print("Failed to get node status..", flush=True)
+
+
+def print_network_status(data):
+    print(f"nodes_count: {data['nodes_count']}")
+    print(f"connected_nodes_count: {data['connected_nodes_count']}")
+    print(f"network_throughput: {data['network_throughput']}")
+    print("throughput by model:")
+
+    for model in data["network_models_stats"]:
+        print(f"    model_name: {model['model_name']}")
+        print(f"    throughput: {model['throughput']}")
+        print()

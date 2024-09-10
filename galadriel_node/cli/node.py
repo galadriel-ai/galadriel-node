@@ -192,7 +192,7 @@ def node_status(
 
 
 @node_app.command("stats", help="Get node stats")
-def node_status(
+def node_stats(
     api_url: str = typer.Option(config.GALADRIEL_API_URL, help="API url"),
     api_key: str = typer.Option(config.GALADRIEL_API_KEY, help="API key"),
 ):

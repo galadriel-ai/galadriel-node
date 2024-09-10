@@ -13,7 +13,7 @@ network_app = typer.Typer(
 
 
 @network_app.command("stats", help="Get current network stats")
-def node_status(
+def network_stats(
     api_url: str = typer.Option(config.GALADRIEL_API_URL, help="API url"),
     api_key: str = typer.Option(config.GALADRIEL_API_KEY, help="API key"),
 ):

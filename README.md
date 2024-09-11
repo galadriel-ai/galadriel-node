@@ -127,3 +127,21 @@ Should see status: online
 ```shell
 galadriel node stats
 ```
+
+### Development
+
+* Code formatting: 
+
+`black .`
+ 
+* Linting: 
+ 
+`pylint --rcfile=setup.cfg galadriel_node/*`
+
+* MyPy: 
+ 
+`mypy .`
+
+* Unit testing:
+
+`python -m pytest tests`

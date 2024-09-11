@@ -57,7 +57,7 @@ async def test_llm_execute_with_bad_request_exception():
         assert len(results) == 1
         assert isinstance(results[0], InferenceResponse)
         assert results[0].error is not None
-        assert results[0].error.status_code == InferenceStatusCodes.BAD_REQUEST.value
+        assert results[0].error.status_code == InferenceStatusCodes.BAD_REQUEST
         assert results[0].error.message == "Inference failed"
 
 

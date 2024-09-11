@@ -9,6 +9,7 @@ from galadriel_node.sdk.entities import InferenceResponse
 from galadriel_node.sdk.entities import InferenceStatusCodes
 
 
+# pylint: disable=R0903
 class Llm:
     async def execute(
         self,
@@ -46,19 +47,3 @@ class Llm:
                     message=str(exc),
                 ),
             )
-
-
-if __name__ == "__main__":
-    ollama = Llm()
-    # from galadriel_node.sdk.entities import InferenceRunStatus
-    # r = ollama.execute(InferenceRun(
-    #     id="id",
-    #     prompt="hi",
-    #     model_id="llama3",
-    #     selected_gpu_nodes=[],
-    #     status=InferenceRunStatus.COMMIT,
-    #     start_block=0,
-    #     history=[],
-    # ))
-    r = ollama.get_model_hash("llama3")
-    print("Response:", r)

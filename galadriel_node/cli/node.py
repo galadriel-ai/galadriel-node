@@ -4,7 +4,7 @@ from typing import Optional
 
 import typer
 import websockets
-from rich import print
+import rich
 
 from galadriel_node.config import config
 from galadriel_node.sdk import api
@@ -38,18 +38,18 @@ async def process_request(
     """
     try:
         if debug:
-            print(f"REQUEST {request.id} START", flush=True)
+            rich.print(f"REQUEST {request.id} START", flush=True)
         async for chunk in llm.execute(request, llm_base_url):
             if debug:
-                print(f"Sending chunk: {chunk}", flush=True)
+                rich.print(f"Sending chunk: {chunk}", flush=True)
             async with send_lock:
                 await websocket.send(chunk.to_json())
         if debug:
-            print(f"REQUEST {request.id} END", flush=True)
+            rich.print(f"REQUEST {request.id} END", flush=True)
     except Exception as e:
         if debug:
             traceback.print_exc()
-        print(f"Error occurred while processing inference request: {e}", flush=True)
+        rich.print(f"Error occurred while processing inference request: {e}", flush=True)
 
 
 async def connect_and_process(
@@ -61,7 +61,7 @@ async def connect_and_process(
     send_lock = asyncio.Lock()
 
     async with websockets.connect(uri, extra_headers=headers) as websocket:
-        print(f"Connected to {uri}", flush=True)
+        rich.print(f"Connected to {uri}", flush=True)
         while True:
             try:
                 message = await websocket.recv()
@@ -72,17 +72,17 @@ async def connect_and_process(
                 )
             except websockets.ConnectionClosed as e:
                 if e.code == 1008:
-                    print(
+                    rich.print(
                         f"Received error: {e.reason}. Exiting...",
                         flush=True,
                     )
                     return False
-                print(f"Connection closed: {e}. Exiting loop.", flush=True)
+                rich.print(f"Connection closed: {e}. Exiting loop.", flush=True)
                 return True
             except Exception as e:
                 if debug:
                     traceback.print_exc()
-                print(f"Error occurred while processing message: {e}", flush=True)
+                rich.print(f"Error occurred while processing message: {e}", flush=True)
                 return True
 
 
@@ -104,15 +104,15 @@ async def retry_connection(rpc_url: str, api_key: str, llm_base_url: str, debug:
             backoff_time = BACKOFF_MIN  # Reset backoff time
         except websockets.ConnectionClosedError as e:
             retries += 1
-            print(f"WebSocket connection closed: {e}. Retrying...", flush=True)
+            rich.print(f"WebSocket connection closed: {e}. Retrying...", flush=True)
         except websockets.InvalidStatusCode as e:
-            print("Invalid status code:", e, flush=True)
+            rich.print("Invalid status code:", e, flush=True)
             break
         except Exception as e:
             retries += 1
             if debug:
                 traceback.print_exc()
-            print(
+            rich.print(
                 f"Websocket connection failed ({retries}/{MAX_RETRIES}). Retrying in {backoff_time} seconds...",
                 flush=True,
             )
@@ -122,7 +122,7 @@ async def retry_connection(rpc_url: str, api_key: str, llm_base_url: str, debug:
         backoff_time = min(backoff_time * 2, 60)  # Cap backoff time to 60 seconds
 
         if retries >= MAX_RETRIES:
-            print(
+            rich.print(
                 "Max retries reached. Make sure GALADRIEL_RPC_URL is set correctly. Exiting...",
                 flush=True,
             )
@@ -133,7 +133,7 @@ async def run_node(
     api_url: str, rpc_url: str, api_key: Optional[str], llm_base_url: str, debug: bool
 ):
     if not api_key:
-        raise Exception("GALADRIEL_API_KEY env variable not set")
+        raise SdkError("GALADRIEL_API_KEY env variable not set")
     await report_hardware(api_url, api_key)
     await report_performance(api_url, api_key, llm_base_url, config.GALADRIEL_MODEL_ID)
     await retry_connection(rpc_url, api_key, llm_base_url, debug)
@@ -156,9 +156,9 @@ def node_run(
     try:
         asyncio.run(run_node(api_url, rpc_url, api_key, llm_base_url, debug))
     except SdkError as e:
-        print(f"Got an Exception when trying to run the node: \n{e}", flush=True)
+        rich.print(f"Got an Exception when trying to run the node: \n{e}", flush=True)
     except Exception:
-        print(f"Got an unexpected Exception when trying to run the node: ", flush=True)
+        rich.print("Got an unexpected Exception when trying to run the node: ", flush=True)
         traceback.print_exc()
 
 
@@ -180,15 +180,15 @@ def node_status(
                 typer.echo("status: " + status_text)
         run_duration = response_json.get("run_duration_seconds")
         if run_duration:
-            print(f"run_duration_seconds: {run_duration}", flush=True)
+            rich.print(f"run_duration_seconds: {run_duration}", flush=True)
         excluded_keys = ["status", "run_duration_seconds"]
         for k, v in response_json.items():
             if k not in excluded_keys:
-                print(f"{k}: {v}", flush=True)
+                rich.print(f"{k}: {v}", flush=True)
     elif status == 404:
-        print("Node has not been registered yet..", flush=True)
+        rich.print("Node has not been registered yet..", flush=True)
     else:
-        print("Failed to get node status..", flush=True)
+        rich.print("Failed to get node status..", flush=True)
 
 
 @node_app.command("stats", help="Get node stats")
@@ -202,11 +202,11 @@ def node_stats(
         excluded_keys = ["completed_inferences"]
         for k, v in response_json.items():
             if k not in excluded_keys:
-                print(f"{k}: {v if v is not None else '<UNKNOWN>'}", flush=True)
+                rich.print(f"{k}: {v if v is not None else '<UNKNOWN>'}", flush=True)
         if response_json.get("completed_inferences"):
-            print("Latest completed inferences:", flush=True)
+            rich.print("Latest completed inferences:", flush=True)
         for i in response_json.get("completed_inferences", []):
-            print(i, flush=True)
+            rich.print(i, flush=True)
 
 
 if __name__ == "__main__":
@@ -221,7 +221,7 @@ if __name__ == "__main__":
             )
         )
     except SdkError as e:
-        print(f"Got an Exception when trying to run the node: \n{e}", flush=True)
+        rich.print(f"Got an Exception when trying to run the node: \n{e}", flush=True)
     except Exception as e:
-        print(f"Got an unexpected Exception when trying to run the node: ", flush=True)
+        rich.print("Got an unexpected Exception when trying to run the node: ", flush=True)
         traceback.print_exc()

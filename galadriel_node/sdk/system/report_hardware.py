@@ -64,12 +64,12 @@ def _get_gpu_info() -> Tuple[str, int]:
     try:
         query = GPUStatCollection.new_query()
         data = query.jsonify()
-    except Exception as e:
+    except Exception:
         raise SdkError(
             "No supported GPU found, make sure `nvidia-smi` works, NVIDIA driver versions must be R450.00 or higher."
         )
 
-    if not len(data["gpus"]):
+    if not data["gpus"]:
         raise SdkError(
             "No supported GPU found, make sure you have a supported NVIDIA GPU."
         )

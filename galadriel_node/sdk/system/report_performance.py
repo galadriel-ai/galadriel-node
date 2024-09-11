@@ -35,17 +35,12 @@ async def report_performance(
     model_name: str,
 ) -> None:
     existing_tokens_per_second = await _get_benchmark(model_name, api_url, api_key)
-    if (
-        existing_tokens_per_second
-        and existing_tokens_per_second > config.MINIMUM_COMPLETIONS_TOKENS_PER_SECOND
-    ):
-        print("Node benchmarking is already done", flush=True)
-        return None
-    elif (
-        existing_tokens_per_second
-        and existing_tokens_per_second < config.MINIMUM_COMPLETIONS_TOKENS_PER_SECOND
-    ):
+    if existing_tokens_per_second:
+        if existing_tokens_per_second > config.MINIMUM_COMPLETIONS_TOKENS_PER_SECOND:
+            print("Node benchmarking is already done", flush=True)
+            return None
         print("Node benchmarking results are too low, retrying", flush=True)
+
     tokens_per_sec = await _get_benchmark_tokens_per_sec(llm_base_url)
     await _post_benchmark(model_name, tokens_per_sec, api_url, api_key)
 
@@ -90,7 +85,7 @@ async def _get_benchmark_tokens_per_sec(llm_base_url: str) -> float:
     completion_tokens_all_threads = sum(results)
     time_elapsed = benchmark_end - benchmark_start
     tokens_per_sec = completion_tokens_all_threads / time_elapsed
-    print(f"    Benchmarking done!", flush=True)
+    print("    Benchmarking done!", flush=True)
     print(f"    Time elapsed: {time_elapsed}", flush=True)
     print(f"    Average tokens/sec: {tokens_per_sec}", flush=True)
     return tokens_per_sec
@@ -99,7 +94,7 @@ async def _get_benchmark_tokens_per_sec(llm_base_url: str) -> float:
 def _load_dataset() -> List[Dict]:
     with importlib.resources.files("galadriel_node.sdk.datasets").joinpath(
         "im_feeling_curious.jsonl"
-    ).open("r") as json_file:
+    ).open("r", encoding="utf-8") as json_file:
         json_list = list(json_file)
 
     results = []
@@ -140,10 +135,10 @@ async def _make_inference_request(
         chunk_data = chunk.chunk
         if not chunk_data:
             raise SdkError(
-                f"Failed to call LLM, make sure GALADRIEL_LLM_BASE_URL is correct"
+                "Failed to call LLM, make sure GALADRIEL_LLM_BASE_URL is correct"
             )
         if (
-            not len(chunk_data.choices)
+            not chunk_data.choices
             and chunk_data.usage
             and chunk_data.usage.completion_tokens
         ):

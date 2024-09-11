@@ -1,4 +1,5 @@
-name: unit tests
+name: Lint MyPy & Pylint
+
 on:
   pull_request:
 
@@ -23,7 +24,9 @@ jobs:
       - name: Install Python Dependencies
         run: |
           pip install -e .
-          pip install pytest==8.3.2
-          pip install pytest-mock==3.14.0
-      - name: Run tests
-        run: python -m pytest tests
+          pip install pylint==3.2.7
+          pip install mypy==1.11.2
+      - name: Run MyPy
+        run: mypy .
+      - name: Run PyLint
+        run: pylint --rcfile=setup.cfg galadriel_node/*

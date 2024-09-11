@@ -40,6 +40,7 @@ class InferenceError:
 class InferenceRequest:
     id: str
     chat_request: Dict
+    type: Optional[str] = None
 
     @staticmethod
     def from_json(message):
@@ -48,7 +49,7 @@ class InferenceRequest:
             return InferenceRequest(
                 id=data["id"], type=data["type"], chat_request=data["chat_request"]
             )
-        except:
+        except Exception:
             return None
 
 

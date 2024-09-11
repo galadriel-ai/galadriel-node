@@ -26,6 +26,7 @@ DEFAULT_LOCAL_VALUES = {
 
 
 class Config:
+    # pylint: disable=C0103
     def __init__(
         self, is_load_env: bool = True, environment: str = DEFAULT_ENVIRONMENT
     ):
@@ -58,7 +59,7 @@ class Config:
         self.MINIMUM_COMPLETIONS_TOKENS_PER_SECOND = 264
 
     def save(self, config_dict: Optional[Dict] = None):
-        with open(CONFIG_FILE_PATH, "w") as file:
+        with open(CONFIG_FILE_PATH, "w", encoding="utf-8") as file:
             _config = self.as_dict()
             if config_dict:
                 _config = config_dict

@@ -30,8 +30,8 @@ def version(
         try:
             app_version = importlib.metadata.version("galadriel-node")
             print(f"Galadriel {app_version}", flush=True)
-        except:
-            print("Failed to get version")
+        except Exception as exc:
+            print("Failed to get version:", exc)
 
 
 if __name__ == "__main__":

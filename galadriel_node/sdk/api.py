@@ -27,7 +27,7 @@ async def get(
                 if response.status != 200:
                     return response.status, {}
                 return response.status, await response.json()
-    except ClientConnectorError as e:
+    except ClientConnectorError:
         raise SdkError(f"Cannot connect to {api_url}, make sure it is correct")
-    except Exception as e:
+    except Exception:
         raise SdkError(f"Failed to GET API endpoint: {endpoint}")

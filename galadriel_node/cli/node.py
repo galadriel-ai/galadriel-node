@@ -49,7 +49,9 @@ async def process_request(
     except Exception as e:
         if debug:
             traceback.print_exc()
-        rich.print(f"Error occurred while processing inference request: {e}", flush=True)
+        rich.print(
+            f"Error occurred while processing inference request: {e}", flush=True
+        )
 
 
 async def connect_and_process(
@@ -158,7 +160,9 @@ def node_run(
     except SdkError as e:
         rich.print(f"Got an Exception when trying to run the node: \n{e}", flush=True)
     except Exception:
-        rich.print("Got an unexpected Exception when trying to run the node: ", flush=True)
+        rich.print(
+            "Got an unexpected Exception when trying to run the node: ", flush=True
+        )
         traceback.print_exc()
 
 
@@ -223,5 +227,7 @@ if __name__ == "__main__":
     except SdkError as e:
         rich.print(f"Got an Exception when trying to run the node: \n{e}", flush=True)
     except Exception as e:
-        rich.print("Got an unexpected Exception when trying to run the node: ", flush=True)
+        rich.print(
+            "Got an unexpected Exception when trying to run the node: ", flush=True
+        )
         traceback.print_exc()

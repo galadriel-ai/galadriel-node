@@ -1,4 +1,3 @@
-import http
 import importlib
 from typing import Dict
 from typing import Optional

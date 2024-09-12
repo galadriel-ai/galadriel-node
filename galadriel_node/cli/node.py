@@ -142,7 +142,8 @@ async def run_node(
     response_status, _ = await api.get(api_url, "node/info", api_key)
     if response_status == HTTPStatus.UPGRADE_REQUIRED:
         print(
-            "Error: Your CLI version is outdated. Please update to the latest version. You can find it at https://pypi.org/project/galadriel-node/"
+            "Error: Your CLI version is outdated. "
+            "Please update to the latest version. You can find it at https://pypi.org/project/galadriel-node/"
         )
         return
 
@@ -201,7 +202,8 @@ def node_status(
                 rich.print(f"{k}: {v}", flush=True)
     elif status == HTTPStatus.UPGRADE_REQUIRED:
         print(
-            "Error: Your CLI version is outdated. Please update to the latest version. You can find it at https://pypi.org/project/galadriel-node/"
+            "Error: Your CLI version is outdated."
+            "Please update to the latest version. You can find it at https://pypi.org/project/galadriel-node/"
         )
     elif status == HTTPStatus.NOT_FOUND:
         rich.print("Node has not been registered yet..", flush=True)
@@ -227,7 +229,8 @@ def node_stats(
             rich.print(i, flush=True)
     elif status == HTTPStatus.UPGRADE_REQUIRED:
         print(
-            "Error: Your CLI version is outdated. Please update to the latest version. You can find it at https://pypi.org/project/galadriel-node/"
+            "Error: Your CLI version is outdated."
+            "Please update to the latest version. You can find it at https://pypi.org/project/galadriel-node/"
         )
 
 

@@ -25,7 +25,8 @@ def network_stats(
         print_network_status(response_json)
     elif status == HTTPStatus.UPGRADE_REQUIRED:
         print(
-            "Error: Your CLI version is outdated. Please update to the latest version. You can find it at https://pypi.org/project/galadriel-node/"
+            "Error: Your CLI version is outdated. "
+            "Please update to the latest version. You can find it at https://pypi.org/project/galadriel-node/"
         )
     else:
         print("Failed to get node status..", flush=True)

@@ -137,6 +137,13 @@ async def run_node(
 ):
     if not api_key:
         raise SdkError("GALADRIEL_API_KEY env variable not set")
+
+    # Check version compatibility with the backend. This way it doesn't have to be checked inside report* commands
+    response_status, _ = await api.get(api_url, "node/info", api_key)
+    if response_status == HTTPStatus.UPGRADE_REQUIRED:
+        print("Error: Your CLI version is outdated. Please update to the latest version. You can find it at https://pypi.org/project/galadriel-node/")
+        return
+
     await report_hardware(api_url, api_key)
     await report_performance(api_url, api_key, llm_base_url, config.GALADRIEL_MODEL_ID)
     await retry_connection(rpc_url, api_key, llm_base_url, debug)

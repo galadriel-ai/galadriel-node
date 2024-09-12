@@ -1,4 +1,3 @@
-import asyncio
 from http import HTTPStatus
 
 from galadriel_node.sdk import api

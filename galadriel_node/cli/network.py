@@ -4,7 +4,7 @@ from http import HTTPStatus
 import typer
 
 from galadriel_node.config import config
-from galadriel_node.sdk import api
+from galadriel_node.sdk.upgrade import version_aware_get
 
 network_app = typer.Typer(
     name="network",
@@ -20,14 +20,11 @@ def network_stats(
 ):
     config.raise_if_no_dotenv()
 
-    status, response_json = asyncio.run(api.get(api_url, "network/stats", api_key))
+    status, response_json = asyncio.run(
+        version_aware_get(api_url, "network/stats", api_key)
+    )
     if status == HTTPStatus.OK and response_json:
         print_network_status(response_json)
-    elif status == HTTPStatus.UPGRADE_REQUIRED:
-        print(
-            "Error: Your CLI version is outdated. "
-            "Please update to the latest version. You can find it at https://pypi.org/project/galadriel-node/"
-        )
     else:
         print("Failed to get node status..", flush=True)
 

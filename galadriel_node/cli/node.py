@@ -1,4 +1,6 @@
 import asyncio
+import subprocess
+import sys
 import traceback
 from http import HTTPStatus
 from typing import Optional
@@ -232,6 +234,21 @@ def node_stats(
             "Error: Your CLI version is outdated."
             "Please update to the latest version. You can find it at https://pypi.org/project/galadriel-node/"
         )
+
+@node_app.command("upgrade", help="Upgrade the node to the latest version")
+def node_upgrade():
+    try:
+        print("Updating galadriel CLI to the latest version...")
+        subprocess.check_call(
+            [sys.executable, "-m", "pip", "install", "--upgrade", "galadriel"]
+        )
+        print("galadriel CLI has been successfully updated to the latest version.")
+    except subprocess.CalledProcessError:
+        print(
+            "An error occurred while updating galadriel CLI. Please check your internet connection and try again."
+        )
+    except Exception as e:
+        print(f"An unexpected error occurred: {str(e)}")
 
 
 if __name__ == "__main__":

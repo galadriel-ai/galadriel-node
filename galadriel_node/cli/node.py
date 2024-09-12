@@ -190,6 +190,8 @@ def node_status(
         for k, v in response_json.items():
             if k not in excluded_keys:
                 rich.print(f"{k}: {v}", flush=True)
+    elif status == HTTPStatus.UPGRADE_REQUIRED:
+        print("Error: Your CLI version is outdated. Please update to the latest version. You can find it at https://pypi.org/project/galadriel-node/")
     elif status == HTTPStatus.NOT_FOUND:
         rich.print("Node has not been registered yet..", flush=True)
     else:
@@ -212,6 +214,8 @@ def node_stats(
             rich.print("Latest completed inferences:", flush=True)
         for i in response_json.get("completed_inferences", []):
             rich.print(i, flush=True)
+    elif status == HTTPStatus.UPGRADE_REQUIRED:
+        print("Error: Your CLI version is outdated. Please update to the latest version. You can find it at https://pypi.org/project/galadriel-node/")
 
 
 if __name__ == "__main__":

@@ -141,7 +141,9 @@ async def run_node(
     # Check version compatibility with the backend. This way it doesn't have to be checked inside report* commands
     response_status, _ = await api.get(api_url, "node/info", api_key)
     if response_status == HTTPStatus.UPGRADE_REQUIRED:
-        print("Error: Your CLI version is outdated. Please update to the latest version. You can find it at https://pypi.org/project/galadriel-node/")
+        print(
+            "Error: Your CLI version is outdated. Please update to the latest version. You can find it at https://pypi.org/project/galadriel-node/"
+        )
         return
 
     await report_hardware(api_url, api_key)
@@ -198,7 +200,9 @@ def node_status(
             if k not in excluded_keys:
                 rich.print(f"{k}: {v}", flush=True)
     elif status == HTTPStatus.UPGRADE_REQUIRED:
-        print("Error: Your CLI version is outdated. Please update to the latest version. You can find it at https://pypi.org/project/galadriel-node/")
+        print(
+            "Error: Your CLI version is outdated. Please update to the latest version. You can find it at https://pypi.org/project/galadriel-node/"
+        )
     elif status == HTTPStatus.NOT_FOUND:
         rich.print("Node has not been registered yet..", flush=True)
     else:
@@ -222,7 +226,9 @@ def node_stats(
         for i in response_json.get("completed_inferences", []):
             rich.print(i, flush=True)
     elif status == HTTPStatus.UPGRADE_REQUIRED:
-        print("Error: Your CLI version is outdated. Please update to the latest version. You can find it at https://pypi.org/project/galadriel-node/")
+        print(
+            "Error: Your CLI version is outdated. Please update to the latest version. You can find it at https://pypi.org/project/galadriel-node/"
+        )
 
 
 if __name__ == "__main__":

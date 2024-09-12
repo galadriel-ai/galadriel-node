@@ -15,6 +15,7 @@ from galadriel_node.sdk.entities import SdkError
 CLIENT_NAME = "gpu-node"
 CLIENT_VERSION = importlib.metadata.version("galadriel-node")
 
+
 async def get(
     api_url: str, endpoint: str, api_key: str, query_params: Optional[Dict] = None
 ) -> Tuple[int, Dict]:

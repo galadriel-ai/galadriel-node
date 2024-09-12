@@ -3,6 +3,7 @@ import importlib.resources
 import json
 import time
 from concurrent.futures import ThreadPoolExecutor
+from http import HTTPStatus
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -167,7 +168,7 @@ async def _post_benchmark(
             },
         ) as response:
             await response.json()
-            if response.status == 200:
+            if response.status == HTTPStatus.OK:
                 print("Successfully sent benchmark results", flush=True)
             else:
                 raise SdkError("Failed to save benchmark results")

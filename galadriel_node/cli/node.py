@@ -1,5 +1,6 @@
 import asyncio
 import traceback
+from http import HTTPStatus
 from typing import Optional
 
 import typer
@@ -136,6 +137,16 @@ async def run_node(
 ):
     if not api_key:
         raise SdkError("GALADRIEL_API_KEY env variable not set")
+
+    # Check version compatibility with the backend. This way it doesn't have to be checked inside report* commands
+    response_status, _ = await api.get(api_url, "node/info", api_key)
+    if response_status == HTTPStatus.UPGRADE_REQUIRED:
+        print(
+            "Error: Your CLI version is outdated. "
+            "Please update to the latest version. You can find it at https://pypi.org/project/galadriel-node/"
+        )
+        return
+
     await report_hardware(api_url, api_key)
     await report_performance(api_url, api_key, llm_base_url, config.GALADRIEL_MODEL_ID)
     await retry_connection(rpc_url, api_key, llm_base_url, debug)
@@ -173,7 +184,7 @@ def node_status(
 ):
     config.raise_if_no_dotenv()
     status, response_json = asyncio.run(api.get(api_url, "node/info", api_key))
-    if status == 200 and response_json:
+    if status == HTTPStatus.OK and response_json:
         run_status = response_json.get("status")
         if run_status:
             if run_status == "online":
@@ -189,7 +200,12 @@ def node_status(
         for k, v in response_json.items():
             if k not in excluded_keys:
                 rich.print(f"{k}: {v}", flush=True)
-    elif status == 404:
+    elif status == HTTPStatus.UPGRADE_REQUIRED:
+        print(
+            "Error: Your CLI version is outdated."
+            "Please update to the latest version. You can find it at https://pypi.org/project/galadriel-node/"
+        )
+    elif status == HTTPStatus.NOT_FOUND:
         rich.print("Node has not been registered yet..", flush=True)
     else:
         rich.print("Failed to get node status..", flush=True)
@@ -202,7 +218,7 @@ def node_stats(
 ):
     config.raise_if_no_dotenv()
     status, response_json = asyncio.run(api.get(api_url, "node/stats", api_key))
-    if status == 200 and response_json:
+    if status == HTTPStatus.OK and response_json:
         excluded_keys = ["completed_inferences"]
         for k, v in response_json.items():
             if k not in excluded_keys:
@@ -211,6 +227,11 @@ def node_stats(
             rich.print("Latest completed inferences:", flush=True)
         for i in response_json.get("completed_inferences", []):
             rich.print(i, flush=True)
+    elif status == HTTPStatus.UPGRADE_REQUIRED:
+        print(
+            "Error: Your CLI version is outdated."
+            "Please update to the latest version. You can find it at https://pypi.org/project/galadriel-node/"
+        )
 
 
 if __name__ == "__main__":

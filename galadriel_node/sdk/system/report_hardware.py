@@ -1,4 +1,5 @@
 import platform
+from http import HTTPStatus
 from typing import Tuple
 from urllib.parse import urljoin
 
@@ -104,7 +105,7 @@ def _get_network_speed() -> Tuple[float, float]:
 
 async def _get_info(api_url: str, api_key: str):
     response_status, _ = await api.get(api_url, "node/info", api_key)
-    return response_status == 200
+    return response_status == HTTPStatus.OK
 
 
 async def _post_info(node_info: NodeInfo, api_url: str, api_key: str) -> None:
@@ -124,7 +125,7 @@ async def _post_info(node_info: NodeInfo, api_url: str, api_key: str) -> None:
             },
         ) as response:
             await response.json()
-            if response.status == 200:
+            if response.status == HTTPStatus.OK:
                 print("Successfully sent hardware info", flush=True)
             else:
                 raise SdkError("Failed to save hardware info")

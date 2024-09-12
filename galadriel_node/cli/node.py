@@ -1,5 +1,6 @@
 import asyncio
 import traceback
+from http import HTTPStatus
 from typing import Optional
 
 import typer
@@ -173,7 +174,7 @@ def node_status(
 ):
     config.raise_if_no_dotenv()
     status, response_json = asyncio.run(api.get(api_url, "node/info", api_key))
-    if status == 200 and response_json:
+    if status == HTTPStatus.OK and response_json:
         run_status = response_json.get("status")
         if run_status:
             if run_status == "online":
@@ -189,7 +190,7 @@ def node_status(
         for k, v in response_json.items():
             if k not in excluded_keys:
                 rich.print(f"{k}: {v}", flush=True)
-    elif status == 404:
+    elif status == HTTPStatus.NOT_FOUND:
         rich.print("Node has not been registered yet..", flush=True)
     else:
         rich.print("Failed to get node status..", flush=True)
@@ -202,7 +203,7 @@ def node_stats(
 ):
     config.raise_if_no_dotenv()
     status, response_json = asyncio.run(api.get(api_url, "node/stats", api_key))
-    if status == 200 and response_json:
+    if status == HTTPStatus.OK and response_json:
         excluded_keys = ["completed_inferences"]
         for k, v in response_json.items():
             if k not in excluded_keys:

@@ -12,6 +12,7 @@ from gpustat import GPUStatCollection
 from galadriel_node.config import config
 from galadriel_node.sdk import api
 from galadriel_node.sdk.entities import SdkError
+from galadriel_node.sdk.entities import AuthenticationError
 from galadriel_node.sdk.system.entities import NodeInfo
 
 MIN_CPU_CORES = 2
@@ -132,5 +133,7 @@ async def _post_info(
             await response.json()
             if response.status == HTTPStatus.OK:
                 print("Successfully sent hardware info", flush=True)
+            elif response.status == HTTPStatus.UNAUTHORIZED:
+                raise AuthenticationError("Unauthorized to send hardware info")
             else:
                 raise SdkError("Failed to save hardware info")

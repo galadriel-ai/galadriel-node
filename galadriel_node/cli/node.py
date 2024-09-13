@@ -210,7 +210,9 @@ def node_stats(
     api_key: str = typer.Option(config.GALADRIEL_API_KEY, help="API key"),
 ):
     config.raise_if_no_dotenv()
-    status, response_json = version_aware_get(api_url, "node/stats", api_key)
+    status, response_json = asyncio.run(
+        version_aware_get(api_url, "node/stats", api_key)
+    )
     if status == HTTPStatus.OK and response_json:
         excluded_keys = ["completed_inferences"]
         for k, v in response_json.items():

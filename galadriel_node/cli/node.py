@@ -141,7 +141,7 @@ async def run_node(
         raise SdkError("GALADRIEL_API_KEY env variable not set")
 
     # Check version compatibility with the backend. This way it doesn't have to be checked inside report* commands
-    asyncio.run(version_aware_get(api_url, "node/info", api_key))
+    await version_aware_get(api_url, "node/info", api_key)
 
     await report_hardware(api_url, api_key)
     await report_performance(api_url, api_key, llm_base_url, config.GALADRIEL_MODEL_ID)

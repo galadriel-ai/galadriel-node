@@ -32,10 +32,13 @@ BASE_REQUEST = {
 async def report_performance(
     api_url: str,
     api_key: str,
+    node_id: str,
     llm_base_url: str,
     model_name: str,
 ) -> None:
-    existing_tokens_per_second = await _get_benchmark(model_name, api_url, api_key)
+    existing_tokens_per_second = await _get_benchmark(
+        model_name, api_url, api_key, node_id
+    )
     if existing_tokens_per_second:
         if existing_tokens_per_second > config.MINIMUM_COMPLETIONS_TOKENS_PER_SECOND:
             print("Node benchmarking is already done", flush=True)
@@ -43,13 +46,13 @@ async def report_performance(
         print("Node benchmarking results are too low, retrying", flush=True)
 
     tokens_per_sec = await _get_benchmark_tokens_per_sec(llm_base_url)
-    await _post_benchmark(model_name, tokens_per_sec, api_url, api_key)
+    await _post_benchmark(model_name, tokens_per_sec, api_url, api_key, node_id)
 
 
 async def _get_benchmark(
-    model_name: str, api_url: str, api_key: str
+    model_name: str, api_url: str, api_key: str, node_id: str
 ) -> Optional[float]:
-    query_params = {"model": model_name}
+    query_params = {"model": model_name, "node_id": node_id}
     response_status, response_json = await api.get(
         api_url, "node/benchmark", api_key, query_params
     )
@@ -157,12 +160,14 @@ async def _post_benchmark(
     tokens_per_sec: float,
     api_url: str,
     api_key: str,
+    node_id: str,
 ) -> None:
     async with aiohttp.ClientSession() as session:
         async with session.post(
             urljoin(api_url + "/", "node/benchmark"),
             headers={"Authorization": f"Bearer {api_key}"},
             json={
+                "node_id": node_id,
                 "model_name": model_name,
                 "tokens_per_second": tokens_per_sec,
             },

@@ -91,12 +91,18 @@ async def connect_and_process(
                 return True
 
 
-async def retry_connection(rpc_url: str, api_key: str, llm_base_url: str, debug: bool):
+async def retry_connection(
+    rpc_url: str, api_key: str, node_id: str, llm_base_url: str, debug: bool
+):
     """
     Attempts to reconnect to the Galadriel server with exponential backoff.
     """
     uri = f"{rpc_url}/ws"
-    headers = {"Authorization": f"Bearer {api_key}", "Model": config.GALADRIEL_MODEL_ID}
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Model": config.GALADRIEL_MODEL_ID,
+        "Node-Id": node_id,
+    }
     retries = 0
     backoff_time = BACKOFF_MIN
 
@@ -135,17 +141,28 @@ async def retry_connection(rpc_url: str, api_key: str, llm_base_url: str, debug:
 
 
 async def run_node(
-    api_url: str, rpc_url: str, api_key: Optional[str], llm_base_url: str, debug: bool
+    api_url: str,
+    rpc_url: str,
+    api_key: Optional[str],
+    node_id: Optional[str],
+    llm_base_url: str,
+    debug: bool,
 ):
     if not api_key:
         raise SdkError("GALADRIEL_API_KEY env variable not set")
+    if not node_id:
+        raise SdkError("GALADRIEL_NODE_ID env variable not set")
 
     # Check version compatibility with the backend. This way it doesn't have to be checked inside report* commands
-    await version_aware_get(api_url, "node/info", api_key)
+    await version_aware_get(
+        api_url, "node/info", api_key, query_params={"node_id": node_id}
+    )
 
-    await report_hardware(api_url, api_key)
-    await report_performance(api_url, api_key, llm_base_url, config.GALADRIEL_MODEL_ID)
-    await retry_connection(rpc_url, api_key, llm_base_url, debug)
+    await report_hardware(api_url, api_key, node_id)
+    await report_performance(
+        api_url, api_key, node_id, llm_base_url, config.GALADRIEL_MODEL_ID
+    )
+    await retry_connection(rpc_url, api_key, node_id, llm_base_url, debug)
 
 
 @node_app.command("run", help="Run the Galadriel node")
@@ -153,6 +170,7 @@ def node_run(
     api_url: str = typer.Option(config.GALADRIEL_API_URL, help="API url"),
     rpc_url: str = typer.Option(config.GALADRIEL_RPC_URL, help="RPC url"),
     api_key: str = typer.Option(config.GALADRIEL_API_KEY, help="API key"),
+    node_id: str = typer.Option(config.GALADRIEL_NODE_ID, help="Node ID"),
     llm_base_url: str = typer.Option(
         config.GALADRIEL_LLM_BASE_URL, help="LLM base url"
     ),
@@ -163,7 +181,7 @@ def node_run(
     """
     config.raise_if_no_dotenv()
     try:
-        asyncio.run(run_node(api_url, rpc_url, api_key, llm_base_url, debug))
+        asyncio.run(run_node(api_url, rpc_url, api_key, node_id, llm_base_url, debug))
     except SdkError as e:
         rich.print(f"Got an Exception when trying to run the node: \n{e}", flush=True)
     except Exception:
@@ -177,10 +195,13 @@ def node_run(
 def node_status(
     api_url: str = typer.Option(config.GALADRIEL_API_URL, help="API url"),
     api_key: str = typer.Option(config.GALADRIEL_API_KEY, help="API key"),
+    node_id: str = typer.Option(config.GALADRIEL_NODE_ID, help="Node ID"),
 ):
     config.raise_if_no_dotenv()
     status, response_json = asyncio.run(
-        version_aware_get(api_url, "node/info", api_key)
+        version_aware_get(
+            api_url, "node/info", api_key, query_params={"node_id": node_id}
+        )
     )
     if status == HTTPStatus.OK and response_json:
         run_status = response_json.get("status")
@@ -208,10 +229,13 @@ def node_status(
 def node_stats(
     api_url: str = typer.Option(config.GALADRIEL_API_URL, help="API url"),
     api_key: str = typer.Option(config.GALADRIEL_API_KEY, help="API key"),
+    node_id: str = typer.Option(config.GALADRIEL_NODE_ID, help="Node ID"),
 ):
     config.raise_if_no_dotenv()
     status, response_json = asyncio.run(
-        version_aware_get(api_url, "node/stats", api_key)
+        version_aware_get(
+            api_url, "node/stats", api_key, query_params={"node_id": node_id}
+        )
     )
     if status == HTTPStatus.OK and response_json:
         excluded_keys = ["completed_inferences"]
@@ -247,6 +271,7 @@ if __name__ == "__main__":
                 config.GALADRIEL_API_URL,
                 config.GALADRIEL_RPC_URL,
                 config.GALADRIEL_API_KEY,
+                config.GALADRIEL_NODE_ID,
                 config.GALADRIEL_LLM_BASE_URL,
                 True,
             )

@@ -42,6 +42,7 @@ class Config:
         self.GALADRIEL_API_URL = os.getenv(
             "GALADRIEL_API_URL", default_values["GALADRIEL_API_URL"]
         )
+        self.GALADRIEL_NODE_ID = os.getenv("GALADRIEL_NODE_ID", None)
         self.GALADRIEL_RPC_URL = os.getenv(
             "GALADRIEL_RPC_URL", default_values["GALADRIEL_RPC_URL"]
         )
@@ -74,6 +75,7 @@ class Config:
         return {
             "GALADRIEL_ENVIRONMENT": self.GALADRIEL_ENVIRONMENT,
             "GALADRIEL_API_URL": self.GALADRIEL_API_URL,
+            "GALADRIEL_NODE_ID": self.GALADRIEL_NODE_ID,
             "GALADRIEL_RPC_URL": self.GALADRIEL_RPC_URL,
             "GALADRIEL_API_KEY": self.GALADRIEL_API_KEY,
             "GALADRIEL_MODEL_ID": self.GALADRIEL_MODEL_ID,

@@ -23,8 +23,8 @@ SUPPORTED_GPUS = [
 ]
 
 
-async def report_hardware(api_url: str, api_key: str) -> None:
-    if await _get_info(api_url, api_key):
+async def report_hardware(api_url: str, api_key: str, node_id: str) -> None:
+    if await _get_info(api_url, api_key, node_id):
         print("Node info is already saved", flush=True)
         return None
     if config.GALADRIEL_ENVIRONMENT == "local":
@@ -58,7 +58,7 @@ async def report_hardware(api_url: str, api_key: str) -> None:
             network_upload_speed=upload_speed_mbs,
             operating_system=platform.platform(),
         )
-    await _post_info(node_info, api_url, api_key)
+    await _post_info(node_info, api_url, api_key, node_id)
 
 
 def _get_gpu_info() -> Tuple[str, int]:
@@ -103,17 +103,22 @@ def _get_network_speed() -> Tuple[float, float]:
     return download_speed_mbs, upload_speed_mbs
 
 
-async def _get_info(api_url: str, api_key: str):
-    response_status, _ = await api.get(api_url, "node/info", api_key)
+async def _get_info(api_url: str, api_key: str, node_id: str):
+    response_status, _ = await api.get(
+        api_url, "node/info", api_key, query_params={"node_id": node_id}
+    )
     return response_status == HTTPStatus.OK
 
 
-async def _post_info(node_info: NodeInfo, api_url: str, api_key: str) -> None:
+async def _post_info(
+    node_info: NodeInfo, api_url: str, api_key: str, node_id: str
+) -> None:
     async with aiohttp.ClientSession() as session:
         async with session.post(
             urljoin(api_url + "/", "node/info"),
             headers={"Authorization": f"Bearer {api_key}"},
             json={
+                "node_id": node_id,
                 "gpu_model": node_info.gpu_model,
                 "vram": node_info.vram,
                 "cpu_model": node_info.cpu_model,

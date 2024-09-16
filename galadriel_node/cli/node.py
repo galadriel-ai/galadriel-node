@@ -2,12 +2,13 @@ import asyncio
 import subprocess
 import sys
 import traceback
-from http import HTTPStatus
 from typing import Optional
 
 import typer
 import websockets
 import rich
+import websockets
+from websockets.frames import CloseCode
 
 from galadriel_node.config import config
 from galadriel_node.sdk.entities import InferenceRequest
@@ -77,13 +78,13 @@ async def connect_and_process(
                     process_request(request, websocket, llm_base_url, debug, send_lock)
                 )
             except websockets.ConnectionClosed as e:
-                if e.code == 1008:
+                if e.code == CloseCode.INVALID_DATA:
                     rich.print(
                         f"Received error: {e.reason}.",
                         flush=True,
                     )
-                    return True
-                rich.print(f"Connection closed: {e}. Exiting loop.", flush=True)
+                    return False
+                rich.print(f"Connection closed: {e}. Retrying.", flush=True)
                 return True
             except Exception as e:
                 if debug:

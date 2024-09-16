@@ -25,7 +25,7 @@ SUPPORTED_GPUS = [
 
 
 async def report_hardware(api_url: str, api_key: str, node_id: str) -> None:
-    if await _get_info(api_url, api_key, node_id):
+    if await _get_info_already_exists(api_url, api_key, node_id):
         print("Node info is already saved", flush=True)
         return None
     if config.GALADRIEL_ENVIRONMENT == "local":
@@ -104,11 +104,16 @@ def _get_network_speed() -> Tuple[float, float]:
     return download_speed_mbs, upload_speed_mbs
 
 
-async def _get_info(api_url: str, api_key: str, node_id: str):
-    response_status, _ = await api.get(
+async def _get_info_already_exists(api_url: str, api_key: str, node_id: str) -> bool:
+    response_status, response_json = await api.get(
         api_url, "node/info", api_key, query_params={"node_id": node_id}
     )
-    return response_status == HTTPStatus.OK
+    if response_status != HTTPStatus.OK:
+        return False
+    return (
+        response_json.get("gpu_model") is not None
+        and response_json.get("cpu_model") is not None
+    )
 
 
 async def _post_info(

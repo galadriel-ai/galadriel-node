@@ -12,6 +12,7 @@ import rich
 from galadriel_node.config import config
 from galadriel_node.sdk.entities import InferenceRequest
 from galadriel_node.sdk.entities import SdkError
+from galadriel_node.sdk.entities import AuthenticationError
 from galadriel_node.sdk.llm import Llm
 from galadriel_node.sdk.system.report_hardware import report_hardware
 from galadriel_node.sdk.system.report_performance import report_performance
@@ -25,8 +26,8 @@ node_app = typer.Typer(
     no_args_is_help=True,
 )
 
-MAX_RETRIES = 5
-BACKOFF_MIN = 1  # Minimum backoff time in seconds
+BACKOFF_MIN = 4  # Minimum backoff time in seconds
+BACKOFF_MAX = 300  # Maximum backoff time in seconds
 
 
 async def process_request(
@@ -78,10 +79,10 @@ async def connect_and_process(
             except websockets.ConnectionClosed as e:
                 if e.code == 1008:
                     rich.print(
-                        f"Received error: {e.reason}. Exiting...",
+                        f"Received error: {e.reason}.",
                         flush=True,
                     )
-                    return False
+                    return True
                 rich.print(f"Connection closed: {e}. Exiting loop.", flush=True)
                 return True
             except Exception as e:
@@ -106,7 +107,7 @@ async def retry_connection(
     retries = 0
     backoff_time = BACKOFF_MIN
 
-    while retries < MAX_RETRIES:
+    while True:
         try:
             retry = await connect_and_process(uri, headers, llm_base_url, debug)
             if not retry:
@@ -124,20 +125,13 @@ async def retry_connection(
             if debug:
                 traceback.print_exc()
             rich.print(
-                f"Websocket connection failed ({retries}/{MAX_RETRIES}). Retrying in {backoff_time} seconds...",
+                f"Websocket connection failed. Retry #{retries} in {backoff_time} seconds...",
                 flush=True,
             )
 
         # Exponential backoff before retrying
         await asyncio.sleep(backoff_time)
-        backoff_time = min(backoff_time * 2, 60)  # Cap backoff time to 60 seconds
-
-        if retries >= MAX_RETRIES:
-            rich.print(
-                "Max retries reached. Make sure GALADRIEL_RPC_URL is set correctly. Exiting...",
-                flush=True,
-            )
-            break
+        backoff_time = min(backoff_time * 2, BACKOFF_MAX)
 
 
 async def run_node(
@@ -182,6 +176,11 @@ def node_run(
     config.raise_if_no_dotenv()
     try:
         asyncio.run(run_node(api_url, rpc_url, api_key, node_id, llm_base_url, debug))
+    except AuthenticationError:
+        rich.print(
+            "Authentication failed. Please check your API key and try again.",
+            flush=True,
+        )
     except SdkError as e:
         rich.print(f"Got an Exception when trying to run the node: \n{e}", flush=True)
     except Exception:

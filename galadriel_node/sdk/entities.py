@@ -12,6 +12,10 @@ class SdkError(Exception):
     pass
 
 
+class AuthenticationError(SdkError):
+    pass
+
+
 class InferenceStatusCodes(Enum):
     BAD_REQUEST = 400
     AUTHENTICATION_ERROR = 401

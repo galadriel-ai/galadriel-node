@@ -27,7 +27,7 @@ node_app = typer.Typer(
 )
 
 BACKOFF_MIN = 4  # Minimum backoff time in seconds
-BACKOFF_MAX = 60  # Maximum backoff time in seconds
+BACKOFF_MAX = 300  # Maximum backoff time in seconds
 
 
 async def process_request(

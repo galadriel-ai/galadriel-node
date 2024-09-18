@@ -4,8 +4,8 @@ import sys
 import traceback
 from http import HTTPStatus
 from typing import Optional
-import requests
 from urllib.parse import urljoin
+import requests
 
 import typer
 import websockets
@@ -253,34 +253,40 @@ def llm_status(
 ):
     config.raise_if_no_dotenv()
     try:
-        response = requests.get(llm_base_url + "/v1/models/")
+        response = requests.get(llm_base_url + "/v1/models/", timeout=5)
         if response.ok:
             rich.print(
-                f"[bold green]\N{check mark} LLM server at {llm_base_url} is accessible via HTTP.[/bold green]",
+                f"[bold green]\N{CHECK MARK} LLM server at {llm_base_url} is accessible via HTTP."
+                "[/bold green]",
                 flush=True,
             )
         else:
             rich.print(
-                f"[bold red]\N{cross mark} LLM server at {llm_base_url} returned status code: {response.status_code}[/bold red]",
+                f"[bold red]\N{CROSS MARK} LLM server at {llm_base_url} returned status code: "
+                f"{response.status_code}[/bold red]",
                 flush=True,
             )
     except requests.exceptions.RequestException as e:
         rich.print(f"Failed to reach LLM server at {llm_base_url}: {e}", flush=True)
+
     try:
         response = asyncio.run(llm_sanity_check(llm_base_url, model_id))
         if response.status_code == 200:
             rich.print(
-                f"[bold green]\N{check mark} LLM server at {llm_base_url} successfully generated tokens.[/bold green]",
+                f"[bold green]\N{CHECK MARK} LLM server at {llm_base_url} successfully generated "
+                "tokens.[/bold green]",
                 flush=True,
             )
     except openai.APIStatusError as e:
         rich.print(
-            f"[bold red]\N{cross mark} LLM server at {llm_base_url} failed to generate tokens. APIStatusError: {e}[/bold red]",
+            f"[bold red]\N{CROSS MARK} LLM server at {llm_base_url} failed to generate tokens. "
+            f"APIStatusError: \n{e}[/bold red]",
             flush=True,
         )
     except Exception as e:
         rich.print(
-            f"[bold red]\N{cross mark} LLM server at {llm_base_url} failed to generate tokens. Exception occurred: {e}[/bold red]",
+            f"[bold red]\N{CROSS MARK} LLM server at {llm_base_url} failed to generate tokens."
+            f" Exception occurred: {e}[/bold red]",
             flush=True,
         )
 

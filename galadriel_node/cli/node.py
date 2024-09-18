@@ -5,7 +5,6 @@ import traceback
 from typing import Optional
 
 import typer
-import websockets
 import rich
 import websockets
 from websockets.frames import CloseCode

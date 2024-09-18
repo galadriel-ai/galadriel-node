@@ -2,6 +2,7 @@ import asyncio
 import subprocess
 import sys
 import traceback
+from http import HTTPStatus
 from typing import Optional
 from dataclasses import dataclass
 

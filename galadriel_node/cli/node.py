@@ -134,7 +134,7 @@ async def retry_connection(
             rich.print(f"WebSocket connection closed: {e}. Retrying...", flush=True)
         except websockets.InvalidStatusCode as e:
             retries += 1
-            rich.print("Invalid status code: {e}. Retrying...", flush=True)
+            rich.print(f"Invalid status code: {e}. Retrying...", flush=True)
         except Exception as e:
             retries += 1
             if debug:

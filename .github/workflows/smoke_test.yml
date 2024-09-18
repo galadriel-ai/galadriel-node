@@ -1,0 +1,59 @@
+name: Smoke Test
+
+on:
+  workflow_dispatch:  # Allows manual triggering
+  schedule:
+      # Run every 4 hours
+      - cron: '0 */4 * * *'
+
+
+jobs:
+  run-smoke-tests:
+    runs-on: ubuntu-22.04  # Stable version
+    env:
+      ENVIRONMENT: smoke test
+    steps:
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Pull the latest release of Galadriel
+        run: |
+          mkdir galadriel
+          cd galadriel
+          python3 -m venv venv
+          source venv/bin/activate
+          pip install galadriel-node
+          galadriel --version
+
+      - name: Initialize Galadriel
+        env:
+          GALADRIEL_API_URL: ${{ secrets.GALADRIEL_API_URL }}
+          GALADRIEL_RPC_URL: ${{ secrets.GALADRIEL_RPC_URL }}
+          GALADRIEL_LLM_BASE_URL: ${{ secrets.GALADRIEL_LLM_BASE_URL }}
+          GALADRIEL_MODEL_ID: ${{ secrets.GALADRIEL_MODEL_ID }}
+        run: |
+          galadriel init --environment production
+
+      - name: Test_1 - Run Node Status
+        run: |
+          galadriel node status > node_status_result.txt
+
+      - name: Test_2 - Run Node Stats
+        run: |
+          galadriel node stats > node_stats_result.txt
+
+
+      - name: Notify the result
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          node_status_result=$(cat node_status_result.txt)
+          node_stats_result=$(cat node_stats_result.txt)
+          
+          payload="{
+            \"node_stats\": \"result: node_status_result\",
+            \"node_stats\": \"result: node_stats_result\"
+          }"
+          curl -X POST -H 'Content-type: application/json' --data "$payload" $SLACK_WEBHOOK_URL

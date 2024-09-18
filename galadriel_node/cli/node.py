@@ -124,8 +124,8 @@ async def retry_connection(
             if result.retry:
                 retries += 1
                 if result.reset_backoff:
-                    retries = 0  # Reset retries on successful connection
-                    backoff_time = BACKOFF_MIN  # Reset backoff time
+                    retries = 0
+                    backoff_time = BACKOFF_MIN
                 rich.print(f"Retry #{retries} in {backoff_time} seconds...")
             else:
                 break

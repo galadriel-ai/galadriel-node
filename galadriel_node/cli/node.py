@@ -267,7 +267,10 @@ def llm_status(
                 flush=True,
             )
     except requests.exceptions.RequestException as e:
-        rich.print(f"Failed to reach LLM server at {llm_base_url}: {e}", flush=True)
+        rich.print(
+            f"[bold red]\N{CROSS MARK} Failed to reach LLM server at {llm_base_url}: \n{e}[/bold red]",
+            flush=True,
+        )
 
     try:
         response = asyncio.run(llm_sanity_check(llm_base_url, model_id))

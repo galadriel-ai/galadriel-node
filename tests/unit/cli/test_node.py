@@ -147,3 +147,25 @@ async def test_run_vllm_when_vllm_not_installed_and_no_llm_base_url():
     with patch("galadriel_node.llm_backends.vllm.is_installed", return_value=False):
         with pytest.raises(SdkError, match="vLLM is not installed"):
             await run_llm(None, model_id, debug)
+
+
+async def test_run_vllm_when_vllm_process_dies():
+    model_id = "mock_model_id"
+    debug = False
+
+    with patch(
+        "galadriel_node.llm_backends.vllm.is_installed", return_value=True
+    ), patch("galadriel_node.llm_backends.vllm.is_running", return_value=False), patch(
+        "galadriel_node.llm_backends.vllm.start", return_value=12345
+    ), patch(
+        "galadriel_node.llm_backends.vllm.is_process_running", side_effect=[True, False]
+    ), patch(
+        "galadriel_node.cli.node.llm_http_check", new_callable=AsyncMock
+    ) as mock_llm_http_check:
+
+        mock_llm_http_check.return_value.ok = False
+
+        with pytest.raises(
+            SdkError, match=r"vLLM process \(PID: 12345\) died unexpectedly"
+        ):
+            await run_llm(None, model_id, debug)

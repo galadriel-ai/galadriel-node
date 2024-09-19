@@ -4,10 +4,13 @@ import sys
 import traceback
 from http import HTTPStatus
 from typing import Optional
+from urllib.parse import urljoin
 from dataclasses import dataclass
+import aiohttp
 
 import typer
 import rich
+import openai
 import websockets
 from websockets.frames import CloseCode
 
@@ -174,6 +177,31 @@ async def run_node(
     await retry_connection(rpc_url, api_key, node_id, llm_base_url, debug)
 
 
+async def llm_http_check(llm_base_url: str):
+    timeout = aiohttp.ClientTimeout(total=60)
+    async with aiohttp.ClientSession(timeout=timeout) as session:
+        return await session.get(llm_base_url + "/v1/models/")
+
+
+async def llm_sanity_check(
+    llm_base_url: str,
+    model_id: str,
+):
+    base_url: str = urljoin(llm_base_url, "/v1")
+    client = openai.AsyncOpenAI(base_url=base_url, api_key="sk-no-key-required")
+    return await client.chat.with_raw_response.completions.create(
+        model=model_id,
+        messages=[
+            {
+                "role": "user",
+                "content": "Say this is a test",
+            },
+        ],
+        max_tokens=5,
+        timeout=5,
+    )
+
+
 @node_app.command("run", help="Run the Galadriel node")
 def node_run(
     api_url: str = typer.Option(config.GALADRIEL_API_URL, help="API url"),
@@ -237,6 +265,56 @@ def node_status(
         rich.print("Node has not been registered yet..", flush=True)
     else:
         rich.print("Failed to get node status..", flush=True)
+
+
+@node_app.command("llm-status", help="Get LLM status")
+def llm_status(
+    model_id: str = typer.Option(config.GALADRIEL_MODEL_ID, help="Model ID"),
+    llm_base_url: str = typer.Option(
+        config.GALADRIEL_LLM_BASE_URL, help="LLM base url"
+    ),
+):
+    config.raise_if_no_dotenv()
+    try:
+        response = asyncio.run(llm_http_check(llm_base_url))
+        if response.ok:
+            rich.print(
+                f"[bold green]\N{CHECK MARK} LLM server at {llm_base_url} is accessible via HTTP."
+                "[/bold green]",
+                flush=True,
+            )
+        else:
+            rich.print(
+                f"[bold red]\N{CROSS MARK} LLM server at {llm_base_url} returned status code: "
+                f"{response.status_code}[/bold red]",
+                flush=True,
+            )
+    except Exception as e:
+        rich.print(
+            f"[bold red]\N{CROSS MARK} Failed to reach LLM server at {llm_base_url}: \n{e}[/bold red]",
+            flush=True,
+        )
+
+    try:
+        response = asyncio.run(llm_sanity_check(llm_base_url, model_id))
+        if response.status_code == HTTPStatus.OK:
+            rich.print(
+                f"[bold green]\N{CHECK MARK} LLM server at {llm_base_url} successfully generated "
+                "tokens.[/bold green]",
+                flush=True,
+            )
+    except openai.APIStatusError as e:
+        rich.print(
+            f"[bold red]\N{CROSS MARK} LLM server at {llm_base_url} failed to generate tokens. "
+            f"APIStatusError: \n{e}[/bold red]",
+            flush=True,
+        )
+    except Exception as e:
+        rich.print(
+            f"[bold red]\N{CROSS MARK} LLM server at {llm_base_url} failed to generate tokens."
+            f" Exception occurred: {e}[/bold red]",
+            flush=True,
+        )
 
 
 @node_app.command("stats", help="Get node stats")

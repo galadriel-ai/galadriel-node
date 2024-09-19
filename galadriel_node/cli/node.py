@@ -286,12 +286,13 @@ async def run_llm(
                         response = await llm_http_check(
                             vllm.LLM_BASE_URL, total_timeout=1.0
                         )
+                        if response.ok:
+                            rich.print("\nvLLM is ready.", flush=True)
+                            break
                     except Exception:
                         continue
-                    if response.ok:
-                        rich.print("\nvLLM is ready.", flush=True)
-                        break
-                    await asyncio.sleep(10.0)
+                    finally:
+                        await asyncio.sleep(10.0)
         else:
             rich.print("vLLM is already running.", flush=True)
         result = await check_llm(vllm.LLM_BASE_URL, model_id)

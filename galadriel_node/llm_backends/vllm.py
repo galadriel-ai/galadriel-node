@@ -17,12 +17,17 @@ def is_installed() -> bool:
         return False
 
 
-def is_running() -> bool:
+def is_running(model_name: str) -> bool:
     for process in psutil.process_iter():
         try:
-            if process.name() == "vllm":
-                return True
-        except psutil.NoSuchProcess:
+            cmdline = process.cmdline()
+            if "python3" in [os.path.basename(arg) for arg in cmdline]:
+                for i in range(len(cmdline) - 2):
+                    if os.path.basename(cmdline[i]) == "vllm" and cmdline[
+                        i + 1 : i + 3
+                    ] == ["serve", model_name]:
+                        return True
+        except (psutil.NoSuchProcess, IndexError):
             pass
     return False
 
@@ -70,7 +75,3 @@ def start(node_info: NodeInfo, model_name: str, debug: bool = False) -> bool:
         if debug:
             print(f"Error starting vllm process: {e}")
         return False
-
-
-if __name__ == "__main__":
-    print(is_running())

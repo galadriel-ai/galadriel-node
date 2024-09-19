@@ -18,7 +18,7 @@ def network_stats(
     api_url: str = typer.Option(config.GALADRIEL_API_URL, help="API url"),
     api_key: str = typer.Option(config.GALADRIEL_API_KEY, help="API key"),
 ):
-    config.raise_if_no_dotenv()
+    config.validate()
 
     status, response_json = asyncio.run(
         version_aware_get(api_url, "network/stats", api_key)

@@ -94,7 +94,7 @@ class Config:
         return os.path.isfile(CONFIG_FILE_PATH)
 
     @staticmethod
-    def raise_if_no_dotenv():
+    def validate():
         if not config.is_dotenv_present():
             raise SdkError(
                 "Galadriel not initialised. Please call `galadriel init` first"

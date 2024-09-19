@@ -1,7 +1,9 @@
-#!/bin/zsh
+#!/bin/bash
 
 # Get the node stats
+source venv/bin/activate
 (galadriel node stats 2>&1)  > node_stats.output
+cat node_stats.output
 
 # Check if the output is empty
 if [ ! -s node_stats.output ]; then

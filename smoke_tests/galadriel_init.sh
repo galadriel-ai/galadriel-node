@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/bin/bash
 
 ENV_FILE="$HOME/.galadrielenv"
 GALADRIEL_ENVIRONMENT="production"

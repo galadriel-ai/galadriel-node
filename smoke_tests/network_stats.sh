@@ -1,7 +1,9 @@
-#!/bin/zsh
+#!/bin/bash
 
 # Get the network stats
+source venv/bin/activate
 (galadriel network stats 2>&1)  > network_stats.output
+cat network_stats.output
 
 # Check if the output is empty
 if [ ! -s network_stats.output ]; then

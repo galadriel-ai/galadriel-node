@@ -1,7 +1,9 @@
-#!/bin/zsh
+#!/bin/bash
 
 # Get the node status
+source venv/bin/activate
 (galadriel node status 2>&1) >  node_status.output
+cat node_status.output
 
 # Check if the output is empty
 if [ ! -s node_status.output ]; then

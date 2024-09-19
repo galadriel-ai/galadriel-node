@@ -1,6 +1,10 @@
 name: Smoke Test
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [ ENG-817 ]
+  pull_request:
+    branches: [ ENG-817 ]
 
 jobs:
   run-smoke-tests:
@@ -18,7 +22,6 @@ jobs:
         run: |          
           python3 -m venv venv
           source venv/bin/activate
-          pip install -r requirements.txt
           pip install galadriel-node
           galadriel --version
           
@@ -33,7 +36,7 @@ jobs:
           GALADRIEL_LLM_BASE_URL: ${{ secrets.GALADRIEL_LLM_BASE_URL }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
-            chmod +x /smoke_test/send_message_to_slack.sh
+            chmod +x ./smoke_tests/send_message_to_slack.sh
             chmod +x ./smoke_tests/node_status.sh
             chmod +x ./smoke_tests/node_stats.sh
             chmod +x ./smoke_tests/network_stats.sh
@@ -43,13 +46,19 @@ jobs:
                   
 
       - name: Test_1 - Run Node Status
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
           ./smoke_tests/node_status.sh 
 
       - name: Test_2 - Run Node Stats
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
           ./smoke_tests/node_stats.sh
 
       - name: Test_3 - Run Network Stats
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
           ./smoke_tests/network_stats.sh

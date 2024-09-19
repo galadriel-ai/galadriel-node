@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/bin/bash
 
 # The message to be sent to Slack
 
@@ -9,4 +9,4 @@ payload="{
     \"text\": \"${MESSAGE}\"
 }"
 
-curl -X POST -H 'Content-type: application/json' --data "$payload" "${SLACK_WEBHOOK_URL}"
+curl -X POST -H 'Content-type: application/json' --data "$payload" ${SLACK_WEBHOOK_URL}

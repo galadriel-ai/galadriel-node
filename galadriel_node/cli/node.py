@@ -319,7 +319,7 @@ def node_run(
     """
     Entry point for running the node with retry logic and connection handling.
     """
-    config.raise_if_no_dotenv()
+    config.validate()
     try:
         asyncio.run(run_node(api_url, rpc_url, api_key, node_id, llm_base_url, debug))
     except AuthenticationError:
@@ -342,7 +342,7 @@ def node_status(
     api_key: str = typer.Option(config.GALADRIEL_API_KEY, help="API key"),
     node_id: str = typer.Option(config.GALADRIEL_NODE_ID, help="Node ID"),
 ):
-    config.raise_if_no_dotenv()
+    config.validate()
     status, response_json = asyncio.run(
         version_aware_get(
             api_url, "node/info", api_key, query_params={"node_id": node_id}
@@ -377,7 +377,7 @@ def llm_status(
         config.GALADRIEL_LLM_BASE_URL, help="LLM base url"
     ),
 ):
-    config.raise_if_no_dotenv()
+    config.validate()
     asyncio.run(check_llm(llm_base_url, model_id))
 
 
@@ -387,7 +387,7 @@ def node_stats(
     api_key: str = typer.Option(config.GALADRIEL_API_KEY, help="API key"),
     node_id: str = typer.Option(config.GALADRIEL_NODE_ID, help="Node ID"),
 ):
-    config.raise_if_no_dotenv()
+    config.validate()
     status, response_json = asyncio.run(
         version_aware_get(
             api_url, "node/stats", api_key, query_params={"node_id": node_id}

@@ -1,0 +1,68 @@
+name: Smoke Test
+
+on:
+  push:
+    branches: [ ENG-817 ]
+  pull_request:
+    branches: [ ENG-817 ]
+  workflow_dispatch: # Allows manual triggering also
+  schedule:
+    # Run every 4 hours
+    - cron: '0 */4 * * *'
+
+jobs:
+  run-smoke-tests:
+    runs-on: gpu-runner  # A GPU server with 1 x NVIDIA Tesla T4 -16GB VRAM
+    env:
+      ENVIRONMENT: smoke test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Pull the latest release of Galadriel
+        run: |          
+          python3 -m venv venv
+          source venv/bin/activate
+          pip install galadriel-node
+          galadriel --version
+          
+
+      - name: Initialize Galadriel
+        env:
+          GALADRIEL_API_URL: ${{ secrets.GALADRIEL_API_URL }}
+          GALADRIEL_NODE_ID: ${{ secrets.GALADRIEL_NODE_ID }}
+          GALADRIEL_RPC_URL: ${{ secrets.GALADRIEL_RPC_URL }}
+          GALADRIEL_API_KEY: ${{ secrets.GALADRIEL_API_KEY }}
+          GALADRIEL_MODEL_ID: ${{ secrets.GALADRIEL_MODEL_ID }}
+          GALADRIEL_LLM_BASE_URL: ${{ secrets.GALADRIEL_LLM_BASE_URL }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+            chmod +x ./smoke_tests/send_message_to_slack.sh
+            chmod +x ./smoke_tests/node_status.sh
+            chmod +x ./smoke_tests/node_stats.sh
+            chmod +x ./smoke_tests/network_stats.sh
+            chmod +x ./smoke_tests/galadriel_init.sh
+            ./smoke_tests/galadriel_init.sh
+            
+                  
+
+      - name: Test_1 - Run Node Status
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          ./smoke_tests/node_status.sh 
+
+      - name: Test_2 - Run Node Stats
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          ./smoke_tests/node_stats.sh
+
+      - name: Test_3 - Run Network Stats
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          ./smoke_tests/network_stats.sh

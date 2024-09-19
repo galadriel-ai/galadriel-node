@@ -2,6 +2,7 @@ import os
 from typing import Any
 from typing import Dict
 from typing import Optional
+from urllib.parse import urlparse
 
 from dotenv import load_dotenv
 
@@ -10,9 +11,11 @@ from galadriel_node.sdk.entities import SdkError
 CONFIG_FILE_PATH = os.path.expanduser("~/.galadrielenv")
 
 DEFAULT_ENVIRONMENT = "production"
+
+PRODUCTION_DOMAIN = "api.galadriel.com"
 DEFAULT_PRODUCTION_VALUES = {
-    "GALADRIEL_API_URL": "https://api.galadriel.com/v1",
-    "GALADRIEL_RPC_URL": "wss://api.galadriel.com/v1/node",
+    "GALADRIEL_API_URL": f"https://{PRODUCTION_DOMAIN}/v1",
+    "GALADRIEL_RPC_URL": f"wss://{PRODUCTION_DOMAIN}/v1/node",
     "GALADRIEL_MODEL_ID": "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8",
 }
 
@@ -22,6 +25,13 @@ DEFAULT_LOCAL_VALUES = {
     "GALADRIEL_LLM_BASE_URL": "http://10.132.0.33:11434",
     "GALADRIEL_MODEL_ID": "hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4",
 }
+
+
+def valid_production_url(url, expected_scheme):
+    if PRODUCTION_DOMAIN in url:
+        parsed_url = urlparse(url)
+        return parsed_url.scheme == expected_scheme
+    return True
 
 
 class Config:
@@ -93,11 +103,16 @@ class Config:
         return os.path.isfile(CONFIG_FILE_PATH)
 
     @staticmethod
-    def raise_if_no_dotenv():
+    def validate():
         if not config.is_dotenv_present():
             raise SdkError(
                 "Galadriel not initialised. Please call `galadriel init` first"
             )
+
+        if not valid_production_url(config.GALADRIEL_API_URL, "https"):
+            raise SdkError(f"Expected {config.GALADRIEL_API_URL} to use HTTPS scheme")
+        if not valid_production_url(config.GALADRIEL_RPC_URL, "wss"):
+            raise SdkError(f"Expected {config.GALADRIEL_RPC_URL} to use WSS scheme")
 
 
 # Create a global instance of the Config class

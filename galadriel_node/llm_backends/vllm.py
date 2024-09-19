@@ -1,4 +1,5 @@
 import importlib.metadata
+import os
 import subprocess
 
 import psutil
@@ -53,9 +54,15 @@ def start(node_info: NodeInfo, model_name: str, debug: bool = False) -> bool:
                     "8192",
                 ]
             )
-        process = subprocess.Popen(
-            command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
+        with open("vllm.log", "a") as log_file:
+            process = subprocess.Popen(
+                command, stdout=log_file, stderr=log_file, preexec_fn=os.setpgrp
+            )
+            if debug:
+                print(
+                    f'Started vllm process with PID: {process.pid}, logging to "vllm.log"'
+                )
+            return True
         if debug:
             print(f"Started vllm process with PID: {process.pid}")
         return True

@@ -6,11 +6,13 @@ from http import HTTPStatus
 from typing import Optional
 from urllib.parse import urljoin
 import aiohttp
+from dataclasses import dataclass
 
 import typer
-import websockets
 import rich
 import openai
+import websockets
+from websockets.frames import CloseCode
 
 from galadriel_node.config import config
 from galadriel_node.sdk.entities import InferenceRequest
@@ -31,6 +33,12 @@ node_app = typer.Typer(
 
 BACKOFF_MIN = 4  # Minimum backoff time in seconds
 BACKOFF_MAX = 300  # Maximum backoff time in seconds
+
+
+@dataclass
+class ConnectionResult:
+    retry: bool
+    reset_backoff: bool = True
 
 
 async def process_request(
@@ -63,7 +71,7 @@ async def process_request(
 
 async def connect_and_process(
     uri: str, headers: dict, llm_base_url: str, debug: bool
-) -> bool:
+) -> ConnectionResult:
     """
     Establishes the WebSocket connection and processes incoming requests concurrently.
     """
@@ -80,19 +88,22 @@ async def connect_and_process(
                     process_request(request, websocket, llm_base_url, debug, send_lock)
                 )
             except websockets.ConnectionClosed as e:
-                if e.code == 1008:
-                    rich.print(
-                        f"Received error: {e.reason}.",
-                        flush=True,
-                    )
-                    return True
-                rich.print(f"Connection closed: {e}. Exiting loop.", flush=True)
-                return True
+                rich.print(
+                    f"Received error: {e.reason}.",
+                    flush=True,
+                )
+                match e.code:
+                    case CloseCode.POLICY_VIOLATION:
+                        return ConnectionResult(retry=False)
+                    case CloseCode.TRY_AGAIN_LATER:
+                        return ConnectionResult(retry=True, reset_backoff=False)
+                rich.print(f"Connection closed: {e}.", flush=True)
+                return ConnectionResult(retry=True, reset_backoff=True)
             except Exception as e:
                 if debug:
                     traceback.print_exc()
                 rich.print(f"Error occurred while processing message: {e}", flush=True)
-                return True
+                return ConnectionResult(retry=True, reset_backoff=True)
 
 
 async def retry_connection(
@@ -112,17 +123,21 @@ async def retry_connection(
 
     while True:
         try:
-            retry = await connect_and_process(uri, headers, llm_base_url, debug)
-            if not retry:
+            result = await connect_and_process(uri, headers, llm_base_url, debug)
+            if result.retry:
+                retries += 1
+                if result.reset_backoff:
+                    retries = 0
+                    backoff_time = BACKOFF_MIN
+                rich.print(f"Retry #{retries} in {backoff_time} seconds...")
+            else:
                 break
-            retries = 0  # Reset retries on successful connection
-            backoff_time = BACKOFF_MIN  # Reset backoff time
         except websockets.ConnectionClosedError as e:
             retries += 1
             rich.print(f"WebSocket connection closed: {e}. Retrying...", flush=True)
         except websockets.InvalidStatusCode as e:
-            rich.print("Invalid status code:", e, flush=True)
-            break
+            retries += 1
+            rich.print(f"Invalid status code: {e}. Retrying...", flush=True)
         except Exception as e:
             retries += 1
             if debug:

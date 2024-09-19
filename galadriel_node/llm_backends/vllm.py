@@ -38,7 +38,7 @@ def start(node_info: NodeInfo, model_name: str, debug: bool = False) -> bool:
             "--gpu-memory-utilization",
             "1",
             "--host",
-            "localhost",
+            "127.0.0.1",
             "--port",
             "11434",
             "--disable-frontend-multiprocessing",

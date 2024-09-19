@@ -13,7 +13,7 @@ DEFAULT_ENVIRONMENT = "production"
 DEFAULT_PRODUCTION_VALUES = {
     "GALADRIEL_API_URL": "https://api.galadriel.com/v1",
     "GALADRIEL_RPC_URL": "wss://api.galadriel.com/v1/node",
-    "GALADRIEL_LLM_BASE_URL": "http://localhost:11434",
+    "GALADRIEL_LLM_BASE_URL": "http://127.0.0.1:11434",
     "GALADRIEL_MODEL_ID": "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8",
 }
 

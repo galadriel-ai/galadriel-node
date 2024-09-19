@@ -5,7 +5,7 @@ import traceback
 from http import HTTPStatus
 from typing import Optional
 from urllib.parse import urljoin
-import requests
+import aiohttp
 
 import typer
 import websockets
@@ -162,20 +162,28 @@ async def run_node(
     await retry_connection(rpc_url, api_key, node_id, llm_base_url, debug)
 
 
+async def llm_http_check(llm_base_url: str):
+    timeout = aiohttp.ClientTimeout(total=60)
+    async with aiohttp.ClientSession(timeout=timeout) as session:
+        return await session.get(llm_base_url + "/v1/models/")
+
+
 async def llm_sanity_check(
-    inference_base_url: str,
+    llm_base_url: str,
     model_id: str,
 ):
-    base_url: str = urljoin(inference_base_url, "/v1")
+    base_url: str = urljoin(llm_base_url, "/v1")
     client = openai.AsyncOpenAI(base_url=base_url, api_key="sk-no-key-required")
     return await client.chat.with_raw_response.completions.create(
-        model=model_id,  # e.g. gpt-35-instant
+        model=model_id,
         messages=[
             {
                 "role": "user",
                 "content": "Say this is a test",
             },
         ],
+        max_tokens=5,
+        timeout=5,
     )
 
 
@@ -253,7 +261,7 @@ def llm_status(
 ):
     config.raise_if_no_dotenv()
     try:
-        response = requests.get(llm_base_url + "/v1/models/", timeout=5)
+        response = asyncio.run(llm_http_check(llm_base_url))
         if response.ok:
             rich.print(
                 f"[bold green]\N{CHECK MARK} LLM server at {llm_base_url} is accessible via HTTP."
@@ -266,7 +274,7 @@ def llm_status(
                 f"{response.status_code}[/bold red]",
                 flush=True,
             )
-    except requests.exceptions.RequestException as e:
+    except Exception as e:
         rich.print(
             f"[bold red]\N{CROSS MARK} Failed to reach LLM server at {llm_base_url}: \n{e}[/bold red]",
             flush=True,
@@ -274,7 +282,7 @@ def llm_status(
 
     try:
         response = asyncio.run(llm_sanity_check(llm_base_url, model_id))
-        if response.status_code == 200:
+        if response.status_code == HTTPStatus.OK:
             rich.print(
                 f"[bold green]\N{CHECK MARK} LLM server at {llm_base_url} successfully generated "
                 "tokens.[/bold green]",

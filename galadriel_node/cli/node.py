@@ -5,8 +5,8 @@ import traceback
 from http import HTTPStatus
 from typing import Optional
 from urllib.parse import urljoin
-import aiohttp
 from dataclasses import dataclass
+import aiohttp
 
 import typer
 import rich

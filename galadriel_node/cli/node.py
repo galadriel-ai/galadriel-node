@@ -20,7 +20,6 @@ from galadriel_node.sdk.entities import SdkError
 from galadriel_node.sdk.entities import AuthenticationError
 from galadriel_node.sdk.llm import Llm
 from galadriel_node.llm_backends import vllm
-from galadriel_node.sdk.system.report_hardware import get_node_info
 from galadriel_node.sdk.system.report_hardware import report_hardware
 from galadriel_node.sdk.system.report_performance import report_performance
 from galadriel_node.sdk.upgrade import version_aware_get
@@ -171,8 +170,8 @@ async def run_node(
     await version_aware_get(
         api_url, "node/info", api_key, query_params={"node_id": node_id}
     )
-    llm_base_url = await run_llm(llm_base_url, config.GALADRIEL_MODEL_ID, debug)
     await report_hardware(api_url, api_key, node_id)
+    llm_base_url = await run_llm(llm_base_url, config.GALADRIEL_MODEL_ID, debug)
     await report_performance(
         api_url, api_key, node_id, llm_base_url, config.GALADRIEL_MODEL_ID
     )
@@ -267,7 +266,7 @@ async def run_llm(
     if vllm.is_installed():
         if not vllm.is_running(model_id):
             rich.print("Starting vLLM...", flush=True)
-            pid = vllm.start(get_node_info(), model_id, debug)
+            pid = vllm.start(model_id, debug)
             if pid is None:
                 raise SdkError(
                     'Failed to start vLLM. Please check "vllm.log" for more information.'
@@ -275,7 +274,6 @@ async def run_llm(
             else:
                 rich.print("vLLM started successfully.", flush=True)
                 rich.print("Waiting for vLLM to be ready.", flush=True)
-                # Step 4: Wait for vllm to be ready by checking the process and the endpoint.
                 while True:
                     if not vllm.is_process_running(pid):
                         raise SdkError(

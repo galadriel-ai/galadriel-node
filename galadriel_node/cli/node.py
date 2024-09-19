@@ -311,7 +311,7 @@ def node_run(
     rpc_url: str = typer.Option(config.GALADRIEL_RPC_URL, help="RPC url"),
     api_key: str = typer.Option(config.GALADRIEL_API_KEY, help="API key"),
     node_id: str = typer.Option(config.GALADRIEL_NODE_ID, help="Node ID"),
-    llm_base_url: str = typer.Option(
+    llm_base_url: Optional[str] = typer.Option(
         config.GALADRIEL_LLM_BASE_URL, help="LLM base url"
     ),
     debug: bool = typer.Option(False, help="Enable debug mode"),
@@ -373,11 +373,13 @@ def node_status(
 @node_app.command("llm-status", help="Get LLM status")
 def llm_status(
     model_id: str = typer.Option(config.GALADRIEL_MODEL_ID, help="Model ID"),
-    llm_base_url: str = typer.Option(
+    llm_base_url: Optional[str] = typer.Option(
         config.GALADRIEL_LLM_BASE_URL, help="LLM base url"
     ),
 ):
     config.validate()
+    if not llm_base_url:
+        llm_base_url = vllm.LLM_BASE_URL
     asyncio.run(check_llm(llm_base_url, model_id))
 
 

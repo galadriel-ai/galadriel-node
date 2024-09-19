@@ -1,5 +1,4 @@
 import os
-import rich
 from typing import Any
 from typing import Dict
 from typing import Optional

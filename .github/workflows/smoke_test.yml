@@ -1,59 +1,54 @@
 name: Smoke Test
 
 on:
-  workflow_dispatch:  # Allows manual triggering
+  workflow_dispatch:  # Allows manual triggering also
   schedule:
       # Run every 4 hours
       - cron: '0 */4 * * *'
 
-
 jobs:
   run-smoke-tests:
-    runs-on: ubuntu-22.04  # Stable version
+    runs-on: gpu-runner  # A GPU server with 1 x NVIDIA Tesla T4 -16GB VRAM
     env:
       ENVIRONMENT: smoke test
     steps:
+      - uses: actions/checkout@v4
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
       - name: Pull the latest release of Galadriel
-        run: |
-          mkdir galadriel
-          cd galadriel
+        run: |          
           python3 -m venv venv
           source venv/bin/activate
+          pip install -r requirements.txt
           pip install galadriel-node
           galadriel --version
+          
 
       - name: Initialize Galadriel
         env:
           GALADRIEL_API_URL: ${{ secrets.GALADRIEL_API_URL }}
+          GALADRIEL_NODE_ID: ${{ secrets.GALADRIEL_NODE_ID }}
           GALADRIEL_RPC_URL: ${{ secrets.GALADRIEL_RPC_URL }}
-          GALADRIEL_LLM_BASE_URL: ${{ secrets.GALADRIEL_LLM_BASE_URL }}
+          GALADRIEL_API_KEY: ${{ secrets.GALADRIEL_API_KEY }}
           GALADRIEL_MODEL_ID: ${{ secrets.GALADRIEL_MODEL_ID }}
+          GALADRIEL_LLM_BASE_URL: ${{ secrets.GALADRIEL_LLM_BASE_URL }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
-          galadriel init --environment production
+            chmod +x ./smoke_tests/galadriel_init.sh
+            ./smoke_tests/galadriel_init.sh
+            
+                  
 
       - name: Test_1 - Run Node Status
         run: |
-          galadriel node status > node_status_result.txt
+          chmod +x ./smoke_tests/node_status.sh
+          ./smoke_tests/node_status.sh 
 
       - name: Test_2 - Run Node Stats
         run: |
-          galadriel node stats > node_stats_result.txt
+          chmod +x ./smoke_tests/node_stats.sh
+          ./smoke_tests/node_stats.sh
 
-
-      - name: Notify the result
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        run: |
-          node_status_result=$(cat node_status_result.txt)
-          node_stats_result=$(cat node_stats_result.txt)
-          
-          payload="{
-            \"node_stats\": \"result: node_status_result\",
-            \"node_stats\": \"result: node_stats_result\"
-          }"
-          curl -X POST -H 'Content-type: application/json' --data "$payload" $SLACK_WEBHOOK_URL

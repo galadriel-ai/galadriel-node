@@ -23,7 +23,7 @@ def is_running(model_name: str) -> bool:
     for process in psutil.process_iter():
         try:
             cmdline = process.cmdline()
-            if "python3" in [os.path.basename(arg) for arg in cmdline]:
+            if any(os.path.basename(arg).startswith("python") for arg in cmdline):
                 for i in range(len(cmdline) - 2):
                     if os.path.basename(cmdline[i]) == "vllm" and cmdline[
                         i + 1 : i + 3

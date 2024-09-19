@@ -1,6 +1,7 @@
 import importlib.metadata
 import os
 import subprocess
+from typing import Optional
 
 import psutil
 
@@ -42,7 +43,7 @@ def is_process_running(pid: int) -> bool:
         return False
 
 
-def start(node_info: NodeInfo, model_name: str, debug: bool = False) -> bool:
+def start(node_info: NodeInfo, model_name: str, debug: bool = False) -> Optional[int]:
     try:
         command = [
             "vllm",
@@ -77,11 +78,8 @@ def start(node_info: NodeInfo, model_name: str, debug: bool = False) -> bool:
                 print(
                     f'Started vllm process with PID: {process.pid}, logging to "vllm.log"'
                 )
-            return True
-        if debug:
-            print(f"Started vllm process with PID: {process.pid}")
-        return True
+            return process.pid
     except Exception as e:
         if debug:
             print(f"Error starting vllm process: {e}")
-        return False
+        return None

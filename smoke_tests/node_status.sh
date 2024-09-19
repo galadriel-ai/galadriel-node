@@ -1,22 +1,26 @@
-#!/usr/bin/env bash
+#!/bin/zsh
 
-# get the node status
-galadriel node status 2>&1  node_status.output
+# Get the node status
+(galadriel node status 2>&1) >  node_status.output
 
-# check if the output is empty
+# Check if the output is empty
 if [ ! -s node_status.output ]; then
-    ./smoke_test/send_message_to_slack.sh "node_status" "ERROR: produced no output" "$SLACK_WEBHOOK_URL"
-    exit
+    ./smoke_tests/send_message_to_slack.sh "galadriel node status: Produced no output" "$SLACK_WEBHOOK_URL"
+    exit 1
 fi
 
+# Encountered some error
 if grep -i "error" node_status.output; then
-    ./smoke_test/send_message_to_slack.sh "node_status" "ERROR: Failed to run 'galadriel node status'" "$SLACK_WEBHOOK_URL"
+    ./smoke_tests/send_message_to_slack.sh "galadriel node status: Failed to run" "$SLACK_WEBHOOK_URL"
+    exit 1
 fi
 
-if grep -i "status: offline" node_status.output; then
-    ./smoke_test/send_message_to_slack.sh "node_status" "ERROR: Node is offline" "$SLACK_WEBHOOK_URL"
-fi
-
-if grep -q "status: online" node_status.output; then
+# Check if the status return the node id of the smoke test user
+if grep -q "node_id: 066ebbf8-9ec7-7618-8000-3fb130706ad9" node_status.output; then
     echo "Node status is OK". # No need to send message in slack if everything is okay
+    exit 0
 fi
+
+# Unknown error
+./smoke_tests/send_message_to_slack.sh "galadriel node status: Unknown error" "$SLACK_WEBHOOK_URL"
+exit 1

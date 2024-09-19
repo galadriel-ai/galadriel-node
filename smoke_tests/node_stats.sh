@@ -1,19 +1,26 @@
-#!/usr/bin/env bash
+#!/bin/zsh
 
-# get the node stats
-galadriel node stats 2>&1  node_stats.output
+# Get the node stats
+(galadriel node stats 2>&1)  > node_stats.output
 
-# check if the output is empty
+# Check if the output is empty
 if [ ! -s node_stats.output ]; then
-    ./smoke_test/send_message_to_slack.sh "node_stats" "ERROR: produced no output" "$SLACK_WEBHOOK_URL"
-    exit
+    ./smoke_tests/send_message_to_slack.sh "galadriel node stats: Produced no output" "$SLACK_WEBHOOK_URL"
+    exit 1
 fi
 
+# Encountered some error
 if grep -i "error" node_stats.output; then
-    ./smoke_test/send_message_to_slack.sh "node_stats" "ERROR: Failed to run 'galadriel node stats'" "$SLACK_WEBHOOK_URL"
+    ./smoke_tests/send_message_to_slack.sh "galadriel node stats: Failed to run " "$SLACK_WEBHOOK_URL"
+    exit 1
 fi
 
+# got the stats
 if grep -q "requests_served" node_stats.output; then
-    echo "Node stats is OK". # No need to send message in slack if everything is okay
+    echo "galadriel node stats: Node stats is OK" # No need to send message in slack if everything is okay
+    exit 0
 fi
 
+# Unknown error
+./smoke_tests/send_message_to_slack.sh "galadriel node stats: ERROR: Unknown error" "$SLACK_WEBHOOK_URL"
+exit 1

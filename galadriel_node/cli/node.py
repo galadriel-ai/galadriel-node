@@ -274,7 +274,7 @@ def llm_status(
         config.GALADRIEL_LLM_BASE_URL, help="LLM base url"
     ),
 ):
-    config.raise_if_no_dotenv()
+    config.validate()
     try:
         response = asyncio.run(llm_http_check(llm_base_url))
         if response.ok:

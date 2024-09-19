@@ -271,26 +271,25 @@ async def run_llm(
                 raise SdkError(
                     'Failed to start vLLM. Please check "vllm.log" for more information.'
                 )
-            else:
-                rich.print("vLLM started successfully.", flush=True)
-                rich.print("Waiting for vLLM to be ready.", flush=True)
-                while True:
-                    if not vllm.is_process_running(pid):
-                        raise SdkError(
-                            f"vLLM process (PID: {pid}) died unexpectedly. Please check 'vllm.log'."
-                        )
-                    rich.print(".", flush=True, end="")
-                    try:
-                        response = await llm_http_check(
-                            vllm.LLM_BASE_URL, total_timeout=1.0
-                        )
-                        if response.ok:
-                            rich.print("\nvLLM is ready.", flush=True)
-                            break
-                    except Exception:
-                        continue
-                    finally:
-                        await asyncio.sleep(1.0)
+            rich.print("vLLM started successfully.", flush=True)
+            rich.print("Waiting for vLLM to be ready.", flush=True)
+            while True:
+                if not vllm.is_process_running(pid):
+                    raise SdkError(
+                        f"vLLM process (PID: {pid}) died unexpectedly. Please check 'vllm.log'."
+                    )
+                rich.print(".", flush=True, end="")
+                try:
+                    response = await llm_http_check(
+                        vllm.LLM_BASE_URL, total_timeout=1.0
+                    )
+                    if response.ok:
+                        rich.print("\nvLLM is ready.", flush=True)
+                        break
+                except Exception:
+                    continue
+                finally:
+                    await asyncio.sleep(1.0)
         else:
             rich.print("vLLM is already running.", flush=True)
         result = await check_llm(vllm.LLM_BASE_URL, model_id)
@@ -299,10 +298,9 @@ async def run_llm(
                 'LLM check failed. Please check "vllm.log" for more details.'
             )
         return vllm.LLM_BASE_URL
-    else:
-        raise SdkError(
-            "vLLM is not installed, please set GALADRIEL_LLM_BASE_URL in ~/.galadrielenv"
-        )
+    raise SdkError(
+        "vLLM is not installed, please set GALADRIEL_LLM_BASE_URL in ~/.galadrielenv"
+    )
 
 
 @node_app.command("run", help="Run the Galadriel node")

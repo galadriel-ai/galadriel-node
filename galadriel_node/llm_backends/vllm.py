@@ -43,6 +43,7 @@ def is_process_running(pid: int) -> bool:
         return False
 
 
+# pylint: disable=R1732
 def start(model_name: str, debug: bool = False) -> Optional[int]:
     _, gpu_vram_mb = get_gpu_info()
     try:
@@ -71,9 +72,9 @@ def start(model_name: str, debug: bool = False) -> Optional[int]:
                     "8192",
                 ]
             )
-        with open("vllm.log", "a") as log_file:
+        with open("vllm.log", "a", encoding="utf-8") as log_file:
             process = subprocess.Popen(
-                command, stdout=log_file, stderr=log_file, preexec_fn=os.setpgrp
+                command, stdout=log_file, stderr=log_file, start_new_session=True
             )
             if debug:
                 print(

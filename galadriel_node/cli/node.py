@@ -282,9 +282,12 @@ async def run_llm(
                             f"vLLM process (PID: {pid}) died unexpectedly. Please check 'vllm.log'."
                         )
                     rich.print(".", flush=True, end="")
-                    response = await llm_http_check(
-                        vllm.LLM_BASE_URL, total_timeout=1.0
-                    )
+                    try:
+                        response = await llm_http_check(
+                            vllm.LLM_BASE_URL, total_timeout=1.0
+                        )
+                    except Exception:
+                        continue
                     if response.ok:
                         rich.print("\nvLLM is ready.", flush=True)
                         break

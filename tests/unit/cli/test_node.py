@@ -1,7 +1,12 @@
 import pytest
 from unittest.mock import AsyncMock, patch, call
 
-from galadriel_node.cli.node import retry_connection, BACKOFF_MIN, BACKOFF_MAX
+from galadriel_node.cli.node import (
+    retry_connection,
+    BACKOFF_MIN,
+    BACKOFF_MAX,
+    ConnectionResult,
+)
 
 
 async def test_retry_connection_with_exceptions():
@@ -11,7 +16,7 @@ async def test_retry_connection_with_exceptions():
             raise Exception("Mock exception")
         else:
             # don't retry anymore
-            return False
+            return ConnectionResult(retry=False)
 
     connect_and_process_side_effect.call_count = 0
 

@@ -28,8 +28,13 @@ async def report_hardware(api_url: str, api_key: str, node_id: str) -> None:
     if await _get_info_already_exists(api_url, api_key, node_id):
         print("Node info is already saved", flush=True)
         return None
+    node_info = get_node_info()
+    await _post_info(node_info, api_url, api_key, node_id)
+
+
+def get_node_info() -> NodeInfo:
     if config.GALADRIEL_ENVIRONMENT == "local":
-        node_info = NodeInfo(
+        return NodeInfo(
             gpu_model=SUPPORTED_GPUS[0],
             vram=20000,
             cpu_model="macOS-14.4.1-arm64-arm-64bit",
@@ -39,27 +44,25 @@ async def report_hardware(api_url: str, api_key: str, node_id: str) -> None:
             network_upload_speed=100,
             operating_system="macOS-14.4.1-arm64-arm-64bit",
         )
-    else:
-        gpu_name, gpu_vram_mb = _get_gpu_info()
-        cpu_model, cpu_count = _get_cpu_info()
-        if cpu_count < MIN_CPU_CORES:
-            raise SdkError(f"Not enough CPU cores, minimum {MIN_CPU_CORES} required")
-        total_mem_mb = _get_ram()
-        if total_mem_mb < MIN_RAM_MB:
-            raise SdkError(f"Not enough RAM, minimum {MIN_RAM_MB}MB required")
-        download_speed_mbs, upload_speed_mbs = _get_network_speed()
+    gpu_name, gpu_vram_mb = _get_gpu_info()
+    cpu_model, cpu_count = _get_cpu_info()
+    if cpu_count < MIN_CPU_CORES:
+        raise SdkError(f"Not enough CPU cores, minimum {MIN_CPU_CORES} required")
+    total_mem_mb = _get_ram()
+    if total_mem_mb < MIN_RAM_MB:
+        raise SdkError(f"Not enough RAM, minimum {MIN_RAM_MB}MB required")
+    download_speed_mbs, upload_speed_mbs = _get_network_speed()
 
-        node_info = NodeInfo(
-            gpu_model=gpu_name,
-            vram=gpu_vram_mb,
-            cpu_model=cpu_model,
-            cpu_count=cpu_count,
-            ram=total_mem_mb,
-            network_download_speed=download_speed_mbs,
-            network_upload_speed=upload_speed_mbs,
-            operating_system=platform.platform(),
-        )
-    await _post_info(node_info, api_url, api_key, node_id)
+    return NodeInfo(
+        gpu_model=gpu_name,
+        vram=gpu_vram_mb,
+        cpu_model=cpu_model,
+        cpu_count=cpu_count,
+        ram=total_mem_mb,
+        network_download_speed=download_speed_mbs,
+        network_upload_speed=upload_speed_mbs,
+        operating_system=platform.platform(),
+    )
 
 
 def _get_gpu_info() -> Tuple[str, int]:

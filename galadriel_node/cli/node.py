@@ -170,8 +170,8 @@ async def run_node(
     await version_aware_get(
         api_url, "node/info", api_key, query_params={"node_id": node_id}
     )
-    await report_hardware(api_url, api_key, node_id)
     llm_base_url = await run_llm(llm_base_url, config.GALADRIEL_MODEL_ID, debug)
+    await report_hardware(api_url, api_key, node_id)
     await report_performance(
         api_url, api_key, node_id, llm_base_url, config.GALADRIEL_MODEL_ID
     )

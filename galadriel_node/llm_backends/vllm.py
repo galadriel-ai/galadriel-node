@@ -7,6 +7,7 @@ import psutil
 from galadriel_node.sdk.system.entities import NodeInfo
 
 CONTEXT_SIZE = 8192
+LLM_BASE_URL = "http://127.0.0.1:11434"
 
 
 def is_installed() -> bool:
@@ -30,6 +31,15 @@ def is_running(model_name: str) -> bool:
         except (psutil.NoSuchProcess, IndexError):
             pass
     return False
+
+
+def is_process_running(pid: int) -> bool:
+    """Check if a process with a given PID is still running."""
+    try:
+        process = psutil.Process(pid)
+        return process.is_running() and process.status() != psutil.STATUS_ZOMBIE
+    except psutil.NoSuchProcess:
+        return False
 
 
 def start(node_info: NodeInfo, model_name: str, debug: bool = False) -> bool:

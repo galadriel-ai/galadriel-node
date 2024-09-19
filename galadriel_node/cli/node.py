@@ -159,7 +159,7 @@ async def run_node(
     rpc_url: str,
     api_key: Optional[str],
     node_id: Optional[str],
-    llm_base_url: str,
+    llm_base_url: Optional[str],
     debug: bool,
 ):
     if not api_key:
@@ -171,7 +171,7 @@ async def run_node(
     await version_aware_get(
         api_url, "node/info", api_key, query_params={"node_id": node_id}
     )
-    await run_llm(llm_base_url, config.GALADRIEL_MODEL_ID, debug)
+    llm_base_url = await run_llm(llm_base_url, config.GALADRIEL_MODEL_ID, debug)
     await report_hardware(api_url, api_key, node_id)
     await report_performance(
         api_url, api_key, node_id, llm_base_url, config.GALADRIEL_MODEL_ID
@@ -179,8 +179,8 @@ async def run_node(
     await retry_connection(rpc_url, api_key, node_id, llm_base_url, debug)
 
 
-async def llm_http_check(llm_base_url: str):
-    timeout = aiohttp.ClientTimeout(total=60)
+async def llm_http_check(llm_base_url: str, total_timeout: float = 60.0):
+    timeout = aiohttp.ClientTimeout(total=total_timeout)
     async with aiohttp.ClientSession(timeout=timeout) as session:
         return await session.get(llm_base_url + "/v1/models/")
 
@@ -235,6 +235,7 @@ async def check_llm(llm_base_url: str, model_id: str) -> bool:
                 "tokens.[/bold green]",
                 flush=True,
             )
+            return True
     except openai.APIStatusError as e:
         rich.print(
             f"[bold red]\N{CROSS MARK} LLM server at {llm_base_url} failed to generate tokens. "
@@ -249,18 +250,57 @@ async def check_llm(llm_base_url: str, model_id: str) -> bool:
             flush=True,
         )
         return False
+    return False
 
 
-async def run_llm(llm_base_url: str, model_id: str, debug: bool = False):
+async def run_llm(
+    llm_base_url: Optional[str], model_id: str, debug: bool = False
+) -> str:
+    if llm_base_url:
+        result = await check_llm(llm_base_url, model_id)
+        if not result:
+            raise SdkError(
+                'LLM check failed. Please make sure "GALADRIEL_LLM_BASE_URL" is correct.'
+            )
+        return llm_base_url
+
     if vllm.is_installed():
         if not vllm.is_running(model_id):
-            rich.print("Starting vllm...", flush=True)
-            if vllm.start(get_node_info(), model_id, debug):
-                rich.print("vllm started successfully.", flush=True)
-                rich.print("Waiting for vllm to be ready...", flush=True)
-                return await check_llm(llm_base_url, model_id)
+            rich.print("Starting vLLM...", flush=True)
+            pid = vllm.start(get_node_info(), model_id, debug)
+            if pid is None:
+                raise SdkError(
+                    'Failed to start vLLM. Please check "vllm.log" for more information.'
+                )
+            else:
+                rich.print("vLLM started successfully.", flush=True)
+                rich.print("Waiting for vLLM to be ready.", flush=True)
+                # Step 4: Wait for vllm to be ready by checking the process and the endpoint.
+                while True:
+                    if not vllm.is_process_running(pid):
+                        raise SdkError(
+                            f"vLLM process (PID: {pid}) died unexpectedly. Please check 'vllm.log'."
+                        )
+                    rich.print(".", flush=True, end="")
+                    response = await llm_http_check(
+                        vllm.LLM_BASE_URL, total_timeout=1.0
+                    )
+                    if response.ok:
+                        rich.print("\nvLLM is ready.", flush=True)
+                        break
+                    await asyncio.sleep(1.0)
         else:
-            rich.print("vllm is already running.", flush=True)
+            rich.print("vLLM is already running.", flush=True)
+        result = await check_llm(vllm.LLM_BASE_URL, model_id)
+        if not result:
+            raise SdkError(
+                'LLM check failed. Please check "vllm.log" for more details.'
+            )
+        return vllm.LLM_BASE_URL
+    else:
+        raise SdkError(
+            "vLLM is not installed, please set GALADRIEL_LLM_BASE_URL in ~/.galadrielenv"
+        )
 
 
 @node_app.command("run", help="Run the Galadriel node")

@@ -253,7 +253,7 @@ async def check_llm(llm_base_url: str, model_id: str) -> bool:
 
 async def run_llm(llm_base_url: str, model_id: str, debug: bool = False):
     if vllm.is_installed():
-        if not vllm.is_running():
+        if not vllm.is_running(model_id):
             rich.print("Starting vllm...", flush=True)
             if vllm.start(get_node_info(), model_id, debug):
                 rich.print("vllm started successfully.", flush=True)

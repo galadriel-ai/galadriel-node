@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/zsh
 
 ENV_FILE="$HOME/.galadrielenv"
 GALADRIEL_ENVIRONMENT="production"
@@ -15,4 +15,6 @@ GALADRIEL_MODEL_COMMIT_HASH="3aed33c3d2bfa212a137f6c855d79b5426862b24"
   echo "GALADRIEL_MODEL_COMMIT_HASH=${GALADRIEL_MODEL_COMMIT_HASH}"
 } > ${ENV_FILE}
 
-
+# display the content of the file
+# will be useful for debugging
+cat ${ENV_FILE}

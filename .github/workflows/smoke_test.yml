@@ -37,6 +37,10 @@ jobs:
           GALADRIEL_LLM_BASE_URL: ${{ secrets.GALADRIEL_LLM_BASE_URL }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
+            chmod +x /smoke_test/send_message_to_slack.sh
+            chmod +x ./smoke_tests/node_status.sh
+            chmod +x ./smoke_tests/node_stats.sh
+            chmod +x ./smoke_tests/network_stats.sh
             chmod +x ./smoke_tests/galadriel_init.sh
             ./smoke_tests/galadriel_init.sh
             
@@ -44,11 +48,12 @@ jobs:
 
       - name: Test_1 - Run Node Status
         run: |
-          chmod +x ./smoke_tests/node_status.sh
           ./smoke_tests/node_status.sh 
 
       - name: Test_2 - Run Node Stats
         run: |
-          chmod +x ./smoke_tests/node_stats.sh
           ./smoke_tests/node_stats.sh
 
+      - name: Test_3 - Run Network Stats
+        run: |
+          ./smoke_tests/network_stats.sh

@@ -5,7 +5,7 @@ Run a Galadriel GPU node to provide LLM inference to the network.
 Check out the [documentation](https://galadriel.mintlify.app/).
 
 
-## Production setup
+## Requirements
 
 ### Hardware requirements
 
@@ -84,12 +84,12 @@ Should see status like:
 galadriel node stats
 ```
 
-## Development setup
+## Development setup (only for developers)
 
 ### Requirement
 
-- python 3.12 or above
-- git 
+- Python <4.0, >=3.8
+- Git 
 
 ### Setup locally
 

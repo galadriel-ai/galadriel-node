@@ -1,6 +1,10 @@
 name: Smoke Test
 
 on:
+  push:
+    branches: [ ENG-840 ]
+  pull_request:
+    branches: [ ENG-840 ]
   workflow_dispatch: # Allows manual triggering also
   schedule:
     # Run every 4 hours
@@ -41,9 +45,8 @@ jobs:
             chmod +x ./smoke_tests/node_stats.sh
             chmod +x ./smoke_tests/network_stats.sh
             chmod +x ./smoke_tests/galadriel_init.sh
+            chmod +x ./smoke_tests/galadriel_small_model.sh
             ./smoke_tests/galadriel_init.sh
-            
-                  
 
       - name: Test_1 - Run Node Status
         env:
@@ -62,3 +65,10 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
           ./smoke_tests/network_stats.sh
+
+      - name: Test_4 - Run Galadriel node with small model
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          pip3 install vllm
+          ./smoke_tests/galadriel_small_model.sh

@@ -8,7 +8,7 @@ import psutil
 from galadriel_node.sdk.system.report_hardware import get_gpu_info
 
 CONTEXT_SIZE = 8192
-LLM_BASE_URL = "http://127.0.0.1:11434"
+LLM_BASE_URL = "http://127.0.0.1:19434"
 
 
 def is_installed() -> bool:
@@ -43,6 +43,17 @@ def is_process_running(pid: int) -> bool:
         return False
 
 
+def stop(pid: int) -> bool:
+    try:
+        process = psutil.Process(pid)
+        process.kill()
+        process.wait(timeout=2)
+        return True
+    except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.TimeoutExpired) as e:
+        print(f"Failed to forcibly kill process with PID {pid}: {e}")
+        return False
+
+
 # pylint: disable=R1732
 def start(model_name: str, debug: bool = False) -> Optional[int]:
     _, gpu_vram_mb = get_gpu_info()
@@ -58,7 +69,7 @@ def start(model_name: str, debug: bool = False) -> Optional[int]:
             "--host",
             "127.0.0.1",
             "--port",
-            "11434",
+            "19434",
             "--disable-frontend-multiprocessing",
         ]
         if gpu_vram_mb <= 8192:

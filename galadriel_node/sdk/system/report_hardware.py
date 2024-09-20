@@ -44,11 +44,10 @@ async def report_hardware(api_url: str, api_key: str, node_id: str) -> None:
         gpu_name, gpu_vram_mb = get_gpu_info()
 
         # smoke test GPU on mom_chest_cube_canyon_super
-        if node_id != "mom_chest_cube_canyon_super":
-            if "NVIDIA" not in gpu_name:
-                raise SdkError("No supported GPU found, make sure you have a supported NVIDIA GPU-3.")
-            else:
-                logger.info(f"Allowing ${gpu_name} for smoke test")
+        if node_id == "mom_chest_cube_canyon_super":
+            original_gpu_name = gpu_name
+            gpu_name = SUPPORTED_GPUS[0]
+            logger.info(f"Modified ${original_gpu_name} to ${gpu_name} for smoke test")
 
         cpu_model, cpu_count = _get_cpu_info()
         if cpu_count < MIN_CPU_CORES:

@@ -113,6 +113,7 @@ Run the following command to go through a setup wizard for your local galadriel 
 python3 galadriel_node/cli/app.py init
 ```
 Make sure to set the `GALADRIEL_LLM_BASE_URL` to the remote GPU worker, instead of your localhost.
+
 ---
 **NOTE**
 

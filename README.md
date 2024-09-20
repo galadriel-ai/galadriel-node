@@ -114,18 +114,9 @@ python3 galadriel_node/cli/app.py init
 ```
 Make sure to set the `GALADRIEL_LLM_BASE_URL` to the remote GPU worker, instead of your localhost.
 
----
-**NOTE**
+> **_NOTE:_**  The initializing setup wizard may not be super up-to-date sometimes, so make sure to check if any environmental variables are missing in the [config.py](galadriel_node/config.py).
 
-The initializing setup wizard may not be super up-to-date sometimes, so make sure to check if any environmental variables are missing in the [config.py](galadriel_node/config.py).
-
----
----
-**NOTE**
-
-Since vLLM only supports Linux machines with a GPU, you can point the node to a vLLM setup by setting the `GALADRIEL_LLM_BASE_URL` in your `~/galadrielenv` file.
-
----
+> **_NOTE:_** Since vLLM only supports Linux machines with a GPU, you can point the node to a vLLM setup by setting the `GALADRIEL_LLM_BASE_URL` in your `~/galadrielenv` file.
 
 #### Verify the LLM status
 Run the following command to check if the `GALADRIEL_LLM_BASE_URL` is correctly set and running normally

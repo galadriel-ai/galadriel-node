@@ -48,22 +48,21 @@ class Config:
         default_values = DEFAULT_PRODUCTION_VALUES
         if self.GALADRIEL_ENVIRONMENT != "production":
             default_values = DEFAULT_LOCAL_VALUES
-        self.GALADRIEL_API_URL = self.parse_val(
-            os.getenv("GALADRIEL_API_URL", default_values["GALADRIEL_API_URL"])
+        self.GALADRIEL_API_URL = os.getenv(
+            "GALADRIEL_API_URL", default_values["GALADRIEL_API_URL"]
         )
         self.GALADRIEL_NODE_ID = self.parse_val(os.getenv("GALADRIEL_NODE_ID", None))
-        self.GALADRIEL_RPC_URL = self.parse_val(
-            os.getenv("GALADRIEL_RPC_URL", default_values["GALADRIEL_RPC_URL"])
+        self.GALADRIEL_RPC_URL = os.getenv(
+            "GALADRIEL_RPC_URL", default_values["GALADRIEL_RPC_URL"]
         )
         self.GALADRIEL_API_KEY = self.parse_val(os.getenv("GALADRIEL_API_KEY", None))
 
         # Other settings
-        self.GALADRIEL_MODEL_ID = self.parse_val(
-            os.getenv(
-                "GALADRIEL_MODEL_ID",
-                default_values["GALADRIEL_MODEL_ID"],
-            )
+        self.GALADRIEL_MODEL_ID = os.getenv(
+            "GALADRIEL_MODEL_ID",
+            default_values["GALADRIEL_MODEL_ID"],
         )
+
         self.GALADRIEL_LLM_BASE_URL = self.parse_val(
             os.getenv(
                 "GALADRIEL_LLM_BASE_URL", default_values.get("GALADRIEL_LLM_BASE_URL")

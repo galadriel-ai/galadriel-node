@@ -1,10 +1,6 @@
 name: Smoke Test
 
 on:
-  push:
-    branches: [ ENG-817 ]
-  pull_request:
-    branches: [ ENG-817 ]
   workflow_dispatch: # Allows manual triggering also
   schedule:
     # Run every 4 hours

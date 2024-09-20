@@ -8,6 +8,7 @@ import cpuinfo
 import psutil
 import speedtest
 from gpustat import GPUStatCollection
+from mistral_common.tokens.tokenizers.tekken import logger
 
 from galadriel_node.config import config
 from galadriel_node.sdk import api
@@ -41,6 +42,14 @@ async def report_hardware(api_url: str, api_key: str, node_id: str) -> None:
         )
     else:
         gpu_name, gpu_vram_mb = get_gpu_info()
+
+        # smoke test GPU on mom_chest_cube_canyon_super
+        if node_id != "mom_chest_cube_canyon_super":
+            if "NVIDIA" not in gpu_name:
+                raise SdkError("No supported GPU found, make sure you have a supported NVIDIA GPU-3.")
+            else:
+                logger.info(f"Allowing ${gpu_name} for smoke test")
+
         cpu_model, cpu_count = _get_cpu_info()
         if cpu_count < MIN_CPU_CORES:
             raise SdkError(f"Not enough CPU cores, minimum {MIN_CPU_CORES} required")
@@ -73,14 +82,14 @@ def get_gpu_info() -> Tuple[str, int]:
 
     if not data["gpus"]:
         raise SdkError(
-            "No supported GPU found, make sure you have a supported NVIDIA GPU."
+            "No supported GPU found, make sure you have a supported NVIDIA GPU-1."
         )
     for gpu in data["gpus"]:
-        if "NVIDIA" in gpu["name"]:
+        if "NVIDIA" in gpu["name"] or "Tesla" in gpu["name"]:
             gpu_name = gpu["name"]
             gpu_vram_mb = gpu["memory.total"] * 1.048576
             return gpu_name, int(gpu_vram_mb)
-    raise SdkError("No supported GPU found, make sure you have a supported NVIDIA GPU.")
+    raise SdkError("No supported GPU found, make sure you have a supported NVIDIA GPU-2.")
 
 
 def _get_cpu_info() -> Tuple[str, int]:

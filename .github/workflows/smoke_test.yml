@@ -70,5 +70,4 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
-          pip3 install vllm
           ./smoke_tests/galadriel_small_model.sh

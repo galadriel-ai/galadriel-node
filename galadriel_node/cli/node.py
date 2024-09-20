@@ -1,23 +1,23 @@
 import asyncio
+import signal
 import subprocess
 import sys
 import traceback
+from dataclasses import dataclass
 from http import HTTPStatus
 from typing import Optional
 from urllib.parse import urljoin
-from dataclasses import dataclass
-import aiohttp
 
-import typer
-import rich
+import aiohttp
 import openai
+import rich
+import typer
 import websockets
 from websockets.frames import CloseCode
 
 from galadriel_node.config import config
-from galadriel_node.sdk.entities import InferenceRequest
-from galadriel_node.sdk.entities import SdkError
-from galadriel_node.sdk.entities import AuthenticationError
+from galadriel_node.llm_backends import vllm
+from galadriel_node.sdk.entities import AuthenticationError, InferenceRequest, SdkError
 from galadriel_node.sdk.llm import Llm
 from galadriel_node.sdk.system.report_hardware import report_hardware
 from galadriel_node.sdk.system.report_performance import report_performance
@@ -152,12 +152,21 @@ async def retry_connection(
         backoff_time = min(backoff_time * 2, BACKOFF_MAX)
 
 
+def handle_termination(loop, llm_pid):
+    for task in asyncio.all_tasks(loop):
+        task.cancel()
+
+    if llm_pid is not None:
+        vllm.stop(llm_pid)
+        print(f"vLLM process with PID {llm_pid} has been stopped.")
+
+
 async def run_node(
     api_url: str,
     rpc_url: str,
     api_key: Optional[str],
     node_id: Optional[str],
-    llm_base_url: str,
+    llm_base_url: Optional[str],
     debug: bool,
 ):
     if not api_key:
@@ -169,16 +178,30 @@ async def run_node(
     await version_aware_get(
         api_url, "node/info", api_key, query_params={"node_id": node_id}
     )
+    try:
+        if llm_base_url:
+            result = await check_llm(llm_base_url, config.GALADRIEL_MODEL_ID)
+            if not result:
+                raise SdkError(
+                    'LLM check failed. Please make sure "GALADRIEL_LLM_BASE_URL" is correct.'
+                )
+        else:
+            llm_pid = await run_llm(config.GALADRIEL_MODEL_ID, debug)
+            loop = asyncio.get_running_loop()
+            for sig in (signal.SIGINT, signal.SIGTERM):
+                loop.add_signal_handler(sig, lambda: handle_termination(loop, llm_pid))
+            llm_base_url = vllm.LLM_BASE_URL
+        await report_hardware(api_url, api_key, node_id)
+        await report_performance(
+            api_url, api_key, node_id, llm_base_url, config.GALADRIEL_MODEL_ID
+        )
+        await retry_connection(rpc_url, api_key, node_id, llm_base_url, debug)
+    except asyncio.CancelledError:
+        rich.print("Stopping the node.", flush=True)
 
-    await report_hardware(api_url, api_key, node_id)
-    await report_performance(
-        api_url, api_key, node_id, llm_base_url, config.GALADRIEL_MODEL_ID
-    )
-    await retry_connection(rpc_url, api_key, node_id, llm_base_url, debug)
 
-
-async def llm_http_check(llm_base_url: str):
-    timeout = aiohttp.ClientTimeout(total=60)
+async def llm_http_check(llm_base_url: str, total_timeout: float = 60.0):
+    timeout = aiohttp.ClientTimeout(total=total_timeout)
     async with aiohttp.ClientSession(timeout=timeout) as session:
         return await session.get(llm_base_url + "/v1/models/")
 
@@ -202,13 +225,98 @@ async def llm_sanity_check(
     )
 
 
+async def check_llm(llm_base_url: str, model_id: str) -> bool:
+    try:
+        response = await llm_http_check(llm_base_url)
+        if response.ok:
+            rich.print(
+                f"[bold green]\N{CHECK MARK} LLM server at {llm_base_url} is accessible via HTTP."
+                "[/bold green]",
+                flush=True,
+            )
+        else:
+            rich.print(
+                f"[bold red]\N{CROSS MARK} LLM server at {llm_base_url} returned status code: "
+                f"{response.status_code}[/bold red]",
+                flush=True,
+            )
+            return False
+    except Exception as e:
+        rich.print(
+            f"[bold red]\N{CROSS MARK} Failed to reach LLM server at {llm_base_url}: \n{e}[/bold red]",
+            flush=True,
+        )
+        return False
+
+    try:
+        response = await llm_sanity_check(llm_base_url, model_id)
+        if response.status_code == HTTPStatus.OK:
+            rich.print(
+                f"[bold green]\N{CHECK MARK} LLM server at {llm_base_url} successfully generated "
+                "tokens.[/bold green]",
+                flush=True,
+            )
+            return True
+    except openai.APIStatusError as e:
+        rich.print(
+            f"[bold red]\N{CROSS MARK} LLM server at {llm_base_url} failed to generate tokens. "
+            f"APIStatusError: \n{e}[/bold red]",
+            flush=True,
+        )
+        return False
+    except Exception as e:
+        rich.print(
+            f"[bold red]\N{CROSS MARK} LLM server at {llm_base_url} failed to generate tokens."
+            f" Exception occurred: {e}[/bold red]",
+            flush=True,
+        )
+        return False
+    return False
+
+
+async def run_llm(model_id: str, debug: bool = False) -> Optional[int]:
+    if vllm.is_installed():
+        rich.print("Starting vLLM...", flush=True)
+        pid = vllm.start(model_id, debug)
+        if pid is None:
+            raise SdkError(
+                'Failed to start vLLM. Please check "vllm.log" for more information.'
+            )
+        rich.print("vLLM started successfully.", flush=True)
+        rich.print("Waiting for vLLM to be ready.", flush=True)
+        while True:
+            if not vllm.is_process_running(pid):
+                raise SdkError(
+                    f"vLLM process (PID: {pid}) died unexpectedly. Please check 'vllm.log'."
+                )
+            rich.print(".", flush=True, end="")
+            try:
+                response = await llm_http_check(vllm.LLM_BASE_URL, total_timeout=1.0)
+                if response.ok:
+                    rich.print("\nvLLM is ready.", flush=True)
+                    break
+            except Exception:
+                continue
+            finally:
+                await asyncio.sleep(1.0)
+        result = await check_llm(vllm.LLM_BASE_URL, model_id)
+        if not result:
+            raise SdkError(
+                'LLM check failed. Please check "vllm.log" for more details.'
+            )
+        return pid
+    raise SdkError(
+        "vLLM is not installed, please set GALADRIEL_LLM_BASE_URL in ~/.galadrielenv"
+    )
+
+
 @node_app.command("run", help="Run the Galadriel node")
 def node_run(
     api_url: str = typer.Option(config.GALADRIEL_API_URL, help="API url"),
     rpc_url: str = typer.Option(config.GALADRIEL_RPC_URL, help="RPC url"),
     api_key: str = typer.Option(config.GALADRIEL_API_KEY, help="API key"),
     node_id: str = typer.Option(config.GALADRIEL_NODE_ID, help="Node ID"),
-    llm_base_url: str = typer.Option(
+    llm_base_url: Optional[str] = typer.Option(
         config.GALADRIEL_LLM_BASE_URL, help="LLM base url"
     ),
     debug: bool = typer.Option(False, help="Enable debug mode"),
@@ -270,51 +378,14 @@ def node_status(
 @node_app.command("llm-status", help="Get LLM status")
 def llm_status(
     model_id: str = typer.Option(config.GALADRIEL_MODEL_ID, help="Model ID"),
-    llm_base_url: str = typer.Option(
+    llm_base_url: Optional[str] = typer.Option(
         config.GALADRIEL_LLM_BASE_URL, help="LLM base url"
     ),
 ):
     config.validate()
-    try:
-        response = asyncio.run(llm_http_check(llm_base_url))
-        if response.ok:
-            rich.print(
-                f"[bold green]\N{CHECK MARK} LLM server at {llm_base_url} is accessible via HTTP."
-                "[/bold green]",
-                flush=True,
-            )
-        else:
-            rich.print(
-                f"[bold red]\N{CROSS MARK} LLM server at {llm_base_url} returned status code: "
-                f"{response.status_code}[/bold red]",
-                flush=True,
-            )
-    except Exception as e:
-        rich.print(
-            f"[bold red]\N{CROSS MARK} Failed to reach LLM server at {llm_base_url}: \n{e}[/bold red]",
-            flush=True,
-        )
-
-    try:
-        response = asyncio.run(llm_sanity_check(llm_base_url, model_id))
-        if response.status_code == HTTPStatus.OK:
-            rich.print(
-                f"[bold green]\N{CHECK MARK} LLM server at {llm_base_url} successfully generated "
-                "tokens.[/bold green]",
-                flush=True,
-            )
-    except openai.APIStatusError as e:
-        rich.print(
-            f"[bold red]\N{CROSS MARK} LLM server at {llm_base_url} failed to generate tokens. "
-            f"APIStatusError: \n{e}[/bold red]",
-            flush=True,
-        )
-    except Exception as e:
-        rich.print(
-            f"[bold red]\N{CROSS MARK} LLM server at {llm_base_url} failed to generate tokens."
-            f" Exception occurred: {e}[/bold red]",
-            flush=True,
-        )
+    if not llm_base_url:
+        llm_base_url = vllm.LLM_BASE_URL
+    asyncio.run(check_llm(llm_base_url, model_id))
 
 
 @node_app.command("stats", help="Get node stats")

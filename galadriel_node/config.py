@@ -16,7 +16,6 @@ PRODUCTION_DOMAIN = "api.galadriel.com"
 DEFAULT_PRODUCTION_VALUES = {
     "GALADRIEL_API_URL": f"https://{PRODUCTION_DOMAIN}/v1",
     "GALADRIEL_RPC_URL": f"wss://{PRODUCTION_DOMAIN}/v1/node",
-    "GALADRIEL_LLM_BASE_URL": "http://localhost:11434",
     "GALADRIEL_MODEL_ID": "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8",
 }
 
@@ -64,7 +63,7 @@ class Config:
             default_values["GALADRIEL_MODEL_ID"],
         )
         self.GALADRIEL_LLM_BASE_URL = os.getenv(
-            "GALADRIEL_LLM_BASE_URL", default_values["GALADRIEL_LLM_BASE_URL"]
+            "GALADRIEL_LLM_BASE_URL", default_values.get("GALADRIEL_LLM_BASE_URL")
         )
         self.GALADRIEL_MODEL_COMMIT_HASH = "3aed33c3d2bfa212a137f6c855d79b5426862b24"
         self.MINIMUM_COMPLETIONS_TOKENS_PER_SECOND = 264

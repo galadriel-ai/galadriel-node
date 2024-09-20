@@ -40,7 +40,7 @@ async def report_hardware(api_url: str, api_key: str, node_id: str) -> None:
             operating_system="macOS-14.4.1-arm64-arm-64bit",
         )
     else:
-        gpu_name, gpu_vram_mb = _get_gpu_info()
+        gpu_name, gpu_vram_mb = get_gpu_info()
         cpu_model, cpu_count = _get_cpu_info()
         if cpu_count < MIN_CPU_CORES:
             raise SdkError(f"Not enough CPU cores, minimum {MIN_CPU_CORES} required")
@@ -62,7 +62,7 @@ async def report_hardware(api_url: str, api_key: str, node_id: str) -> None:
     await _post_info(node_info, api_url, api_key, node_id)
 
 
-def _get_gpu_info() -> Tuple[str, int]:
+def get_gpu_info() -> Tuple[str, int]:
     try:
         query = GPUStatCollection.new_query()
         data = query.jsonify()

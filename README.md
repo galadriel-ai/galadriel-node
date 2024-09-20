@@ -22,60 +22,6 @@ Check out the [documentation](https://galadriel.mintlify.app/).
 - A valid galadriel API key
 - A valid [huggingface](https://huggingface.co/) access token
 
-
-### LLM deployment
-
-To run a Galadriel node, you must first run an LLM.
-
-**Create a python environment**
-```shell
-python3 -m venv venv
-source venv/bin/activate
-```
-
-**Install vllm**
-```shell
-pip install vllm==0.5.5
-```
-
-**Run vllm**
-```shell
-HUGGING_FACE_HUB_TOKEN=<HUGGING_FACE_TOKEN> \
-  nohup vllm serve neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8 \
-  --revision 3aed33c3d2bfa212a137f6c855d79b5426862b24 \
-  --max-model-len 8192 \
-  --gpu-memory-utilization 1 \
-  --host 127.0.0.1 \
-  --disable-frontend-multiprocessing \
-  --port 11434 > logs_llm.log 2>&1 &
-```
-
-**Ensure vllm works**
-```shell
-tail -f logs_llm.log
-```
-Should see something like `INFO: Uvicorn running on http://127.0.0.1:11434`
-
-Once you see the API is working try calling it
-```shell
-curl http://localhost:11434/v1/chat/completions \
--H "Content-Type: application/json" \
--H "Authorization: a" \
--d '{
-    "model": "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8",
-    "messages": [
-    {
-      "role": "system",
-      "content": "You are a helpful assistant."
-    },
-    {
-      "role": "user",
-      "content": "Hi, whats up?"
-    }
-  ]
-}'
-```
-
 ### Run a GPU node from the command line
 
 **Create a (separate) python environment**
@@ -130,7 +76,10 @@ galadriel node stats
 
 ### Development
 
-* Code formatting: 
+- LLM:
+  Since vLLM only supports Linux machines with a GPU, you can point the node to a vLLM setup by setting the `GALADRIEL_LLM_BASE_URL` in your `~/galadrielenv` file.
+
+- Code formatting:
 
 `black .`
  

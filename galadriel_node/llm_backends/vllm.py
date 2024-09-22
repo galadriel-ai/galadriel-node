@@ -70,9 +70,7 @@ def start(model_name: str, debug: bool = False) -> Optional[int]:
             "127.0.0.1",
             "--port",
             "19434",
-            "--disable-frontend-multiprocessing",
-            "--dtype",
-            "half"
+            "--disable-frontend-multiprocessing"
         ]
         if gpu_vram_mb <= 8192:
             command.extend(

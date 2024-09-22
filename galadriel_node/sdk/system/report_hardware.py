@@ -48,6 +48,8 @@ async def report_hardware(api_url: str, api_key: str, node_id: str) -> None:
             original_gpu_name = gpu_name
             gpu_name = SUPPORTED_GPUS[0]
             logger.info(f"Modified ${original_gpu_name} to ${gpu_name} for smoke test")
+        else:
+            logger.info(f"Node ID: {node_id}, GPU: {gpu_name}")
 
         cpu_model, cpu_count = _get_cpu_info()
         if cpu_count < MIN_CPU_CORES:
@@ -84,6 +86,7 @@ def get_gpu_info() -> Tuple[str, int]:
             "No supported GPU found, make sure you have a supported NVIDIA GPU-1."
         )
     for gpu in data["gpus"]:
+        logger.info("Found GPU %s", gpu["name"])
         if "NVIDIA" in gpu["name"] or "Tesla" in gpu["name"]:
             gpu_name = gpu["name"]
             gpu_vram_mb = gpu["memory.total"] * 1.048576

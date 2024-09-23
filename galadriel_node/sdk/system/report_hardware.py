@@ -102,7 +102,7 @@ def _get_cpu_info() -> Tuple[str, int]:
 
 def _get_ram() -> int:
     mem = psutil.virtual_memory()
-    total_mem_mb = int(mem.total / (1024**2))
+    total_mem_mb = int(mem.total / (1024 ** 2))
     return total_mem_mb
 
 
@@ -122,29 +122,29 @@ async def _get_info_already_exists(api_url: str, api_key: str, node_id: str) -> 
     if response_status != HTTPStatus.OK:
         return False
     return (
-        response_json.get("gpu_model") is not None
-        and response_json.get("cpu_model") is not None
+            response_json.get("gpu_model") is not None
+            and response_json.get("cpu_model") is not None
     )
 
 
 async def _post_info(
-    node_info: NodeInfo, api_url: str, api_key: str, node_id: str
+        node_info: NodeInfo, api_url: str, api_key: str, node_id: str
 ) -> None:
     async with aiohttp.ClientSession() as session:
         async with session.post(
-            urljoin(api_url + "/", "node/info"),
-            headers={"Authorization": f"Bearer {api_key}"},
-            json={
-                "node_id": node_id,
-                "gpu_model": node_info.gpu_model,
-                "vram": node_info.vram,
-                "cpu_model": node_info.cpu_model,
-                "cpu_count": node_info.cpu_count,
-                "ram": node_info.ram,
-                "network_download_speed": node_info.network_download_speed,
-                "network_upload_speed": node_info.network_upload_speed,
-                "operating_system": node_info.operating_system,
-            },
+                urljoin(api_url + "/", "node/info"),
+                headers={"Authorization": f"Bearer {api_key}"},
+                json={
+                    "node_id": node_id,
+                    "gpu_model": node_info.gpu_model,
+                    "vram": node_info.vram,
+                    "cpu_model": node_info.cpu_model,
+                    "cpu_count": node_info.cpu_count,
+                    "ram": node_info.ram,
+                    "network_download_speed": node_info.network_download_speed,
+                    "network_upload_speed": node_info.network_upload_speed,
+                    "operating_system": node_info.operating_system,
+                },
         ) as response:
             await response.json()
             if response.status == HTTPStatus.OK:

@@ -26,8 +26,8 @@ def is_running(model_name: str) -> bool:
             if any(os.path.basename(arg).startswith("python") for arg in cmdline):
                 for i in range(len(cmdline) - 2):
                     if os.path.basename(cmdline[i]) == "vllm" and cmdline[
-                        i + 1 : i + 3
-                    ] == ["serve", model_name]:
+                                                                  i + 1: i + 3
+                                                                  ] == ["serve", model_name]:
                         return True
         except (psutil.NoSuchProcess, IndexError):
             pass

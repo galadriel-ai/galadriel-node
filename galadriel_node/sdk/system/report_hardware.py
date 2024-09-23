@@ -81,17 +81,17 @@ def get_gpu_info() -> Tuple[str, int]:
             "No supported GPU found, make sure `nvidia-smi` works, NVIDIA driver versions must be R450.00 or higher."
         )
 
-    if not data["gpus"]:
-        raise SdkError(
-            "No supported GPU found, make sure you have a supported NVIDIA GPU-1."
-        )
+    # if not data["gpus"]:
+    #     raise SdkError(
+    #         "No supported GPU found, make sure you have a supported NVIDIA GPU-1."
+    #     )
     for gpu in data["gpus"]:
         logger.info("Found GPU %s", gpu["name"])
         if "NVIDIA" in gpu["name"] or "Tesla" in gpu["name"]:
             gpu_name = gpu["name"]
             gpu_vram_mb = gpu["memory.total"] * 1.048576
             return gpu_name, int(gpu_vram_mb)
-    raise SdkError("No supported GPU found, make sure you have a supported NVIDIA GPU-2.")
+    #raise SdkError("No supported GPU found, make sure you have a supported NVIDIA GPU-2.")
 
 
 def _get_cpu_info() -> Tuple[str, int]:

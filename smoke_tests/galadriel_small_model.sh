@@ -6,12 +6,11 @@ INTERVAL=1  # Interval for checking log file
 # display the content of the file
 cat ${ENV_FILE}
 
-# run the model
+LOGFILE="run_output.txt"
 # Get the node stats
 source venv/bin/activate
 nvidia-smi
-pip3 install -r requirements.txt
-python3 galadriel_node/cli/node.py node stats
+ls galadriel_node/cli/node.py
 python3 galadriel_node/cli/node.py node run > run_output.txt 2>&1 &
 CMD_PID=$!
 

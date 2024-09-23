@@ -10,7 +10,7 @@ cat ${ENV_FILE}
 # Get the node stats
 source venv/bin/activate
 nvidia-smi
-ls -alrt
+pip3 install -r requirements.txt
 python3 galadriel_node/cli/node.py node stats
 python3 galadriel_node/cli/node.py node run > run_output.txt 2>&1 &
 CMD_PID=$!

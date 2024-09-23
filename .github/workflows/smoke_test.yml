@@ -69,6 +69,5 @@ jobs:
       - name: Test_4 - Run Galadriel node with small model
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        uses: actions/checkout@v4
         run: |          
           ./smoke_tests/galadriel_small_model.sh

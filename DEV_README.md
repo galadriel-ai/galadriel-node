@@ -18,7 +18,7 @@ cd galadriel-node
 deactivate
 python3 -m venv venv
 source venv/bin/activate
-pip3 install .
+pip install -e .
 ```
 
 #### Setup local env variables

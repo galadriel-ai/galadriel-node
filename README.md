@@ -69,28 +69,17 @@ galadriel node status
 ```
 Should see status: online
 
+**Check LLM status**
+```shell
+galadriel node llm-status
+```
+Should see status like:
+```
+✓ LLM server at http://your_llm_address is accessible via HTTP.
+✓ LLM server at http://your_llm_address successfully generated tokens.
+```
+
 **Check node metrics**
 ```shell
 galadriel node stats
 ```
-
-### Development
-
-- LLM:
-  Since vLLM only supports Linux machines with a GPU, you can point the node to a vLLM setup by setting the `GALADRIEL_LLM_BASE_URL` in your `~/galadrielenv` file.
-
-- Code formatting:
-
-`black .`
- 
-* Linting: 
- 
-`pylint --rcfile=setup.cfg galadriel_node/*`
-
-* MyPy: 
- 
-`mypy .`
-
-* Unit testing:
-
-`python -m pytest tests`

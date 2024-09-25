@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from http import HTTPStatus
 from typing import Optional
 from urllib.parse import urljoin
-
+import json
 import aiohttp
 import openai
 import rich
@@ -19,6 +19,9 @@ from galadriel_node.config import config
 from galadriel_node.llm_backends import vllm
 from galadriel_node.sdk.entities import AuthenticationError, InferenceRequest, SdkError
 from galadriel_node.sdk.llm import Llm
+from galadriel_node.sdk.protocol.protocol_hander import ProtocolHandler
+from galadriel_node.sdk.protocol.ping_pong_protocol import PingPongProtocol
+from galadriel_node.sdk.protocol import protocol_settings
 from galadriel_node.sdk.system.report_hardware import report_hardware
 from galadriel_node.sdk.system.report_performance import report_performance
 from galadriel_node.sdk.upgrade import version_aware_get
@@ -42,11 +45,11 @@ class ConnectionResult:
 
 
 async def process_request(
-    request: InferenceRequest,
-    websocket,
-    llm_base_url: str,
-    debug: bool,
-    send_lock: asyncio.Lock,
+        request: InferenceRequest,
+        websocket,
+        llm_base_url: str,
+        debug: bool,
+        send_lock: asyncio.Lock,
 ) -> None:
     """
     Handles a single inference request and sends the response back in chunks.
@@ -70,23 +73,40 @@ async def process_request(
 
 
 async def connect_and_process(
-    uri: str, headers: dict, llm_base_url: str, debug: bool
+        uri: str, headers: dict, llm_base_url: str, node_id: str, debug: bool
 ) -> ConnectionResult:
     """
     Establishes the WebSocket connection and processes incoming requests concurrently.
     """
     send_lock = asyncio.Lock()
-
-    async with websockets.connect(uri, extra_headers=headers) as websocket:
+    async with (websockets.connect(uri, extra_headers=headers) as websocket):
         rich.print(f"Connected to {uri}", flush=True)
+
+        # Initialize the protocol handler and register the protocols
+        protocol_handler = ProtocolHandler(node_id, websocket)
+        ping_pong_protocol = PingPongProtocol()
+        protocol_handler.register(protocol_settings.PING_PONG_PROTOCOL_NAME, ping_pong_protocol)
+
         while True:
             try:
-                message = await websocket.recv()
-                request = InferenceRequest.from_json(message)
+                # Receive and parse incoming messages
+                data = await websocket.recv()
+                parsed_data = json.loads(data)
 
-                asyncio.create_task(
-                    process_request(request, websocket, llm_base_url, debug, send_lock)
-                )
+                # Check if the message is an inference request
+                inference_request = InferenceRequest.get_inference_request(parsed_data)
+                if inference_request is not None:
+                    asyncio.create_task(
+                        process_request(inference_request, websocket, llm_base_url, debug, send_lock)
+                    )
+                else:
+                    # Handle the message using the protocol handler
+                    asyncio.create_task(
+                        protocol_handler.handle(parsed_data, send_lock)
+                    )
+            except json.JSONDecodeError:
+                rich.print(f"Error while parsing json message", flush=True)
+                return ConnectionResult(retry=True, reset_backoff=True)  # for now, just retry
             except websockets.ConnectionClosed as e:
                 rich.print(
                     f"Received error: {e.reason}.",
@@ -107,7 +127,7 @@ async def connect_and_process(
 
 
 async def retry_connection(
-    rpc_url: str, api_key: str, node_id: str, llm_base_url: str, debug: bool
+        rpc_url: str, api_key: str, node_id: str, llm_base_url: str, debug: bool
 ):
     """
     Attempts to reconnect to the Galadriel server with exponential backoff.
@@ -123,7 +143,7 @@ async def retry_connection(
 
     while True:
         try:
-            result = await connect_and_process(uri, headers, llm_base_url, debug)
+            result = await connect_and_process(uri, headers, llm_base_url, node_id, debug)
             if result.retry:
                 retries += 1
                 if result.reset_backoff:
@@ -162,12 +182,12 @@ def handle_termination(loop, llm_pid):
 
 
 async def run_node(
-    api_url: str,
-    rpc_url: str,
-    api_key: Optional[str],
-    node_id: Optional[str],
-    llm_base_url: Optional[str],
-    debug: bool,
+        api_url: str,
+        rpc_url: str,
+        api_key: Optional[str],
+        node_id: Optional[str],
+        llm_base_url: Optional[str],
+        debug: bool,
 ):
     if not api_key:
         raise SdkError("GALADRIEL_API_KEY env variable not set")
@@ -207,8 +227,8 @@ async def llm_http_check(llm_base_url: str, total_timeout: float = 60.0):
 
 
 async def llm_sanity_check(
-    llm_base_url: str,
-    model_id: str,
+        llm_base_url: str,
+        model_id: str,
 ):
     base_url: str = urljoin(llm_base_url, "/v1")
     client = openai.AsyncOpenAI(base_url=base_url, api_key="sk-no-key-required")
@@ -312,14 +332,14 @@ async def run_llm(model_id: str, debug: bool = False) -> Optional[int]:
 
 @node_app.command("run", help="Run the Galadriel node")
 def node_run(
-    api_url: str = typer.Option(config.GALADRIEL_API_URL, help="API url"),
-    rpc_url: str = typer.Option(config.GALADRIEL_RPC_URL, help="RPC url"),
-    api_key: str = typer.Option(config.GALADRIEL_API_KEY, help="API key"),
-    node_id: str = typer.Option(config.GALADRIEL_NODE_ID, help="Node ID"),
-    llm_base_url: Optional[str] = typer.Option(
-        config.GALADRIEL_LLM_BASE_URL, help="LLM base url"
-    ),
-    debug: bool = typer.Option(False, help="Enable debug mode"),
+        api_url: str = typer.Option(config.GALADRIEL_API_URL, help="API url"),
+        rpc_url: str = typer.Option(config.GALADRIEL_RPC_URL, help="RPC url"),
+        api_key: str = typer.Option(config.GALADRIEL_API_KEY, help="API key"),
+        node_id: str = typer.Option(config.GALADRIEL_NODE_ID, help="Node ID"),
+        llm_base_url: Optional[str] = typer.Option(
+            config.GALADRIEL_LLM_BASE_URL, help="LLM base url"
+        ),
+        debug: bool = typer.Option(False, help="Enable debug mode"),
 ):
     """
     Entry point for running the node with retry logic and connection handling.
@@ -343,9 +363,9 @@ def node_run(
 
 @node_app.command("status", help="Get node status")
 def node_status(
-    api_url: str = typer.Option(config.GALADRIEL_API_URL, help="API url"),
-    api_key: str = typer.Option(config.GALADRIEL_API_KEY, help="API key"),
-    node_id: str = typer.Option(config.GALADRIEL_NODE_ID, help="Node ID"),
+        api_url: str = typer.Option(config.GALADRIEL_API_URL, help="API url"),
+        api_key: str = typer.Option(config.GALADRIEL_API_KEY, help="API key"),
+        node_id: str = typer.Option(config.GALADRIEL_NODE_ID, help="Node ID"),
 ):
     config.validate()
     status, response_json = asyncio.run(
@@ -377,10 +397,10 @@ def node_status(
 
 @node_app.command("llm-status", help="Get LLM status")
 def llm_status(
-    model_id: str = typer.Option(config.GALADRIEL_MODEL_ID, help="Model ID"),
-    llm_base_url: Optional[str] = typer.Option(
-        config.GALADRIEL_LLM_BASE_URL, help="LLM base url"
-    ),
+        model_id: str = typer.Option(config.GALADRIEL_MODEL_ID, help="Model ID"),
+        llm_base_url: Optional[str] = typer.Option(
+            config.GALADRIEL_LLM_BASE_URL, help="LLM base url"
+        ),
 ):
     config.validate()
     if not llm_base_url:
@@ -390,9 +410,9 @@ def llm_status(
 
 @node_app.command("stats", help="Get node stats")
 def node_stats(
-    api_url: str = typer.Option(config.GALADRIEL_API_URL, help="API url"),
-    api_key: str = typer.Option(config.GALADRIEL_API_KEY, help="API key"),
-    node_id: str = typer.Option(config.GALADRIEL_NODE_ID, help="Node ID"),
+        api_url: str = typer.Option(config.GALADRIEL_API_URL, help="API url"),
+        api_key: str = typer.Option(config.GALADRIEL_API_KEY, help="API key"),
+        node_id: str = typer.Option(config.GALADRIEL_NODE_ID, help="Node ID"),
 ):
     config.validate()
     status, response_json = asyncio.run(

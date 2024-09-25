@@ -47,15 +47,16 @@ class InferenceRequest:
     type: Optional[str] = None
 
     @staticmethod
-    def from_json(message):
-        try:
-            data = json.loads(message)
-            return InferenceRequest(
-                id=data["id"], type=data["type"], chat_request=data["chat_request"]
-            )
-        except Exception:
+    def get_inference_request(parsed_data):
+        if "id" in parsed_data and "type" in parsed_data and "chat_request" in parsed_data:
+            if parsed_data["id"] is not None and parsed_data["type"] is not None and parsed_data["chat_request"] is not None:
+                return InferenceRequest(
+                    id=parsed_data["id"], type=parsed_data["type"], chat_request=parsed_data["chat_request"]
+                )
+            else:
+                return None
+        else:
             return None
-
 
 @dataclass
 class InferenceResponse:

@@ -32,7 +32,7 @@ class PingPongProtocol:
             rich.print(
                 f"{protocol_settings.PING_PONG_PROTOCOL_NAME}: Invalid data received: {data}"
             )
-            return
+            return None
 
         rich.print(
             f"{protocol_settings.PING_PONG_PROTOCOL_NAME}: Received ping request for {ping_request.node_id}, "
@@ -41,7 +41,7 @@ class PingPongProtocol:
 
         # Protocol checks
         if _protocol_validations(my_node_id, ping_request) is False:
-            return
+            return None
 
         # Update the state as seen by the server
         self.rtt = ping_request.rtt
@@ -102,7 +102,7 @@ def _protocol_validations(my_node_id: str, ping_request: PingRequest) -> bool:
 def _extract_and_validate(data: Any) -> PingRequest | None:
     ping_request = PingRequest(
         protocol_version="",
-        message_type=1,
+        message_type=PingPongMessageType.PING,
         node_id="",
         nonce="",
         rtt=0,
@@ -116,7 +116,7 @@ def _extract_and_validate(data: Any) -> PingRequest | None:
         try:
             ping_request.message_type = PingPongMessageType(message_type)
         except KeyError:
-            ping_request.message_type = None
+            return None
     if "node_id" in data:
         ping_request.node_id = data["node_id"]
     if "nonce" in data:

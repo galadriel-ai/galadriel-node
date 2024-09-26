@@ -52,14 +52,15 @@ class InferenceRequest:
         if (
             "id" in parsed_data
             and parsed_data["id"] is not None
-            and "type" in parsed_data
-            and parsed_data["type"] is not None
             and "chat_request" in parsed_data
             and parsed_data["chat_request"] is not None
         ):
+            type_field = None
+            if "type" in parsed_data:
+                type_field = parsed_data["type"]
             return InferenceRequest(
                 id=parsed_data["id"],
-                type=parsed_data["type"],
+                type=type_field,
                 chat_request=parsed_data["chat_request"],
             )
         else:

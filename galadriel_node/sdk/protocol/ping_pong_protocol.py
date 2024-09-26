@@ -23,7 +23,6 @@ class PingPongProtocol:
 
     # Handle the responses from the client
     async def handle(self, data: Any, my_node_id: str) -> str | None:
-        print(data)
         # TODO: we should replace these mess with direct pydantic model objects once the
         # inference is inside the protocol. Until then, we will use the dict objects and manually
         # validate them.

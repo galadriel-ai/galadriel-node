@@ -84,7 +84,6 @@ async def connect_and_process(
         rich.print(f"Connected to {uri}", flush=True)
 
         # Initialize the protocol handler and register the protocols
-        print(f"My Node ID: {node_id}")
         protocol_handler = ProtocolHandler(node_id, websocket)
         ping_pong_protocol = PingPongProtocol()
         protocol_handler.register(

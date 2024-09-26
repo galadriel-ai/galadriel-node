@@ -2,10 +2,12 @@ from enum import Enum
 from pydantic import BaseModel
 from pydantic import Field
 
+
 # TODO: Move these common protocol stuff into a shared library
 class PingPongMessageType(Enum):
     PING = 1
     PONG = 2
+
 
 class PingRequest(BaseModel):
     protocol_version: str = Field(

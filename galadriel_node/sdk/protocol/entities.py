@@ -28,4 +28,5 @@ class PongResponse(BaseModel):
         description="Protocol version of the ping-pong protocol"
     )
     message_type: PingPongMessageType = Field(description="Message type")
+    node_id: str = Field(description="Node ID")
     nonce: str = Field(description="The same nonce as in the request")

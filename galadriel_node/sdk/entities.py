@@ -50,10 +50,8 @@ class InferenceRequest:
     @staticmethod
     def get_inference_request(parsed_data):
         if (
-            "id" in parsed_data
-            and parsed_data["id"] is not None
-            and "chat_request" in parsed_data
-            and parsed_data["chat_request"] is not None
+            parsed_data.get("id") is not None
+            and parsed_data.get("chat_request") is not None
         ):
             type_field = None
             if "type" in parsed_data:

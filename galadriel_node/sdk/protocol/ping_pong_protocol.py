@@ -108,24 +108,18 @@ def _extract_and_validate(data: Any) -> PingRequest | None:
         ping_streak=0,
         miss_streak=0,
     )
-    if "protocol_version" in data:
-        ping_request.protocol_version = data["protocol_version"]
-    if "message_type" in data:
-        message_type = data["message_type"]
-        try:
-            ping_request.message_type = PingPongMessageType(message_type)
-        except KeyError:
-            return None
-    if "node_id" in data:
-        ping_request.node_id = data["node_id"]
-    if "nonce" in data:
-        ping_request.nonce = data["nonce"]
-    if "rtt" in data:
-        ping_request.rtt = data["rtt"]
-    if "ping_streak" in data:
-        ping_request.ping_streak = data["ping_streak"]
-    if "miss_streak" in data:
-        ping_request.miss_streak = data["miss_streak"]
+
+    ping_request.protocol_version = data.get("protocol_version")
+    message_type = data.get("message_type")
+    try:
+        ping_request.message_type = PingPongMessageType(message_type)
+    except KeyError:
+        return None
+    ping_request.node_id = data.get("node_id")
+    ping_request.nonce = data.get("nonce")
+    ping_request.rtt = data.get("rtt")
+    ping_request.ping_streak = data.get("ping_streak")
+    ping_request.miss_streak = data.get("miss_streak")
     if (
         ping_request.protocol_version is None
         or ping_request.message_type is None

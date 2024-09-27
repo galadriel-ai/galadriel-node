@@ -46,14 +46,22 @@ class InferenceRequest:
     chat_request: Dict
     type: Optional[str] = None
 
+    # pylint: disable=too-many-boolean-expressions, no-else-return
     @staticmethod
-    def from_json(message):
-        try:
-            data = json.loads(message)
+    def get_inference_request(parsed_data):
+        if (
+            parsed_data.get("id") is not None
+            and parsed_data.get("chat_request") is not None
+        ):
+            type_field = None
+            if "type" in parsed_data:
+                type_field = parsed_data["type"]
             return InferenceRequest(
-                id=data["id"], type=data["type"], chat_request=data["chat_request"]
+                id=parsed_data["id"],
+                type=type_field,
+                chat_request=parsed_data["chat_request"],
             )
-        except Exception:
+        else:
             return None
 
 

@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from http import HTTPStatus
 from typing import Optional
 from urllib.parse import urljoin
-
+import json
 import aiohttp
 import openai
 import rich
@@ -15,10 +15,14 @@ import typer
 import websockets
 from websockets.frames import CloseCode
 
+
 from galadriel_node.config import config
 from galadriel_node.llm_backends import vllm
 from galadriel_node.sdk.entities import AuthenticationError, InferenceRequest, SdkError
 from galadriel_node.sdk.llm import Llm
+from galadriel_node.sdk.protocol.protocol_handler import ProtocolHandler
+from galadriel_node.sdk.protocol.ping_pong_protocol import PingPongProtocol
+from galadriel_node.sdk.protocol import protocol_settings
 from galadriel_node.sdk.system.report_hardware import report_hardware
 from galadriel_node.sdk.system.report_performance import report_performance
 from galadriel_node.sdk.upgrade import version_aware_get
@@ -70,23 +74,44 @@ async def process_request(
 
 
 async def connect_and_process(
-    uri: str, headers: dict, llm_base_url: str, debug: bool
+    uri: str, headers: dict, llm_base_url: str, node_id: str, debug: bool
 ) -> ConnectionResult:
     """
     Establishes the WebSocket connection and processes incoming requests concurrently.
     """
     send_lock = asyncio.Lock()
-
     async with websockets.connect(uri, extra_headers=headers) as websocket:
         rich.print(f"Connected to {uri}", flush=True)
+
+        # Initialize the protocol handler and register the protocols
+        protocol_handler = ProtocolHandler(node_id, websocket)
+        ping_pong_protocol = PingPongProtocol()
+        protocol_handler.register(
+            protocol_settings.PING_PONG_PROTOCOL_NAME, ping_pong_protocol
+        )
+
         while True:
             try:
-                message = await websocket.recv()
-                request = InferenceRequest.from_json(message)
+                # Receive and parse incoming messages
+                data = await websocket.recv()
+                parsed_data = json.loads(data)
 
-                asyncio.create_task(
-                    process_request(request, websocket, llm_base_url, debug, send_lock)
-                )
+                # Check if the message is an inference request
+                inference_request = InferenceRequest.get_inference_request(parsed_data)
+                if inference_request is not None:
+                    asyncio.create_task(
+                        process_request(
+                            inference_request, websocket, llm_base_url, debug, send_lock
+                        )
+                    )
+                else:
+                    # Handle the message using the protocol handler
+                    asyncio.create_task(protocol_handler.handle(parsed_data, send_lock))
+            except json.JSONDecodeError:
+                rich.print("Error while parsing json message", flush=True)
+                return ConnectionResult(
+                    retry=True, reset_backoff=True
+                )  # for now, just retry
             except websockets.ConnectionClosed as e:
                 rich.print(
                     f"Received error: {e.reason}.",
@@ -123,7 +148,9 @@ async def retry_connection(
 
     while True:
         try:
-            result = await connect_and_process(uri, headers, llm_base_url, debug)
+            result = await connect_and_process(
+                uri, headers, llm_base_url, node_id, debug
+            )
             if result.retry:
                 retries += 1
                 if result.reset_backoff:

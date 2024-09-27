@@ -416,7 +416,7 @@ def node_upgrade():
     try:
         print("Updating galadriel CLI to the latest version...")
         subprocess.check_call(
-            [sys.executable, "-m", "pip", "install", "--upgrade", "galadriel"]
+            [sys.executable, "-m", "pip", "install", "--upgrade", "galadriel-node"]
         )
         print("galadriel CLI has been successfully updated to the latest version.")
     except subprocess.CalledProcessError:

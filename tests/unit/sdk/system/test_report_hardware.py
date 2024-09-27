@@ -45,41 +45,10 @@ async def test_post_info_unauthorized():
         (11, 11, True),  # Both speeds above minimum
     ],
 )
-def test_get_network_speed(monkeypatch, download_speed, upload_speed, expected_result):
-    # Mock the speedtest.Speedtest class
-    class MockSpeedtest:
-        def download(self):
-            return download_speed
-
-        def upload(self):
-            return upload_speed
-
-    monkeypatch.setattr("speedtest.Speedtest", MockSpeedtest)
-
-    # Import the function here to ensure the monkeypatch is applied
-    from galadriel_node.sdk.system.report_hardware import _get_network_speed
-
-    if expected_result:
-        assert _get_network_speed() == (download_speed, upload_speed)
-    else:
-        with pytest.raises(
-            SdkError, match="Network speed is too slow to run Galadriel."
-        ):
-            _get_network_speed()
-
-
-@pytest.mark.parametrize(
-    "download_speed, upload_speed, expected_result",
-    [
-        (9, 10, False),  # Download speed below MIN_DOWNLOAD_SPEED
-        (10, 9, False),  # Upload speed below MIN_UPLOAD_SPEED
-        (9, 9, False),  # Both speeds below minimum
-        (10, 10, True),  # Both speeds at minimum
-        (11, 11, True),  # Both speeds above minimum
-    ],
-)
 @pytest.mark.asyncio
-async def test_report_hardware(monkeypatch, download_speed, upload_speed, expected_result):
+async def test_report_hardware(
+    monkeypatch, download_speed, upload_speed, expected_result
+):
     gpu_name = "NVIDIA GeForce RTX 3090"
     vram = 24576
     cpu_model = "Intel(R) Core(TM) i9-10900K CPU @ 3.70GHz"
@@ -160,5 +129,7 @@ async def test_report_hardware(monkeypatch, download_speed, upload_speed, expect
         except Exception as e:
             pytest.fail(f"Unexpected exception: {e}")
     else:
-        with pytest.raises(SdkError, match="Network speed is too slow to run Galadriel."):
+        with pytest.raises(
+            SdkError, match="Network speed is too slow to run Galadriel."
+        ):
             await report_hardware("mock_api_url", "mock_api_key", "mock_node_id")

@@ -20,7 +20,7 @@ from galadriel_node.config import config
 from galadriel_node.llm_backends import vllm
 from galadriel_node.sdk.entities import AuthenticationError, InferenceRequest, SdkError
 from galadriel_node.sdk.llm import Llm
-from galadriel_node.sdk.protocol.protocol_hander import ProtocolHandler
+from galadriel_node.sdk.protocol.protocol_handler import ProtocolHandler
 from galadriel_node.sdk.protocol.ping_pong_protocol import PingPongProtocol
 from galadriel_node.sdk.protocol import protocol_settings
 from galadriel_node.sdk.system.report_hardware import report_hardware

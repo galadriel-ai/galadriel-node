@@ -22,6 +22,8 @@ SUPPORTED_GPUS = [
     "NVIDIA GeForce RTX 4090",
     "NVIDIA GeForce RTX 3090",
 ]
+MIN_DOWNLOAD_SPEED = 10  # MB/s
+MIN_UPLOAD_SPEED = 10  # MB/s
 
 
 async def report_hardware(api_url: str, api_key: str, node_id: str) -> None:
@@ -48,6 +50,11 @@ async def report_hardware(api_url: str, api_key: str, node_id: str) -> None:
         if total_mem_mb < MIN_RAM_MB:
             raise SdkError(f"Not enough RAM, minimum {MIN_RAM_MB}MB required")
         download_speed_mbs, upload_speed_mbs = _get_network_speed()
+        if (
+            download_speed_mbs < MIN_DOWNLOAD_SPEED
+            or upload_speed_mbs < MIN_UPLOAD_SPEED
+        ):
+            raise SdkError("Network speed is too slow to run Galadriel.")
 
         node_info = NodeInfo(
             gpu_model=gpu_name,
@@ -109,6 +116,14 @@ async def _get_info_already_exists(api_url: str, api_key: str, node_id: str) -> 
         api_url, "node/info", api_key, query_params={"node_id": node_id}
     )
     if response_status != HTTPStatus.OK:
+        return False
+    download_speed = response_json.get("network_download_speed")
+    upload_speed = response_json.get("network_upload_speed")
+    # This is to force already saved nodes to run the check again if
+    # the speed is not enough.
+    if download_speed is not None and download_speed < MIN_DOWNLOAD_SPEED:
+        return False
+    if upload_speed is not None and upload_speed < MIN_UPLOAD_SPEED:
         return False
     return (
         response_json.get("gpu_model") is not None

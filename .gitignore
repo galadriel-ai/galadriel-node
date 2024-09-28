@@ -4,4 +4,5 @@ poetry.lock
 dist
 .env
 venv
+.venv
 *.log

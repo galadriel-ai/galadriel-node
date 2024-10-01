@@ -8,6 +8,7 @@ import cpuinfo
 import psutil
 import speedtest
 from gpustat import GPUStatCollection
+import importlib
 
 from galadriel_node.config import config
 from galadriel_node.sdk import api
@@ -24,7 +25,7 @@ SUPPORTED_GPUS = [
 ]
 MIN_DOWNLOAD_SPEED = 10  # MB/s
 MIN_UPLOAD_SPEED = 10  # MB/s
-
+CLIENT_VERSION = importlib.metadata.version("galadriel-node")
 
 async def report_hardware(api_url: str, api_key: str, node_id: str) -> None:
     if await _get_info_already_exists(api_url, api_key, node_id):
@@ -40,6 +41,7 @@ async def report_hardware(api_url: str, api_key: str, node_id: str) -> None:
             network_download_speed=100,
             network_upload_speed=100,
             operating_system="macOS-14.4.1-arm64-arm-64bit",
+            version=CLIENT_VERSION,
         )
     else:
         gpu_name, gpu_vram_mb = get_gpu_info()
@@ -65,6 +67,7 @@ async def report_hardware(api_url: str, api_key: str, node_id: str) -> None:
             network_download_speed=download_speed_mbs,
             network_upload_speed=upload_speed_mbs,
             operating_system=platform.platform(),
+            version=CLIENT_VERSION,
         )
     await _post_info(node_info, api_url, api_key, node_id)
 
@@ -148,6 +151,7 @@ async def _post_info(
                 "network_download_speed": node_info.network_download_speed,
                 "network_upload_speed": node_info.network_upload_speed,
                 "operating_system": node_info.operating_system,
+                "version": node_info.version,
             },
         ) as response:
             await response.json()

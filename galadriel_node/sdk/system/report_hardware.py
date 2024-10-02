@@ -134,6 +134,8 @@ async def _get_info_already_exists(api_url: str, api_key: str, node_id: str) -> 
         return False
     if upload_speed is not None and upload_speed < MIN_UPLOAD_SPEED:
         return False
+    if response_json.get("version") != _get_version():
+        return False
     return (
         response_json.get("gpu_model") is not None
         and response_json.get("cpu_model") is not None

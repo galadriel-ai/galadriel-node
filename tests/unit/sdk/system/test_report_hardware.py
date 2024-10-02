@@ -112,7 +112,9 @@ async def test_report_hardware(
             and node_info.operating_system == operating_system
             and node_info.version == version
         ):
-            raise Exception(f"Incorrect node info: \nReceived node info is: {node_info}")
+            raise Exception(
+                f"Incorrect node info: \nReceived node info is: {node_info}"
+            )
 
     monkeypatch.setattr(
         "galadriel_node.sdk.system.report_hardware._post_info", mock_post_info
@@ -128,7 +130,9 @@ async def test_report_hardware(
     def mock_version():
         return version
 
-    monkeypatch.setattr("galadriel_node.sdk.system.report_hardware._get_version", mock_version)
+    monkeypatch.setattr(
+        "galadriel_node.sdk.system.report_hardware._get_version", mock_version
+    )
 
     config.GALADRIEL_ENVIRONMENT = "production"
     if expected_result:

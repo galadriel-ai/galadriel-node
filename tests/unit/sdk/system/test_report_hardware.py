@@ -55,6 +55,7 @@ async def test_report_hardware(
     cpu_count = 10
     ram = 32768
     operating_system = "Linux-5.4.0-42-generic-x86_64-with-glibc2.29"
+    version = "0.0.6"
 
     # Mock _get_info_already_exists
     async def mock_get_info_already_exists(*args, **kwargs):
@@ -109,8 +110,9 @@ async def test_report_hardware(
             and node_info.network_download_speed == download_speed
             and node_info.network_upload_speed == upload_speed
             and node_info.operating_system == operating_system
+            and node_info.version == version
         ):
-            raise Exception("Incorrect node info")
+            raise Exception(f"Incorrect node info: \nReceived node info is: {node_info}")
 
     monkeypatch.setattr(
         "galadriel_node.sdk.system.report_hardware._post_info", mock_post_info
@@ -122,9 +124,15 @@ async def test_report_hardware(
 
     monkeypatch.setattr("platform.platform", mock_platform)
 
+    # Mock _get_version
+    def mock_version():
+        return version
+
+    monkeypatch.setattr("galadriel_node.sdk.system.report_hardware._get_version", mock_version)
+
+    config.GALADRIEL_ENVIRONMENT = "production"
     if expected_result:
         try:
-            config.GALADRIEL_ENVIRONMENT = "production"
             await report_hardware("mock_api_url", "mock_api_key", "mock_node_id")
         except Exception as e:
             pytest.fail(f"Unexpected exception: {e}")

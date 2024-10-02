@@ -13,12 +13,10 @@
 - GPG sign the commits.
 - Install the lint and unit test commit hooks to save time.
 - Once the review comments are addressed, please "Resolve" them.
-- Invite atleast two reviewers through github
+- Invite atleast two reviewers to do the review
 
 ## Checklist before requesting a review
 - [ ] I shared my design with developers (if it's a big enough task).
-- [ ] I have performed a self-review of my code. 
+- [ ] I have tested the changes e2e locally. 
 - [ ] I have added required unit test cases.
-- [ ] Do we need to implement analytics?
-- [ ] Do we need a e2e or smoke test for this task? 
 

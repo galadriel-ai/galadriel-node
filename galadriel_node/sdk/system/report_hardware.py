@@ -3,6 +3,7 @@ from http import HTTPStatus
 from typing import Tuple
 from urllib.parse import urljoin
 
+import importlib
 import aiohttp
 import cpuinfo
 import psutil
@@ -31,6 +32,7 @@ async def report_hardware(api_url: str, api_key: str, node_id: str) -> None:
         print("Node info is already saved", flush=True)
         return None
     if config.GALADRIEL_ENVIRONMENT == "local":
+        version = _get_version()
         node_info = NodeInfo(
             gpu_model=SUPPORTED_GPUS[0],
             vram=20000,
@@ -40,6 +42,7 @@ async def report_hardware(api_url: str, api_key: str, node_id: str) -> None:
             network_download_speed=100,
             network_upload_speed=100,
             operating_system="macOS-14.4.1-arm64-arm-64bit",
+            version=version,
         )
     else:
         gpu_name, gpu_vram_mb = get_gpu_info()
@@ -55,6 +58,7 @@ async def report_hardware(api_url: str, api_key: str, node_id: str) -> None:
             or upload_speed_mbs < MIN_UPLOAD_SPEED
         ):
             raise SdkError("Network speed is too slow to run Galadriel.")
+        version = _get_version()
 
         node_info = NodeInfo(
             gpu_model=gpu_name,
@@ -65,6 +69,7 @@ async def report_hardware(api_url: str, api_key: str, node_id: str) -> None:
             network_download_speed=download_speed_mbs,
             network_upload_speed=upload_speed_mbs,
             operating_system=platform.platform(),
+            version=version,
         )
     await _post_info(node_info, api_url, api_key, node_id)
 
@@ -111,6 +116,10 @@ def _get_network_speed() -> Tuple[float, float]:
     return download_speed_mbs, upload_speed_mbs
 
 
+def _get_version() -> str:
+    return importlib.metadata.version("galadriel-node")
+
+
 async def _get_info_already_exists(api_url: str, api_key: str, node_id: str) -> bool:
     response_status, response_json = await api.get(
         api_url, "node/info", api_key, query_params={"node_id": node_id}
@@ -124,6 +133,8 @@ async def _get_info_already_exists(api_url: str, api_key: str, node_id: str) -> 
     if download_speed is not None and download_speed < MIN_DOWNLOAD_SPEED:
         return False
     if upload_speed is not None and upload_speed < MIN_UPLOAD_SPEED:
+        return False
+    if response_json.get("version") != _get_version():
         return False
     return (
         response_json.get("gpu_model") is not None
@@ -148,6 +159,7 @@ async def _post_info(
                 "network_download_speed": node_info.network_download_speed,
                 "network_upload_speed": node_info.network_upload_speed,
                 "operating_system": node_info.operating_system,
+                "version": node_info.version,
             },
         ) as response:
             await response.json()

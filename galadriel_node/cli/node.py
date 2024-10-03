@@ -213,7 +213,9 @@ async def run_node(
                     'LLM check failed. Please make sure "GALADRIEL_LLM_BASE_URL" is correct.'
                 )
         else:
-            llm_pid = await run_llm(config.GALADRIEL_MODEL_ID, debug)
+            llm_pid = await run_llm(
+                config.GALADRIEL_MODEL_ID, config.GALADRIEL_LOW_MEMORY_GPU, debug
+            )
             loop = asyncio.get_running_loop()
             for sig in (signal.SIGINT, signal.SIGTERM):
                 loop.add_signal_handler(sig, lambda: handle_termination(loop, llm_pid))
@@ -301,10 +303,12 @@ async def check_llm(llm_base_url: str, model_id: str) -> bool:
     return False
 
 
-async def run_llm(model_id: str, debug: bool = False) -> Optional[int]:
+async def run_llm(
+    model_id: str, low_mem_mode: bool, debug: bool = False
+) -> Optional[int]:
     if vllm.is_installed():
         rich.print("Starting vLLM...", flush=True)
-        pid = vllm.start(model_id, debug)
+        pid = vllm.start(model_id, low_mem_mode, debug)
         if pid is None:
             raise SdkError(
                 'Failed to start vLLM. Please check "vllm.log" for more information.'

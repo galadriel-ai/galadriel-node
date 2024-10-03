@@ -7,6 +7,7 @@ from urllib.parse import urlparse
 from dotenv import load_dotenv
 
 from galadriel_node.sdk.entities import SdkError
+from galadriel_node.sdk.system.gpu import get_gpu_info
 
 CONFIG_FILE_PATH = os.path.expanduser("~/.galadrielenv")
 
@@ -25,6 +26,8 @@ DEFAULT_LOCAL_VALUES = {
     "GALADRIEL_LLM_BASE_URL": "http://10.132.0.33:11434",
     "GALADRIEL_MODEL_ID": "hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4",
 }
+
+DEFAULT_LOW_MEMORY_MODEL_ID = "hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4"
 
 
 def valid_production_url(url, expected_scheme):
@@ -58,9 +61,16 @@ class Config:
         self.GALADRIEL_API_KEY = self.parse_val(os.getenv("GALADRIEL_API_KEY", None))
 
         # Other settings
+        _, gpu_vram_mb = get_gpu_info()
+        self.GALADRIEL_LOW_MEMORY_GPU = gpu_vram_mb < 8600
+
         self.GALADRIEL_MODEL_ID = os.getenv(
             "GALADRIEL_MODEL_ID",
-            default_values["GALADRIEL_MODEL_ID"],
+            (
+                default_values["GALADRIEL_MODEL_ID"]
+                if not self.GALADRIEL_LOW_MEMORY_GPU
+                else DEFAULT_LOW_MEMORY_MODEL_ID
+            ),
         )
 
         self.GALADRIEL_LLM_BASE_URL = self.parse_val(

@@ -26,6 +26,8 @@ DEFAULT_LOCAL_VALUES = {
     "GALADRIEL_MODEL_ID": "hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4",
 }
 
+LOW_GPU_MEM_MODEL_ID = "hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4"
+
 
 def valid_production_url(url, expected_scheme):
     if PRODUCTION_DOMAIN in url:
@@ -37,7 +39,10 @@ def valid_production_url(url, expected_scheme):
 class Config:
     # pylint: disable=C0103
     def __init__(
-        self, is_load_env: bool = True, environment: str = DEFAULT_ENVIRONMENT
+        self,
+        is_load_env: bool = True,
+        environment: str = DEFAULT_ENVIRONMENT,
+        low_gpu_mem: bool = False,
     ):
         if is_load_env:
             load_dotenv(dotenv_path=CONFIG_FILE_PATH)
@@ -60,7 +65,11 @@ class Config:
         # Other settings
         self.GALADRIEL_MODEL_ID = os.getenv(
             "GALADRIEL_MODEL_ID",
-            default_values["GALADRIEL_MODEL_ID"],
+            (
+                LOW_GPU_MEM_MODEL_ID
+                if low_gpu_mem
+                else default_values["GALADRIEL_MODEL_ID"]
+            ),
         )
 
         self.GALADRIEL_LLM_BASE_URL = self.parse_val(

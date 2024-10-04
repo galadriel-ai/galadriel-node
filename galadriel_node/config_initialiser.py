@@ -1,8 +1,16 @@
 from galadriel_node import config
+from galadriel_node.sdk.system.gpu import has_low_memory_gpu
 
 
 def execute(environment: str):
-    _config = config.Config(is_load_env=False, environment=environment)
+    try:
+        low_mem_gpu = has_low_memory_gpu()
+    except Exception as exc:
+        low_mem_gpu = False
+        print(f"WARNING: failed to get GPU info")
+    _config = config.Config(
+        is_load_env=False, environment=environment, low_gpu_mem=low_mem_gpu
+    )
     config_dict = _config.as_dict()
     print("Press enter to use default values.")
     print("Or insert custom value when asked.")

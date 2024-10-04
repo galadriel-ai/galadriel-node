@@ -8,13 +8,14 @@ import aiohttp
 import cpuinfo
 import psutil
 import speedtest
-from gpustat import GPUStatCollection
 
 from galadriel_node.config import config
 from galadriel_node.sdk import api
 from galadriel_node.sdk.entities import SdkError
 from galadriel_node.sdk.entities import AuthenticationError
 from galadriel_node.sdk.system.entities import NodeInfo
+from galadriel_node.sdk.system.gpu import get_gpu_info
+
 
 MIN_CPU_CORES = 2
 MIN_RAM_MB = 2048
@@ -72,27 +73,6 @@ async def report_hardware(api_url: str, api_key: str, node_id: str) -> None:
             version=version,
         )
     await _post_info(node_info, api_url, api_key, node_id)
-
-
-def get_gpu_info() -> Tuple[str, int]:
-    try:
-        query = GPUStatCollection.new_query()
-        data = query.jsonify()
-    except Exception:
-        raise SdkError(
-            "No supported GPU found, make sure `nvidia-smi` works, NVIDIA driver versions must be R450.00 or higher."
-        )
-
-    if not data["gpus"]:
-        raise SdkError(
-            "No supported GPU found, make sure you have a supported NVIDIA GPU."
-        )
-    for gpu in data["gpus"]:
-        if "NVIDIA" in gpu["name"]:
-            gpu_name = gpu["name"]
-            gpu_vram_mb = gpu["memory.total"] * 1.048576
-            return gpu_name, int(gpu_vram_mb)
-    raise SdkError("No supported GPU found, make sure you have a supported NVIDIA GPU.")
 
 
 def _get_cpu_info() -> Tuple[str, int]:

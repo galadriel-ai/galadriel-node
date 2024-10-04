@@ -5,7 +5,7 @@ from typing import Optional
 
 import psutil
 
-from galadriel_node.sdk.system.report_hardware import get_gpu_info
+from galadriel_node.sdk.system.gpu import has_low_memory_gpu
 
 CONTEXT_SIZE = 8192
 LLM_BASE_URL = "http://127.0.0.1:19434"
@@ -56,7 +56,6 @@ def stop(pid: int) -> bool:
 
 # pylint: disable=R1732
 def start(model_name: str, debug: bool = False) -> Optional[int]:
-    _, gpu_vram_mb = get_gpu_info()
     try:
         command = [
             "vllm",
@@ -72,13 +71,13 @@ def start(model_name: str, debug: bool = False) -> Optional[int]:
             "19434",
             "--disable-frontend-multiprocessing",
         ]
-        if gpu_vram_mb <= 8192:
+        if has_low_memory_gpu():
             command.extend(
                 [
                     "--kv_cache_dtype",
                     "fp8",
                     "--max_num_seqs",
-                    "128",
+                    "1",
                     "--max_num_batched_tokens",
                     "8192",
                 ]

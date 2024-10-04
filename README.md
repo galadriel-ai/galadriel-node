@@ -15,7 +15,7 @@ Check out the [documentation](https://galadriel.mintlify.app/).
 
 ### Software requirements
 - linux (Ubuntu recommended)
-- python (version 3.8+)
+- python (version 3.10+)
 - nvidia drivers, version > 450. `nvidia-smi` must work
 
 ### API keys

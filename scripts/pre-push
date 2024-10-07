@@ -1,0 +1,18 @@
+#!/bin/sh
+#
+echo "Running pre-push checks..."
+# TODO: 1) Run end to end test before the branch is pushed
+#
+
+# 2) Remind people of our guidelines
+echo "Remember to follow these guidelines while submitting PR."
+echo "- Create every PR branch name with the task number in linear, ENG-XXX."
+echo "- Create the PR in DRAFT mode if it not ready for review."
+echo "- Assign the PR to yourself"
+echo "- Label the PR with respective labels \"feature\", \"bug-fix\", \"documentation\" etc."
+echo "- Have logical commits which represents a part of the PR. No \"initial commit\", \"misc\" etc."
+echo "- Squash and merge the commit when merging to main."
+echo "- GPG sign the commits."
+echo "- Install the lint and unit test commit hooks to save time."
+echo "- Once the review comments are addressed, please \"Resolve\" them."
+

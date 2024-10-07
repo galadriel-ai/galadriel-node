@@ -1,0 +1,14 @@
+#!/bin/sh
+
+echo "Runing pre-commit checks..."
+
+
+# 1) Run pylint on gladriel-node, Allow the commit only if the lintting passes
+pylint --rcfile=setup.cfg galadriel_node/*
+pylint_status=$?
+exit $pylint_status
+
+# TODO: 
+# 2) Run unit tests
+# 3) Check for proper commit message
+

@@ -188,6 +188,7 @@ def handle_termination(loop, llm_pid):
         print(f"vLLM process with PID {llm_pid} has been stopped.")
 
 
+# pylint: disable=R0917:
 async def run_node(
     api_url: str,
     rpc_url: str,
@@ -337,6 +338,7 @@ async def run_llm(model_id: str, debug: bool = False) -> Optional[int]:
     )
 
 
+# pylint: disable=R0917:
 @node_app.command("run", help="Run the Galadriel node")
 def node_run(
     api_url: str = typer.Option(config.GALADRIEL_API_URL, help="API url"),

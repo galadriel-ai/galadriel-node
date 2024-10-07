@@ -1,19 +1,14 @@
 #!/bin/sh
 
 
-# TODO: 1) Check for proper commit message
-
-# 2) All commits SHOULD be GPG signed
-commit_hash=$(git rev-parse --verify HEAD)
-if git log --show-signature -1 "$commit_hash" | grep -q 'gpg: Signature'; then
-    echo "Commit $commit_hash is GPG signed."
-else
-    echo "Commit $commit_hash is not GPG signed. Please sign your commit."
-    exit 1
-fi
 
 
-# 3) Run pylint on gladriel-node, Allow the commit only if the lintting passes
+# 1) Run pylint on gladriel-node, Allow the commit only if the lintting passes
 pylint --rcfile=setup.cfg galadriel_node/*
 pylint_status=$?
 exit $pylint_status
+
+# TODO: 
+# 2) Run unit tests
+# 3) Check for proper commit message
+

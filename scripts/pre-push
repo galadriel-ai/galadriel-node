@@ -15,5 +15,4 @@ echo "- Squash and merge the commit when merging to main."
 echo "- GPG sign the commits."
 echo "- Install the lint and unit test commit hooks to save time."
 echo "- Once the review comments are addressed, please \"Resolve\" them."
-echo "- Invite atleast two reviewers through github"
 

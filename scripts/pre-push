@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-
+echo "Running pre-push checks..."
 # TODO: 1) Run end to end test before the branch is pushed
 #
 

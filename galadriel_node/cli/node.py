@@ -35,7 +35,8 @@ node_app = typer.Typer(
     no_args_is_help=True,
 )
 
-BACKOFF_MIN = 4  # Minimum backoff time in seconds
+BACKOFF_MIN = 24  # Minimum backoff time in seconds
+BACKOFF_INCREMENT = 6  # Incremental backoff time in seconds
 BACKOFF_MAX = 300  # Maximum backoff time in seconds
 
 
@@ -174,9 +175,11 @@ async def retry_connection(
                 flush=True,
             )
 
-        # Exponential backoff before retrying
+        # Exponential backoff with offset
         await asyncio.sleep(backoff_time)
-        backoff_time = min(backoff_time * 2, BACKOFF_MAX)
+        backoff_time = min(
+            BACKOFF_MIN + (BACKOFF_INCREMENT * (2 ** (retries - 1))), BACKOFF_MAX
+        )
 
 
 def handle_termination(loop, llm_pid):

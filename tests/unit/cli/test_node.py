@@ -7,6 +7,7 @@ from galadriel_node.cli.node import (
     run_llm,
     retry_connection,
     BACKOFF_MIN,
+    BACKOFF_INCREMENT,
     BACKOFF_MAX,
     ConnectionResult,
     SdkError,
@@ -16,7 +17,7 @@ from galadriel_node.llm_backends.vllm import LLM_BASE_URL
 
 async def test_retry_connection_with_exceptions():
     async def connect_and_process_side_effect(*args, **kwargs):
-        if connect_and_process_side_effect.call_count < 3:
+        if connect_and_process_side_effect.call_count < 5:
             connect_and_process_side_effect.call_count += 1
             raise Exception("Mock exception")
         else:
@@ -41,12 +42,15 @@ async def test_retry_connection_with_exceptions():
                 False,
             )
 
-            assert mock_connect_and_process.call_count == 4
+            assert mock_connect_and_process.call_count == 6
 
             expected_backoff_times = [BACKOFF_MIN]
             backoff_time = BACKOFF_MIN
-            for _ in range(2):
-                backoff_time = min(backoff_time * 2, BACKOFF_MAX)
+            for attempt in range(1, 5):
+                backoff_time = min(
+                    BACKOFF_MIN + (BACKOFF_INCREMENT * (2 ** (attempt - 1))),
+                    BACKOFF_MAX,
+                )
                 expected_backoff_times.append(backoff_time)
 
             expected_sleep_calls = [call(time) for time in expected_backoff_times]

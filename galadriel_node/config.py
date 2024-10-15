@@ -70,6 +70,11 @@ class Config:
         )
         self.GALADRIEL_MODEL_COMMIT_HASH = "3aed33c3d2bfa212a137f6c855d79b5426862b24"
         self.MINIMUM_COMPLETIONS_TOKENS_PER_SECOND = 264
+        self.MINIMUM_COMPLETIONS_TOKENS_PER_SECOND_PER_MODEL = {
+            # If model not found uses self.MINIMUM_COMPLETIONS_TOKENS_PER_SECOND as a fallback
+            "neuralmagic/Meta-Llama-3.1-70B-Instruct-quantized.w4a16": 200,
+            "neuralmagic/Meta-Llama-3.1-405B-Instruct-quantized.w4a16": 120,
+        }
 
     def save(self, config_dict: Optional[Dict] = None):
         with open(CONFIG_FILE_PATH, "w", encoding="utf-8") as file:

@@ -2,7 +2,7 @@
 
 Run a Galadriel GPU node to provide LLM inference to the network.
 
-Check out the [documentation](https://galadriel.mintlify.app/).
+Check out the [documentation](https://docs.galadriel.com/nodes).
 
 
 ## Requirements

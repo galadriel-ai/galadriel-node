@@ -41,7 +41,10 @@ async def report_performance(
         model_name, api_url, api_key, node_id
     )
     if existing_tokens_per_second:
-        if existing_tokens_per_second > config.MINIMUM_COMPLETIONS_TOKENS_PER_SECOND:
+        min_tokens_per_sec = config.MINIMUM_COMPLETIONS_TOKENS_PER_SECOND_PER_MODEL.get(
+            model_name, config.MINIMUM_COMPLETIONS_TOKENS_PER_SECOND
+        )
+        if existing_tokens_per_second > min_tokens_per_sec:
             print("Node benchmarking is already done", flush=True)
             return None
         print("Node benchmarking results are too low, retrying", flush=True)

@@ -151,6 +151,7 @@ async def _get_info_already_exists(api_url: str, api_key: str, node_id: str) -> 
     return (
         response_json.get("gpu_model") is not None
         and response_json.get("cpu_model") is not None
+        and response_json.get("gpu_count") is not None
     )
 
 

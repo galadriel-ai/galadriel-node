@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, patch
 from http import HTTPStatus
 from galadriel_node.config import config
 from galadriel_node.sdk.entities import AuthenticationError, SdkError
+from galadriel_node.sdk.system.entities import GPUInfo
 from galadriel_node.sdk.system.report_hardware import _post_info
 from galadriel_node.sdk.system.report_hardware import report_hardware
 
@@ -51,6 +52,7 @@ async def test_report_hardware(
 ):
     gpu_name = "NVIDIA GeForce RTX 3090"
     vram = 24576
+    gpu_count = 1
     cpu_model = "Intel(R) Core(TM) i9-10900K CPU @ 3.70GHz"
     cpu_count = 10
     ram = 32768
@@ -68,7 +70,7 @@ async def test_report_hardware(
 
     # Mock get_gpu_info
     def mock_get_gpu_info():
-        return gpu_name, vram
+        return GPUInfo(gpu_name, vram, gpu_count)
 
     monkeypatch.setattr(
         "galadriel_node.sdk.system.report_hardware.get_gpu_info", mock_get_gpu_info
@@ -104,6 +106,7 @@ async def test_report_hardware(
         if not (
             node_info.gpu_model == gpu_name
             and node_info.vram == vram
+            and node_info.gpu_count == 1
             and node_info.cpu_model == cpu_model
             and node_info.cpu_count == cpu_count
             and node_info.ram == ram

@@ -1,7 +1,10 @@
+from dataclasses import dataclass
+
 import platform
 from http import HTTPStatus
 from typing import Tuple
 from urllib.parse import urljoin
+
 
 import importlib
 import aiohttp
@@ -14,6 +17,7 @@ from galadriel_node.config import config
 from galadriel_node.sdk import api
 from galadriel_node.sdk.entities import SdkError
 from galadriel_node.sdk.entities import AuthenticationError
+from galadriel_node.sdk.system.entities import GPUInfo
 from galadriel_node.sdk.system.entities import NodeInfo
 
 MIN_CPU_CORES = 2
@@ -35,6 +39,7 @@ async def report_hardware(api_url: str, api_key: str, node_id: str) -> None:
         version = _get_version()
         node_info = NodeInfo(
             gpu_model=SUPPORTED_GPUS[0],
+            gpu_count=1,
             vram=20000,
             cpu_model="macOS-14.4.1-arm64-arm-64bit",
             cpu_count=8,
@@ -45,7 +50,7 @@ async def report_hardware(api_url: str, api_key: str, node_id: str) -> None:
             version=version,
         )
     else:
-        gpu_name, gpu_vram_mb = get_gpu_info()
+        gpu_info = get_gpu_info()
         cpu_model, cpu_count = _get_cpu_info()
         if cpu_count < MIN_CPU_CORES:
             raise SdkError(f"Not enough CPU cores, minimum {MIN_CPU_CORES} required")
@@ -61,8 +66,9 @@ async def report_hardware(api_url: str, api_key: str, node_id: str) -> None:
         version = _get_version()
 
         node_info = NodeInfo(
-            gpu_model=gpu_name,
-            vram=gpu_vram_mb,
+            gpu_model=gpu_info.gpu_model,
+            vram=gpu_info.vram,
+            gpu_count=gpu_info.gpu_count,
             cpu_model=cpu_model,
             cpu_count=cpu_count,
             ram=total_mem_mb,
@@ -74,7 +80,7 @@ async def report_hardware(api_url: str, api_key: str, node_id: str) -> None:
     await _post_info(node_info, api_url, api_key, node_id)
 
 
-def get_gpu_info() -> Tuple[str, int]:
+def get_gpu_info() -> GPUInfo:
     try:
         query = GPUStatCollection.new_query()
         data = query.jsonify()
@@ -87,12 +93,18 @@ def get_gpu_info() -> Tuple[str, int]:
         raise SdkError(
             "No supported GPU found, make sure you have a supported NVIDIA GPU."
         )
-    for gpu in data["gpus"]:
-        if "NVIDIA" in gpu["name"]:
-            gpu_name = gpu["name"]
-            gpu_vram_mb = gpu["memory.total"] * 1.048576
-            return gpu_name, int(gpu_vram_mb)
-    raise SdkError("No supported GPU found, make sure you have a supported NVIDIA GPU.")
+
+    gpus = [gpu for gpu in data["gpus"] if "NVIDIA" in gpu["name"]]
+    if not gpus:
+        raise SdkError(
+            "No supported GPU found, make sure you have a supported NVIDIA GPU."
+        )
+
+    gpu_name = gpus[0]["name"]
+    gpu_vram_mb = gpus[0]["memory.total"] * 1.048576
+    gpu_count = len(gpus)
+
+    return GPUInfo(gpu_model=gpu_name, vram=int(gpu_vram_mb), gpu_count=gpu_count)
 
 
 def _get_cpu_info() -> Tuple[str, int]:
@@ -153,6 +165,7 @@ async def _post_info(
                 "node_id": node_id,
                 "gpu_model": node_info.gpu_model,
                 "vram": node_info.vram,
+                "gpu_count": node_info.gpu_count,
                 "cpu_model": node_info.cpu_model,
                 "cpu_count": node_info.cpu_count,
                 "ram": node_info.ram,

@@ -56,7 +56,7 @@ def stop(pid: int) -> bool:
 
 # pylint: disable=R1732
 def start(model_name: str, debug: bool = False) -> Optional[int]:
-    _, gpu_vram_mb = get_gpu_info()
+    gpu_info = get_gpu_info()
     try:
         command = [
             "vllm",
@@ -72,7 +72,7 @@ def start(model_name: str, debug: bool = False) -> Optional[int]:
             "19434",
             "--disable-frontend-multiprocessing",
         ]
-        if gpu_vram_mb <= 8192:
+        if gpu_info.vram <= 8192:
             command.extend(
                 [
                     "--kv_cache_dtype",

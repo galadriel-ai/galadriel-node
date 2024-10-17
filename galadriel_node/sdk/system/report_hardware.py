@@ -1,5 +1,3 @@
-from dataclasses import dataclass
-
 import platform
 from http import HTTPStatus
 from typing import Tuple

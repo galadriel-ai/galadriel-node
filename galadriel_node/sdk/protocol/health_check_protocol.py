@@ -28,7 +28,7 @@ class HealthCheckProtocol:
     async def handle(self, data: Any, my_node_id: str) -> str | None:
         try:
             request = HealthCheckRequest(**data)
-        except:
+        except Exception:
             rich.print(f"{self.PROTOCOL_NAME}: Invalid data received: {data}")
             return None
 

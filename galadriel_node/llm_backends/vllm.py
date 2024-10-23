@@ -1,5 +1,4 @@
 import importlib.metadata
-import os
 import subprocess
 from typing import Optional
 
@@ -17,21 +16,6 @@ def is_installed() -> bool:
         return True
     except importlib.metadata.PackageNotFoundError:
         return False
-
-
-def is_running(model_name: str) -> bool:
-    for process in psutil.process_iter():
-        try:
-            cmdline = process.cmdline()
-            if any(os.path.basename(arg).startswith("python") for arg in cmdline):
-                for i in range(len(cmdline) - 2):
-                    if os.path.basename(cmdline[i]) == "vllm" and cmdline[
-                        i + 1 : i + 3
-                    ] == ["serve", model_name]:
-                        return True
-        except (psutil.NoSuchProcess, IndexError):
-            pass
-    return False
 
 
 def is_process_running(pid: int) -> bool:
@@ -56,7 +40,7 @@ def stop(pid: int) -> bool:
 
 # pylint: disable=R1732
 def start(model_name: str, debug: bool = False) -> Optional[int]:
-    _, gpu_vram_mb = get_gpu_info()
+    gpu_info = get_gpu_info()
     try:
         command = [
             "vllm",
@@ -72,7 +56,7 @@ def start(model_name: str, debug: bool = False) -> Optional[int]:
             "19434",
             "--disable-frontend-multiprocessing",
         ]
-        if gpu_vram_mb <= 8192:
+        if gpu_info.vram <= 8192:
             command.extend(
                 [
                     "--kv_cache_dtype",

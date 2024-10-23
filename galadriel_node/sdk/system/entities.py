@@ -3,9 +3,14 @@ from dataclasses import dataclass
 
 
 @dataclass
-class NodeInfo:
+class GPUInfo:
     gpu_model: str
     vram: int
+    gpu_count: int
+
+
+@dataclass
+class NodeInfo(GPUInfo):
     cpu_model: str
     cpu_count: int
     ram: int

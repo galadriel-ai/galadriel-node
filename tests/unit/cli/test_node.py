@@ -85,7 +85,7 @@ async def test_run_vllm_when_vllm_installed_and_not_running():
     process_pid = 12345
     with patch(
         "galadriel_node.llm_backends.vllm.is_installed", return_value=True
-    ), patch("galadriel_node.llm_backends.vllm.is_running", return_value=False), patch(
+    ), patch(
         "galadriel_node.llm_backends.vllm.start", return_value=process_pid
     ) as mock_start, patch(
         "galadriel_node.llm_backends.vllm.is_process_running", return_value=True
@@ -120,9 +120,7 @@ async def test_run_vllm_when_vllm_process_dies():
 
     with patch(
         "galadriel_node.llm_backends.vllm.is_installed", return_value=True
-    ), patch("galadriel_node.llm_backends.vllm.is_running", return_value=False), patch(
-        "galadriel_node.llm_backends.vllm.start", return_value=12345
-    ), patch(
+    ), patch("galadriel_node.llm_backends.vllm.start", return_value=12345), patch(
         "galadriel_node.llm_backends.vllm.is_process_running", side_effect=[True, False]
     ), patch(
         "galadriel_node.cli.node.llm_http_check", new_callable=AsyncMock

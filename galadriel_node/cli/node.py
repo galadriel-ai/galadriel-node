@@ -124,7 +124,7 @@ async def connect_and_process(
                 )
                 match e.code:
                     case CloseCode.POLICY_VIOLATION:
-                        return ConnectionResult(retry=False)
+                        return ConnectionResult(retry=True, reset_backoff=False)
                     case CloseCode.TRY_AGAIN_LATER:
                         return ConnectionResult(retry=True, reset_backoff=False)
                 rich.print(f"Connection closed: {e}.", flush=True)

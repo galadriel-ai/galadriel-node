@@ -6,6 +6,7 @@ import rich
 
 from fastapi.encoders import jsonable_encoder
 
+from galadriel_node.config import config
 from galadriel_node.sdk.protocol.entities import (
     HealthCheckRequest,
     HealthCheckResponse,
@@ -25,8 +26,9 @@ class HealthCheckProtocol:
         rich.print(f"{self.PROTOCOL_NAME}: Protocol initialized")
 
     async def handle(self, data: Any, my_node_id: str) -> str | None:
-        request = _extract_and_validate(data)
-        if request is None:
+        try:
+            request = HealthCheckRequest(**data)
+        except:
             rich.print(f"{self.PROTOCOL_NAME}: Invalid data received: {data}")
             return None
 
@@ -37,7 +39,15 @@ class HealthCheckProtocol:
         if _protocol_validations(my_node_id, request) is False:
             return None
 
-        utilization = await report_utilization.execute()
+        if config.GALADRIEL_ENVIRONMENT == "local":
+            utilization = NodeUtilization(
+                cpu_percent=50,
+                ram_percent=50,
+                disk_percent=50,
+                gpus=[],
+            )
+        else:
+            utilization = await report_utilization.execute()
         gpus = _convert_gpu_stats(utilization)
         health_check_response = HealthCheckResponse(
             protocol_version=self.PROTOCOL_VERSION,
@@ -90,29 +100,3 @@ def _convert_gpu_stats(utilization: NodeUtilization) -> List[HealthCheckGPUUtili
         )
         for gpu in utilization.gpus
     ]
-
-
-def _extract_and_validate(data: Any) -> HealthCheckRequest | None:
-    request = HealthCheckRequest(
-        protocol_version="",
-        message_type=HealthCheckMessageType.HEALTH_CHECK_REQUEST,
-        node_id="",
-        nonce="",
-    )
-
-    request.protocol_version = data.get("protocol_version")
-    message_type = data.get("message_type")
-    try:
-        request.message_type = HealthCheckMessageType(message_type)
-    except KeyError:
-        return None
-    request.node_id = data.get("node_id")
-    request.nonce = data.get("nonce")
-    if (
-        request.protocol_version is None
-        or request.message_type is None
-        or request.node_id is None
-        or request.nonce is None
-    ):
-        return None
-    return request

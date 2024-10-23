@@ -94,7 +94,6 @@ async def test_run_vllm_when_vllm_installed_and_not_running():
     ) as mock_check_llm, patch(
         "galadriel_node.cli.node.llm_http_check", new_callable=AsyncMock
     ) as mock_llm_http_check:
-
         mock_check_llm.return_value = True
         mock_llm_http_check.return_value.ok = True
 
@@ -128,7 +127,6 @@ async def test_run_vllm_when_vllm_process_dies():
     ), patch(
         "galadriel_node.cli.node.llm_http_check", new_callable=AsyncMock
     ) as mock_llm_http_check:
-
         mock_llm_http_check.return_value.ok = False
 
         with pytest.raises(

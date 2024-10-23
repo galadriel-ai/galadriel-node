@@ -1,3 +1,4 @@
+from typing import List
 from dataclasses import dataclass
 
 
@@ -12,3 +13,17 @@ class NodeInfo:
     network_upload_speed: float
     operating_system: str
     version: str
+
+
+@dataclass
+class GPUUtilization:
+    gpu_percent: int
+    vram_percent: int
+
+
+@dataclass
+class NodeUtilization:
+    cpu_percent: int
+    ram_percent: int
+    disk_percent: int
+    gpus: List[GPUUtilization]

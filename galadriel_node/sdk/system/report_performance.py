@@ -76,15 +76,13 @@ async def _get_benchmark_tokens_per_sec(llm_base_url: str) -> float:
         flush=True,
     )
 
-    llm = Llm()
+    llm = Llm(llm_base_url)
     datasets = _split_dataset(dataset, NUM_THREADS)
     loop = asyncio.get_running_loop()
     with ThreadPoolExecutor(max_workers=NUM_THREADS) as executor:
         benchmark_start = time.time()
         tasks = [
-            loop.run_in_executor(
-                executor, _run_llm, benchmark_start, datasets[i], llm, llm_base_url
-            )
+            loop.run_in_executor(executor, _run_llm, benchmark_start, datasets[i], llm)
             for i in range(NUM_THREADS)
         ]
         results = await asyncio.gather(*tasks)
@@ -117,17 +115,13 @@ def _split_dataset(lst, n):
     return [lst[i * avg : (i + 1) * avg if i + 1 < n else None] for i in range(n)]
 
 
-def _run_llm(
-    benchmark_start: float, dataset: List[Dict], llm: Llm, llm_base_url: str
-) -> int:
+def _run_llm(benchmark_start: float, dataset: List[Dict], llm: Llm) -> int:
     i = 0
     completion_tokens = 0
     while time.time() - benchmark_start < BENCHMARK_TIME_SECONDS:
         request_data = {**BASE_REQUEST, "messages": dataset[i]["chat"]}
         request = InferenceRequest(id="test", chat_request=request_data)
-        tokens = asyncio.run(
-            _make_inference_request(benchmark_start, llm, request, llm_base_url)
-        )
+        tokens = asyncio.run(_make_inference_request(benchmark_start, llm, request))
         completion_tokens += tokens
         i += 1
     return completion_tokens
@@ -137,9 +131,8 @@ async def _make_inference_request(
     benchmark_start: float,
     llm: Llm,
     request: InferenceRequest,
-    llm_base_url: str,
 ) -> int:
-    async for chunk in llm.execute(request, llm_base_url, is_benchmark=True):
+    async for chunk in llm.execute(request, is_benchmark=True):
         chunk_data = chunk.chunk
         if not chunk_data:
             raise SdkError(

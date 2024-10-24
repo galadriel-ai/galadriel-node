@@ -22,6 +22,7 @@ from galadriel_node.sdk.entities import AuthenticationError, InferenceRequest, S
 from galadriel_node.sdk.llm import Llm
 from galadriel_node.sdk.protocol.protocol_handler import ProtocolHandler
 from galadriel_node.sdk.protocol.ping_pong_protocol import PingPongProtocol
+from galadriel_node.sdk.protocol.health_check_protocol import HealthCheckProtocol
 from galadriel_node.sdk.protocol import protocol_settings
 from galadriel_node.sdk.system.report_hardware import report_hardware
 from galadriel_node.sdk.system.report_performance import report_performance
@@ -90,7 +91,10 @@ async def connect_and_process(
         protocol_handler.register(
             protocol_settings.PING_PONG_PROTOCOL_NAME, ping_pong_protocol
         )
-
+        health_check_protocol = HealthCheckProtocol()
+        protocol_handler.register(
+            HealthCheckProtocol.PROTOCOL_NAME, health_check_protocol
+        )
         while True:
             try:
                 # Receive and parse incoming messages

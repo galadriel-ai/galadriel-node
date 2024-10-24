@@ -2,7 +2,6 @@ import asyncio
 import signal
 import subprocess
 import sys
-import time
 import traceback
 from dataclasses import dataclass
 from http import HTTPStatus
@@ -29,7 +28,7 @@ from galadriel_node.sdk.system.report_hardware import report_hardware
 from galadriel_node.sdk.system.report_performance import report_performance
 from galadriel_node.sdk.upgrade import version_aware_get
 
-llm = None
+llm = Llm(config.GALADRIEL_LLM_BASE_URL or "")
 
 node_app = typer.Typer(
     name="node",
@@ -190,6 +189,7 @@ def handle_termination(loop, llm_pid):
 
 
 # pylint: disable=R0917:
+# pylint: disable=W0603
 async def run_node(
     api_url: str,
     rpc_url: str,

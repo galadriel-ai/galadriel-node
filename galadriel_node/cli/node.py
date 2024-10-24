@@ -28,7 +28,7 @@ from galadriel_node.sdk.system.report_hardware import report_hardware
 from galadriel_node.sdk.system.report_performance import report_performance
 from galadriel_node.sdk.upgrade import version_aware_get
 
-llm = Llm()
+llm = Llm(config.GALADRIEL_LLM_BASE_URL or "")
 
 node_app = typer.Typer(
     name="node",
@@ -50,7 +50,6 @@ class ConnectionResult:
 async def process_request(
     request: InferenceRequest,
     websocket,
-    llm_base_url: str,
     debug: bool,
     send_lock: asyncio.Lock,
 ) -> None:
@@ -60,7 +59,7 @@ async def process_request(
     try:
         if debug:
             rich.print(f"REQUEST {request.id} START", flush=True)
-        async for chunk in llm.execute(request, llm_base_url):
+        async for chunk in llm.execute(request):
             if debug:
                 rich.print(f"Sending chunk: {chunk}", flush=True)
             async with send_lock:
@@ -76,7 +75,7 @@ async def process_request(
 
 
 async def connect_and_process(
-    uri: str, headers: dict, llm_base_url: str, node_id: str, debug: bool
+    uri: str, headers: dict, node_id: str, debug: bool
 ) -> ConnectionResult:
     """
     Establishes the WebSocket connection and processes incoming requests concurrently.
@@ -105,9 +104,7 @@ async def connect_and_process(
                 inference_request = InferenceRequest.get_inference_request(parsed_data)
                 if inference_request is not None:
                     asyncio.create_task(
-                        process_request(
-                            inference_request, websocket, llm_base_url, debug, send_lock
-                        )
+                        process_request(inference_request, websocket, debug, send_lock)
                     )
                 else:
                     # Handle the message using the protocol handler
@@ -136,9 +133,7 @@ async def connect_and_process(
                 return ConnectionResult(retry=True, reset_backoff=True)
 
 
-async def retry_connection(
-    rpc_url: str, api_key: str, node_id: str, llm_base_url: str, debug: bool
-):
+async def retry_connection(rpc_url: str, api_key: str, node_id: str, debug: bool):
     """
     Attempts to reconnect to the Galadriel server with exponential backoff.
     """
@@ -153,9 +148,7 @@ async def retry_connection(
 
     while True:
         try:
-            result = await connect_and_process(
-                uri, headers, llm_base_url, node_id, debug
-            )
+            result = await connect_and_process(uri, headers, node_id, debug)
             if result.retry:
                 retries += 1
                 if result.reset_backoff:
@@ -196,6 +189,7 @@ def handle_termination(loop, llm_pid):
 
 
 # pylint: disable=R0917:
+# pylint: disable=W0603
 async def run_node(
     api_url: str,
     rpc_url: str,
@@ -204,6 +198,8 @@ async def run_node(
     llm_base_url: Optional[str],
     debug: bool,
 ):
+    global llm
+
     if not api_key:
         raise SdkError("GALADRIEL_API_KEY env variable not set")
     if not node_id:
@@ -226,11 +222,13 @@ async def run_node(
             for sig in (signal.SIGINT, signal.SIGTERM):
                 loop.add_signal_handler(sig, lambda: handle_termination(loop, llm_pid))
             llm_base_url = vllm.LLM_BASE_URL
+        # Initialize llm with llm_base_url
+        llm = Llm(llm_base_url)
         await report_hardware(api_url, api_key, node_id)
         await report_performance(
             api_url, api_key, node_id, llm_base_url, config.GALADRIEL_MODEL_ID
         )
-        await retry_connection(rpc_url, api_key, node_id, llm_base_url, debug)
+        await retry_connection(rpc_url, api_key, node_id, debug)
     except asyncio.CancelledError:
         rich.print("Stopping the node.", flush=True)
 

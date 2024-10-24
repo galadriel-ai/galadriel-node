@@ -28,7 +28,7 @@ vllm = {version = "0.6.1", platform = "linux"}
 [tool.poetry.dev-dependencies]
 black = "^24.8.0"
 pytest = "^8.3.2"
-pytest-asyncio = "^0.24.0"
+pytest-asyncio = "0.24.0"
 pytest-mock = "^3.14.0"
 
 [build-system]

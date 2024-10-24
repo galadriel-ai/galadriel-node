@@ -11,21 +11,27 @@ from galadriel_node.sdk.entities import InferenceStatusCodes
 
 # pylint: disable=R0903
 class Llm:
+
+    def __init__(self, inference_base_url: str):
+        base_url: str = urljoin(inference_base_url, "/v1")
+        self._client = openai.AsyncOpenAI(
+            base_url=base_url, api_key="sk-no-key-required"
+        )
+
     async def execute(
         self,
         request: InferenceRequest,
-        inference_base_url: str,
         is_benchmark: bool = False,
     ) -> AsyncGenerator[InferenceResponse, None]:
         if not is_benchmark:
             print(f"Running inference, id={request.id}", flush=True)
-        base_url: str = urljoin(inference_base_url, "/v1")
-        client = openai.AsyncOpenAI(base_url=base_url, api_key="sk-no-key-required")
         # Force streaming and token usage inclusion
         request.chat_request["stream"] = True
         request.chat_request["stream_options"] = {"include_usage": True}
         try:
-            completion = await client.chat.completions.create(**request.chat_request)
+            completion = await self._client.chat.completions.create(
+                **request.chat_request
+            )
             async for chunk in completion:
                 yield InferenceResponse(
                     request_id=request.id,

@@ -26,8 +26,8 @@ async def test_llm_execute_successful():
     mock_openai.chat.completions.create = mock_create
 
     with patch("openai.AsyncOpenAI", return_value=mock_openai):
-        llm = Llm()
-        results = [item async for item in llm.execute(request, INFERENCE_BASE_URL)]
+        llm = Llm(INFERENCE_BASE_URL)
+        results = [item async for item in llm.execute(request)]
 
         assert len(results) == 2
         assert isinstance(results[0], InferenceResponse)
@@ -51,8 +51,8 @@ async def test_llm_execute_with_bad_request_exception():
             )
         )
 
-        llm = Llm()
-        results = [item async for item in llm.execute(request, INFERENCE_BASE_URL)]
+        llm = Llm(INFERENCE_BASE_URL)
+        results = [item async for item in llm.execute(request)]
 
         assert len(results) == 1
         assert isinstance(results[0], InferenceResponse)
@@ -69,8 +69,8 @@ async def test_llm_execute_with_generic_exception():
             "Inference failed"
         )
 
-        llm = Llm()
-        results = [item async for item in llm.execute(request, INFERENCE_BASE_URL)]
+        llm = Llm(INFERENCE_BASE_URL)
+        results = [item async for item in llm.execute(request)]
 
         assert len(results) == 1
         assert isinstance(results[0], InferenceResponse)
@@ -93,8 +93,8 @@ async def test_llm_execute_url_construction():
     with patch("openai.AsyncOpenAI") as MockOpenAI:
         MockOpenAI.return_value.chat.completions.create.return_value = mock_completion
 
-        llm = Llm()
-        [item async for item in llm.execute(request, INFERENCE_BASE_URL)]
+        llm = Llm(INFERENCE_BASE_URL)
+        [item async for item in llm.execute(request)]
 
         MockOpenAI.assert_called_once_with(
             base_url=urljoin(INFERENCE_BASE_URL, "/v1"), api_key="sk-no-key-required"

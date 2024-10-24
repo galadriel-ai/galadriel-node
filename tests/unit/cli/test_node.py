@@ -38,7 +38,6 @@ async def test_retry_connection_with_exceptions():
                 "mock_rpc_url",
                 "mock_api_key",
                 "mock_node_id",
-                "mock_llm_base_url",
                 False,
             )
 
@@ -72,7 +71,6 @@ async def test_retry_connection_keyboard_interrupt():
                 "mock_rpc_url",
                 "mock_api_key",
                 "mock_node_id",
-                "mock_llm_base_url",
                 False,
             )
 

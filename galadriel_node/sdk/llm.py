@@ -42,7 +42,7 @@ class Llm:
                 request_id=request.id,
                 error=InferenceError(
                     status_code=InferenceStatusCodes(exc.status_code),
-                    message=str(exc),
+                    message=_llm_message_prefix(exc),
                 ),
             )
         except Exception as exc:
@@ -50,6 +50,10 @@ class Llm:
                 request_id=request.id,
                 error=InferenceError(
                     status_code=InferenceStatusCodes.UNKNOWN_ERROR,
-                    message=str(exc),
+                    message=_llm_message_prefix(exc),
                 ),
             )
+
+
+def _llm_message_prefix(exc: Exception) -> str:
+    return f"LLM Engine error: {str(exc)}"

@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -14,5 +14,9 @@ async def test_wait_for_reconnect():
     )
     inference_status_counter.is_free.return_value = AsyncMock(return_value=True)
 
-    res = await wait_for_reconnect(inference_status_counter, ping_pong_protocol)
+    with patch(
+        "galadriel_node.sdk.jobs.reconnect_request_job.asyncio.sleep",
+        new_callable=AsyncMock,
+    ):
+        res = await wait_for_reconnect(inference_status_counter, ping_pong_protocol)
     assert res == True

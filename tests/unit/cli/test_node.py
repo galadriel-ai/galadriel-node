@@ -80,32 +80,6 @@ async def test_retry_connection_keyboard_interrupt():
         assert mock_connect_and_process.await_count == 1
 
 
-# @pytest.mark.asyncio
-# async def test_retry_connection_reconnect_requested():
-#
-#    ping_pong_protocol = AsyncMock()
-#    ping_pong_protocol.get_reconnect_requested = AsyncMock(return_value=True)
-#    ping_pong_protocol.set_reconnect_requested = AsyncMock()
-#
-#    inference_status_counter = AsyncMock()
-#    inference_status_counter.is_free = AsyncMock(return_value=True)
-#
-#    wait_for_reconnect = AsyncMock(return_value=True)
-#
-#    mock_websocket = MagicMock()
-#    mock_websocket.__aenter__ = AsyncMock(return_value=mock_websocket)
-#    mock_websocket.__aexit__ = AsyncMock(return_value=None)
-#    mock_websocket.recv = AsyncMock(return_value=b'{"type": "ping"}')
-#
-#    with patch("websockets.connect", return_value=mock_websocket) and patch(
-#        "galadriel_node.cli.node.wait_for_reconnect", wait_for_reconnect
-#    ):
-#        res = await connect_and_process("wss://api.example.com/ws", "", "", AsyncMock(), False)
-#
-#    assert res == ConnectionResult(retry=True, reset_backoff=True)
-#    ping_pong_protocol.set_reconnect_requested.assert_called_once_with(False)
-
-
 async def test_run_vllm_when_vllm_installed_and_not_running():
     model_id = "mock_model_id"
     debug = False

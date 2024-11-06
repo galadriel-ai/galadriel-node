@@ -6,7 +6,7 @@ import traceback
 from dataclasses import dataclass
 from http import HTTPStatus
 from typing import Optional
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 import json
 import aiohttp
 import openai
@@ -14,7 +14,6 @@ import rich
 import typer
 import websockets
 from websockets.frames import CloseCode
-from urllib.parse import urlparse
 
 
 from galadriel_node.config import config
@@ -81,6 +80,7 @@ async def process_request(
         )
 
 
+# pylint: disable=R0914
 async def connect_and_process(
     uri: str, headers: dict, node_id: str, api_ping_job: ApiPingJob, debug: bool
 ) -> ConnectionResult:
@@ -123,7 +123,9 @@ async def connect_and_process(
                     task.cancel()
 
                 if reconnect_request_job in done:
-                    rich.print("Reconnect requested. Closing the connection...", flush=True)
+                    rich.print(
+                        "Reconnect requested. Closing the connection...", flush=True
+                    )
                     await ping_pong_protocol.set_reconnect_requested(False)
                     return ConnectionResult(retry=True, reset_backoff=True)
 
@@ -133,7 +135,9 @@ async def connect_and_process(
                     parsed_data = json.loads(data)
 
                     # Check if the message is an inference request
-                    inference_request = InferenceRequest.get_inference_request(parsed_data)
+                    inference_request = InferenceRequest.get_inference_request(
+                        parsed_data
+                    )
                     if inference_request is not None:
                         asyncio.create_task(
                             process_request(
@@ -146,7 +150,9 @@ async def connect_and_process(
                         )
                     else:
                         # Handle the message using the protocol handler
-                        asyncio.create_task(protocol_handler.handle(parsed_data, send_lock))
+                        asyncio.create_task(
+                            protocol_handler.handle(parsed_data, send_lock)
+                        )
             except json.JSONDecodeError:
                 rich.print("Error while parsing json message", flush=True)
                 return ConnectionResult(
@@ -190,7 +196,9 @@ async def retry_connection(rpc_url: str, api_key: str, node_id: str, debug: bool
 
     while True:
         try:
-            result = await connect_and_process(uri, headers, node_id, api_ping_job, debug)
+            result = await connect_and_process(
+                uri, headers, node_id, api_ping_job, debug
+            )
             if result.retry:
                 retries += 1
                 if result.reset_backoff:

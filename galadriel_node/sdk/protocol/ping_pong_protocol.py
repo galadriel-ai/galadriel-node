@@ -15,6 +15,7 @@ from galadriel_node.sdk.protocol.entities import (
 )
 from galadriel_node.sdk.protocol import protocol_settings
 
+
 # pylint: disable=too-few-public-methods,
 class PingPongProtocol:
 
@@ -29,10 +30,11 @@ class PingPongProtocol:
 
     # Handle the responses from the client
     async def handle(self, data: Any, my_node_id: str) -> str | None:
-        node_reconnect_request = _validate_reconnect_request(data, my_node_id)
+        node_reconnect_request = _validate_reconnect_request(data)
         if (
             node_reconnect_request
-            and node_reconnect_request.message_type == PingPongMessageType.RECONNECT_REQUEST
+            and node_reconnect_request.message_type
+            == PingPongMessageType.RECONNECT_REQUEST
             and node_reconnect_request.reconnect_request
         ):
             rich.print(
@@ -164,11 +166,7 @@ def _extract_and_validate_ping_request(data: Any) -> PingRequest | None:
     return ping_request
 
 
-def _validate_reconnect_request(data: Any, my_node_id: str) -> NodeReconnectRequest | None:
-    from pydantic import ValidationError
-
-
-def _validate_reconnect_request(data: Any, my_node_id: str) -> Optional[NodeReconnectRequest]:
+def _validate_reconnect_request(data: Any) -> Optional[NodeReconnectRequest]:
     try:
         reconnect_request = NodeReconnectRequest(
             protocol_version=data.get("protocol_version"),
@@ -178,16 +176,5 @@ def _validate_reconnect_request(data: Any, my_node_id: str) -> Optional[NodeReco
             reconnect_request=data.get("reconnect_request"),
         )
         return reconnect_request
-    except Exception as e:
+    except Exception:
         return None
-
-    # only return the request iff it's valid, to this node and it's requested for reconnect
-    if (
-        reconnect_request.protocol_version == protocol_settings.PING_PONG_PROTOCOL_VERSION
-        and reconnect_request.message_type == PingPongMessageType.RECONNECT_REQUEST
-        and reconnect_request.node_id == my_node_id
-        and reconnect_request.nonce is not None
-        and reconnect_request.reconnect_request
-    ):
-        return reconnect_request
-    return None

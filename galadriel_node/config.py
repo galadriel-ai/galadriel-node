@@ -61,8 +61,12 @@ class Config:
         self.GALADRIEL_API_DOMAIN = os.getenv(
             "GALADRIEL_API_DOMAIN", default_values["GALADRIEL_API_DOMAIN"]
         )
-        self.GALADRIEL_API_PING_INTERVAL = os.getenv("GALADRIEL_API_PING_INTERVAL", 60)
-        self.RECONNECT_JOB_INTERVAL = os.getenv("RECONNECT_JOB_INTERVAL", 10)
+        self.GALADRIEL_API_PING_INTERVAL = self.parse_val(
+            os.getenv("GALADRIEL_API_PING_INTERVAL", "60")
+        )
+        self.RECONNECT_JOB_INTERVAL = self.parse_val(
+            os.getenv("RECONNECT_JOB_INTERVAL", "10")
+        )
 
         # Other settings
         self.GALADRIEL_MODEL_ID = os.getenv(

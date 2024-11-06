@@ -30,7 +30,7 @@ class ApiPingJob:
     def _check_api_ping_time(self) -> Optional[int]:
         ping_time = ping(self.domain, unit="ms")
         rich.print(f"ping to domain: {self.domain}")
-        if ping_time is None or ping_time == False:
+        if ping_time is None or ping_time is False:
             return None
         return int(ping_time)
 

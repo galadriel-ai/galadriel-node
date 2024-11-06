@@ -6,7 +6,8 @@ from galadriel_node.sdk.protocol.ping_pong_protocol import PingPongProtocol
 
 
 async def wait_for_reconnect(
-    inference_status_counter: InferenceStatusCounter, ping_pong_protocol: PingPongProtocol
+    inference_status_counter: InferenceStatusCounter,
+    ping_pong_protocol: PingPongProtocol,
 ) -> bool:
     while True:
         await asyncio.sleep(config.RECONNECT_JOB_INTERVAL)

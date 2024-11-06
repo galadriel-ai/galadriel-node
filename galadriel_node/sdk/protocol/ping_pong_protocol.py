@@ -38,9 +38,8 @@ class PingPongProtocol:
             and node_reconnect_request.reconnect_request
         ):
             rich.print(
-                f"{protocol_settings.PING_PONG_PROTOCOL_NAME}: Received reconnect request, setting reconnect flag..."
-                f"nonce: {node_reconnect_request.nonce}, "
-                f"reconnect_request: {node_reconnect_request.reconnect_request}"
+                f"{protocol_settings.PING_PONG_PROTOCOL_NAME}: Received reconnect request."
+                "There is a more performing server found. Trying to connect to this server."
             )
             await self.set_reconnect_requested(node_reconnect_request.reconnect_request)
             return None

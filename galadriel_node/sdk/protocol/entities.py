@@ -48,7 +48,7 @@ class NodeReconnectRequest(BaseModel):
     node_id: str = Field(description="Node ID")
     nonce: str = Field(description="A random number to prevent replay attacks")
     reconnect_request: bool = Field(
-        description="True if the node is requested to reconnect"
+        description="True if the node is requested to reconnect to a better performing server"
     )
 
 

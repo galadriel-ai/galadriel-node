@@ -12,8 +12,8 @@ async def wait_for_reconnect(
     while True:
         await asyncio.sleep(config.RECONNECT_JOB_INTERVAL)
 
-        is_free = await inference_status_counter.is_free()
+        is_zero = await inference_status_counter.is_zero()
         reconnect_requested = await ping_pong_protocol.get_reconnect_requested()
 
-        if is_free and reconnect_requested:
+        if is_zero and reconnect_requested:
             return True

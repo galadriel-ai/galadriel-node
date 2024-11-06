@@ -60,16 +60,15 @@ async def process_request(
     """
     Handles a single inference request and sends the response back in chunks.
     """
+    inference_status_counter.increment()
     try:
         if debug:
             rich.print(f"REQUEST {request.id} START", flush=True)
-        inference_status_counter.increment()
         async for chunk in llm.execute(request):
             if debug:
                 rich.print(f"Sending chunk: {chunk}", flush=True)
             async with send_lock:
                 await websocket.send(chunk.to_json())
-        inference_status_counter.decrement()
         if debug:
             rich.print(f"REQUEST {request.id} END", flush=True)
     except Exception as e:
@@ -78,6 +77,8 @@ async def process_request(
         rich.print(
             f"Error occurred while processing inference request: {e}", flush=True
         )
+    finally:
+        inference_status_counter.decrement()
 
 
 # pylint: disable=R0914

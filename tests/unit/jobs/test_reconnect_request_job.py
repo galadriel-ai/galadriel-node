@@ -12,7 +12,7 @@ async def test_wait_for_reconnect():
     ping_pong_protocol.get_reconnect_requested.return_value = AsyncMock(
         return_value=True
     )
-    inference_status_counter.is_free.return_value = AsyncMock(return_value=True)
+    inference_status_counter.is_zero.return_value = AsyncMock(return_value=True)
 
     with patch(
         "galadriel_node.sdk.jobs.reconnect_request_job.asyncio.sleep",

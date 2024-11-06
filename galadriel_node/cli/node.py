@@ -14,10 +14,14 @@ import rich
 import typer
 import websockets
 from websockets.frames import CloseCode
+from urllib.parse import urlparse
 
 
 from galadriel_node.config import config
 from galadriel_node.llm_backends import vllm
+from galadriel_node.sdk.jobs.api_ping_job import ApiPingJob
+from galadriel_node.sdk.jobs.inference_status_counter import InferenceStatusCounter
+from galadriel_node.sdk.jobs.reconnect_request_job import wait_for_reconnect
 from galadriel_node.sdk.entities import AuthenticationError, InferenceRequest, SdkError
 from galadriel_node.sdk.llm import Llm
 from galadriel_node.sdk.protocol.protocol_handler import ProtocolHandler
@@ -52,6 +56,7 @@ async def process_request(
     websocket,
     debug: bool,
     send_lock: asyncio.Lock,
+    inference_status_counter: InferenceStatusCounter,
 ) -> None:
     """
     Handles a single inference request and sends the response back in chunks.
@@ -59,11 +64,13 @@ async def process_request(
     try:
         if debug:
             rich.print(f"REQUEST {request.id} START", flush=True)
+        inference_status_counter.increment()
         async for chunk in llm.execute(request):
             if debug:
                 rich.print(f"Sending chunk: {chunk}", flush=True)
             async with send_lock:
                 await websocket.send(chunk.to_json())
+        inference_status_counter.decrement()
         if debug:
             rich.print(f"REQUEST {request.id} END", flush=True)
     except Exception as e:
@@ -75,7 +82,7 @@ async def process_request(
 
 
 async def connect_and_process(
-    uri: str, headers: dict, node_id: str, debug: bool
+    uri: str, headers: dict, node_id: str, api_ping_job: ApiPingJob, debug: bool
 ) -> ConnectionResult:
     """
     Establishes the WebSocket connection and processes incoming requests concurrently.
@@ -86,7 +93,7 @@ async def connect_and_process(
 
         # Initialize the protocol handler and register the protocols
         protocol_handler = ProtocolHandler(node_id, websocket)
-        ping_pong_protocol = PingPongProtocol()
+        ping_pong_protocol = PingPongProtocol(api_ping_job)
         protocol_handler.register(
             protocol_settings.PING_PONG_PROTOCOL_NAME, ping_pong_protocol
         )
@@ -94,21 +101,52 @@ async def connect_and_process(
         protocol_handler.register(
             HealthCheckProtocol.PROTOCOL_NAME, health_check_protocol
         )
+        # TODO better handle the inference status and reconnection request with encapsulations
+        inference_status_counter = InferenceStatusCounter()
         while True:
             try:
-                # Receive and parse incoming messages
-                data = await websocket.recv()
-                parsed_data = json.loads(data)
+                rich.print("Waiting for incoming messages...", flush=True)
 
-                # Check if the message is an inference request
-                inference_request = InferenceRequest.get_inference_request(parsed_data)
-                if inference_request is not None:
-                    asyncio.create_task(
-                        process_request(inference_request, websocket, debug, send_lock)
-                    )
-                else:
-                    # Handle the message using the protocol handler
-                    asyncio.create_task(protocol_handler.handle(parsed_data, send_lock))
+                # Create tasks for receiving messages and waiting for reconnect requests
+                reconnect_request_job = asyncio.create_task(
+                    wait_for_reconnect(inference_status_counter, ping_pong_protocol)
+                )
+                websocket_recv_job = asyncio.create_task(websocket.recv())
+
+                # Wait for incoming messages or reconnect request
+                done, pending = await asyncio.wait(
+                    [websocket_recv_job, reconnect_request_job],
+                    return_when=asyncio.FIRST_COMPLETED,
+                )
+                # Cancel pending tasks
+                for task in pending:
+                    task.cancel()
+
+                if reconnect_request_job in done:
+                    rich.print("Reconnect requested. Closing the connection...", flush=True)
+                    await ping_pong_protocol.set_reconnect_requested(False)
+                    return ConnectionResult(retry=True, reset_backoff=True)
+
+                if websocket_recv_job in done:
+                    # Receive and parse incoming messages
+                    data = await websocket_recv_job
+                    parsed_data = json.loads(data)
+
+                    # Check if the message is an inference request
+                    inference_request = InferenceRequest.get_inference_request(parsed_data)
+                    if inference_request is not None:
+                        asyncio.create_task(
+                            process_request(
+                                inference_request,
+                                websocket,
+                                debug,
+                                send_lock,
+                                inference_status_counter,
+                            )
+                        )
+                    else:
+                        # Handle the message using the protocol handler
+                        asyncio.create_task(protocol_handler.handle(parsed_data, send_lock))
             except json.JSONDecodeError:
                 rich.print("Error while parsing json message", flush=True)
                 return ConnectionResult(
@@ -146,9 +184,13 @@ async def retry_connection(rpc_url: str, api_key: str, node_id: str, debug: bool
     retries = 0
     backoff_time = BACKOFF_MIN
 
+    # Start the API ping job
+    api_ping_job = ApiPingJob(config.GALADRIEL_API_DOMAIN or _get_domain_from_url(uri))
+    asyncio.create_task(api_ping_job.run())
+
     while True:
         try:
-            result = await connect_and_process(uri, headers, node_id, debug)
+            result = await connect_and_process(uri, headers, node_id, api_ping_job, debug)
             if result.retry:
                 retries += 1
                 if result.reset_backoff:
@@ -341,6 +383,11 @@ async def run_llm(model_id: str, debug: bool = False) -> Optional[int]:
     raise SdkError(
         "vLLM is not installed, please set GALADRIEL_LLM_BASE_URL in ~/.galadrielenv"
     )
+
+
+def _get_domain_from_url(url: str) -> str:
+    parsed_url = urlparse(url)
+    return parsed_url.netloc
 
 
 # pylint: disable=R0917:

@@ -24,7 +24,7 @@ pip install -e .
 #### Setup local env variables
 Run the following command to go through a setup wizard for your local galadriel node:
 ```shell
-python3 galadriel_node/cli/app.py init
+python galadriel_node/cli/app.py init
 ```
 Make sure to set the `GALADRIEL_LLM_BASE_URL` to the remote GPU worker, instead of your localhost.
 
@@ -35,7 +35,7 @@ Make sure to set the `GALADRIEL_LLM_BASE_URL` to the remote GPU worker, instead 
 #### Verify the LLM status
 Run the following command to check if the `GALADRIEL_LLM_BASE_URL` is correctly set and running normally
 ```shell
-python3 galadriel_node/cli/app.py node llm-status
+python galadriel_node/cli/app.py node llm-status
 ```
 Should see status like:
 ```
@@ -46,7 +46,7 @@ Should see status like:
 #### Run the node
 Run the node locally:
 ```shell
-python3 galadriel_node/cli/app.py node run
+python galadriel_node/cli/app.py node run
 ```
 
 ### Formatting and linting

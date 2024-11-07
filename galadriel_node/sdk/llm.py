@@ -33,8 +33,9 @@ class Llm:
         try:
             models = await self._client.models.list()
             self.engine = LLMEngine(models.data[0].owned_by.lower())
-        finally:
-            return self.engine
+        except Exception:
+            pass
+        return self.engine
 
     async def execute(
         self,

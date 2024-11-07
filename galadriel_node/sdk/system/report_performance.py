@@ -10,6 +10,7 @@ from typing import Optional
 from urllib.parse import urljoin
 
 import aiohttp
+from openai.types.chat import ChatCompletionChunk
 
 from galadriel_node.config import config
 from galadriel_node.sdk import api
@@ -127,6 +128,14 @@ def _run_llm(benchmark_start: float, dataset: List[Dict], llm: Llm) -> int:
     return completion_tokens
 
 
+def _check_if_inference_done(chunk: ChatCompletionChunk) -> bool:
+    return not chunk.choices or (
+        len(chunk.choices) == 1
+        and chunk.choices[0].delta.content == ""
+        and chunk.choices[0].finish_reason is not None
+    )
+
+
 async def _make_inference_request(
     benchmark_start: float,
     llm: Llm,
@@ -139,14 +148,7 @@ async def _make_inference_request(
                 "Failed to call LLM, make sure GALADRIEL_LLM_BASE_URL is correct"
             )
         if (
-            (
-                not chunk_data.choices
-                or (
-                    len(chunk_data.choices) == 1
-                    and chunk_data.choices[0].delta.content == ""
-                    and chunk_data.choices[0].finish_reason is not None
-                )
-            )
+            _check_if_inference_done(chunk_data)
             and chunk_data.usage
             and chunk_data.usage.completion_tokens
         ):

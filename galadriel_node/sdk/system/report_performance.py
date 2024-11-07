@@ -139,7 +139,14 @@ async def _make_inference_request(
                 "Failed to call LLM, make sure GALADRIEL_LLM_BASE_URL is correct"
             )
         if (
-            not chunk_data.choices
+            (
+                not chunk_data.choices
+                or (
+                    len(chunk_data.choices) == 1
+                    and chunk_data.choices[0].delta.content == ""
+                    and chunk_data.choices[0].finish_reason is not None
+                )
+            )
             and chunk_data.usage
             and chunk_data.usage.completion_tokens
         ):

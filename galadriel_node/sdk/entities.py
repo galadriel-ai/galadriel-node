@@ -16,6 +16,11 @@ class AuthenticationError(SdkError):
     pass
 
 
+class LLMEngine(Enum):
+    VLLM = "vllm"
+    LMDEPLOY = "lmdeploy"
+
+
 class InferenceStatusCodes(Enum):
     BAD_REQUEST = 400
     AUTHENTICATION_ERROR = 401

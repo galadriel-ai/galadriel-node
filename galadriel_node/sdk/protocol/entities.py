@@ -47,7 +47,7 @@ class HealthCheckRequest(BaseModel):
     )
     message_type: HealthCheckMessageType = Field(
         description="Message type",
-        default=HealthCheckMessageType.HEALTH_CHECK_REQUEST.value,
+        default=HealthCheckMessageType.HEALTH_CHECK_REQUEST,
     )
     node_id: str = Field(description="Node ID")
     nonce: str = Field(description="A random number to prevent replay attacks")
@@ -64,7 +64,7 @@ class HealthCheckResponse(BaseModel):
     )
     message_type: HealthCheckMessageType = Field(
         description="Message type",
-        default=HealthCheckMessageType.HEALTH_CHECK_RESPONSE.value,
+        default=HealthCheckMessageType.HEALTH_CHECK_RESPONSE,
     )
     node_id: str = Field(description="Node ID")
     nonce: str = Field(description="The same nonce as in the request")

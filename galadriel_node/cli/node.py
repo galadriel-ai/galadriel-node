@@ -224,6 +224,7 @@ async def run_node(
             llm_base_url = vllm.LLM_BASE_URL
         # Initialize llm with llm_base_url
         llm = Llm(llm_base_url)
+        await llm.detect_llm_engine()
         await report_hardware(api_url, api_key, node_id)
         await report_performance(
             api_url, api_key, node_id, llm_base_url, config.GALADRIEL_MODEL_ID

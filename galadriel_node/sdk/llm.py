@@ -89,7 +89,7 @@ class Llm:
             request_id=request_id,
             error=InferenceError(
                 status_code=status_code,
-                message=str(exc),
+                message=_llm_message_prefix(exc),
             ),
         )
 
@@ -161,3 +161,7 @@ class Llm:
             self.engine = LLMEngine(models.data[0].owned_by.lower())
         finally:
             return self.engine
+
+
+def _llm_message_prefix(exc: Exception) -> str:
+    return f"LLM Engine error: {str(exc)}"

@@ -16,6 +16,7 @@ PRODUCTION_DOMAIN = "api.galadriel.com"
 DEFAULT_PRODUCTION_VALUES = {
     "GALADRIEL_API_URL": f"https://{PRODUCTION_DOMAIN}/v1",
     "GALADRIEL_RPC_URL": f"wss://{PRODUCTION_DOMAIN}/v1/node",
+    "GALADRIEL_API_DOMAIN": "api.galadriel.com",
     "GALADRIEL_MODEL_ID": "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8",
 }
 
@@ -23,6 +24,7 @@ DEFAULT_LOCAL_VALUES = {
     "GALADRIEL_API_URL": "http://localhost:5000/v1",
     "GALADRIEL_RPC_URL": "ws://localhost:5000/v1/node",
     "GALADRIEL_LLM_BASE_URL": "http://10.132.0.33:11434",
+    "GALADRIEL_API_DOMAIN": "api.galadriel.com",
     "GALADRIEL_MODEL_ID": "hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4",
 }
 
@@ -56,6 +58,13 @@ class Config:
             "GALADRIEL_RPC_URL", default_values["GALADRIEL_RPC_URL"]
         )
         self.GALADRIEL_API_KEY = self.parse_val(os.getenv("GALADRIEL_API_KEY", None))
+        self.GALADRIEL_API_DOMAIN = os.getenv(
+            "GALADRIEL_API_DOMAIN", default_values["GALADRIEL_API_DOMAIN"]
+        )
+        self.GALADRIEL_API_PING_INTERVAL = float(
+            os.getenv("GALADRIEL_API_PING_INTERVAL", "60")
+        )
+        self.RECONNECT_JOB_INTERVAL = float(os.getenv("RECONNECT_JOB_INTERVAL", "10"))
 
         # Other settings
         self.GALADRIEL_MODEL_ID = os.getenv(

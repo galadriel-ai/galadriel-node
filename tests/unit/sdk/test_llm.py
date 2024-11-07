@@ -134,7 +134,7 @@ async def test_llm_execute_with_bad_request_exception():
         assert isinstance(results[0], InferenceResponse)
         assert results[0].error is not None
         assert results[0].error.status_code == InferenceStatusCodes.BAD_REQUEST
-        assert results[0].error.message == "Inference failed"
+        assert results[0].error.message == "LLM Engine error: Inference failed"
 
 
 async def test_llm_execute_with_generic_exception():
@@ -152,7 +152,7 @@ async def test_llm_execute_with_generic_exception():
         assert isinstance(results[0], InferenceResponse)
         assert results[0].error is not None
         assert results[0].error.status_code == InferenceStatusCodes.UNKNOWN_ERROR
-        assert results[0].error.message == "Inference failed"
+        assert results[0].error.message == "LLM Engine error: Inference failed"
 
 
 async def test_llm_execute_url_construction():

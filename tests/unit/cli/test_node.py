@@ -1,11 +1,14 @@
+import asyncio
 import pytest
-from unittest.mock import AsyncMock, patch, call
+from unittest.mock import AsyncMock, MagicMock, patch, call
 
 from galadriel_node.config import config
+from galadriel_node.sdk.jobs.reconnect_request_job import wait_for_reconnect
 from galadriel_node.cli.node import (
     run_node,
     run_llm,
     retry_connection,
+    connect_and_process,
     BACKOFF_MIN,
     BACKOFF_INCREMENT,
     BACKOFF_MAX,

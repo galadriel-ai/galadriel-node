@@ -103,6 +103,11 @@ async def connect_and_process(
             HealthCheckProtocol.PROTOCOL_NAME, health_check_protocol
         )
         # TODO better handle the inference status and reconnection request with encapsulations
+        # Currently we have locks and counters all in the loop here, and it's really messy to handle
+        # these and it could easily go wrong if anyone touches these later. so my meaning is to
+        # encapsulate these stuff in functions or better classes so in this function connect_and_process,
+        # we just simply instantiate an object and call the function it exposes, without worrying about
+        # all these low-level stuff.
         inference_status_counter = InferenceStatusCounter()
         while True:
             try:

@@ -189,7 +189,7 @@ async def test_llm_handle_error_with_status_code():
     assert response.request_id == "test_id"
     assert isinstance(response.error, InferenceError)
     assert response.error.status_code == InferenceStatusCodes.PERMISSION_DENIED
-    assert response.error.message == "API Error"
+    assert response.error.message == "LLM Engine error: API Error"
 
 
 async def test_llm_handle_unknown_error():
@@ -202,7 +202,7 @@ async def test_llm_handle_unknown_error():
     assert response.request_id == "test_id"
     assert isinstance(response.error, InferenceError)
     assert response.error.status_code == InferenceStatusCodes.UNKNOWN_ERROR
-    assert response.error.message == "Unexpected error"
+    assert response.error.message == "LLM Engine error: Unexpected error"
 
 
 @pytest.mark.parametrize(

@@ -10,6 +10,7 @@ from openai.types.chat import ChatCompletionChunk
 from openai.types.chat.chat_completion import Choice
 from openai.types.chat.chat_completion_chunk import Choice as ChunkChoice
 from openai.types.chat.chat_completion_chunk import ChoiceDelta
+from openai.types.chat.chat_completion_chunk import ChoiceLogprobs
 from openai.types.chat.chat_completion_chunk import ChoiceDeltaToolCall
 from openai.types.chat.chat_completion_chunk import ChoiceDeltaToolCallFunction
 from galadriel_node.sdk.entities import LLMEngine
@@ -27,6 +28,13 @@ class Llm:
             base_url=base_url, api_key="sk-no-key-required"
         )
         self.engine = LLMEngine.VLLM
+
+    async def detect_llm_engine(self) -> LLMEngine:
+        try:
+            models = await self._client.models.list()
+            self.engine = LLMEngine(models.data[0].owned_by.lower())
+        finally:
+            return self.engine
 
     async def execute(
         self,
@@ -144,7 +152,14 @@ class Llm:
                 ChunkChoice(
                     finish_reason=choice.finish_reason,
                     index=choice.index,
-                    logprobs=choice.logprobs,
+                    logprobs=(
+                        ChoiceLogprobs(
+                            content=choice.logprobs.content,
+                            refusal=choice.logprobs.refusal,
+                        )
+                        if choice.logprobs
+                        else None
+                    ),
                     delta=ChoiceDelta(
                         content=choice.message.content,
                         refusal=choice.message.refusal,
@@ -154,13 +169,6 @@ class Llm:
                 )
             )
         return chunk_choices
-
-    async def detect_llm_engine(self) -> LLMEngine:
-        try:
-            models = await self._client.models.list()
-            self.engine = LLMEngine(models.data[0].owned_by.lower())
-        finally:
-            return self.engine
 
 
 def _llm_message_prefix(exc: Exception) -> str:

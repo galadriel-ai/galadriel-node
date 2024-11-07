@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel
 from pydantic import Field
@@ -9,6 +9,7 @@ from pydantic import Field
 class PingPongMessageType(Enum):
     PING = 1
     PONG = 2
+    RECONNECT_REQUEST = 3
 
 
 class PingRequest(BaseModel):
@@ -34,6 +35,21 @@ class PongResponse(BaseModel):
     message_type: PingPongMessageType = Field(description="Message type")
     node_id: str = Field(description="Node ID")
     nonce: str = Field(description="The same nonce as in the request")
+    api_ping_time: List[Optional[int]] = Field(
+        description="Ping time to Galadriel API in milliseconds"
+    )
+
+
+class NodeReconnectRequest(BaseModel):
+    protocol_version: str = Field(
+        description="Protocol version of the ping-pong protocol"
+    )
+    message_type: PingPongMessageType = Field(description="Message type")
+    node_id: str = Field(description="Node ID")
+    nonce: str = Field(description="A random number to prevent replay attacks")
+    reconnect_request: bool = Field(
+        description="True if the node is requested to reconnect to a better performing server"
+    )
 
 
 class HealthCheckMessageType(Enum):

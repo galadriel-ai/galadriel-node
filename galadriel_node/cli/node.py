@@ -60,7 +60,7 @@ async def process_request(
     """
     Handles a single inference request and sends the response back in chunks.
     """
-    inference_status_counter.increment()
+    await inference_status_counter.increment()
     try:
         if debug:
             rich.print(f"REQUEST {request.id} START", flush=True)
@@ -78,7 +78,7 @@ async def process_request(
             f"Error occurred while processing inference request: {e}", flush=True
         )
     finally:
-        inference_status_counter.decrement()
+        await inference_status_counter.decrement()
 
 
 # pylint: disable=R0914

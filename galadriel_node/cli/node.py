@@ -61,8 +61,8 @@ async def process_request(
     """
     Handles a single inference request and sends the response back in chunks.
     """
-    inference_status_counter.increment()
     try:
+        await inference_status_counter.increment()
         if debug:
             rich.print(f"REQUEST {request.id} START", flush=True)
         async for chunk in llm.execute(request):
@@ -79,7 +79,7 @@ async def process_request(
             f"Error occurred while processing inference request: {e}", flush=True
         )
     finally:
-        inference_status_counter.decrement()
+        await inference_status_counter.decrement()
 
 
 # pylint: disable=R0914
@@ -328,7 +328,7 @@ async def check_llm(llm_base_url: str, model_id: str) -> bool:
         else:
             rich.print(
                 f"[bold red]\N{CROSS MARK} LLM server at {llm_base_url} returned status code: "
-                f"{response.status_code}[/bold red]",
+                f"{response.status}[/bold red]",
                 flush=True,
             )
             return False

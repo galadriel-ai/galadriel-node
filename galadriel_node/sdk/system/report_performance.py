@@ -17,6 +17,7 @@ from galadriel_node.sdk import api
 from galadriel_node.sdk.entities import SdkError
 from galadriel_node.sdk.entities import AuthenticationError
 from galadriel_node.sdk.protocol.entities import InferenceRequest
+from galadriel_node.sdk.protocol.entities import InferenceStatusCodes
 from galadriel_node.sdk.llm import Llm
 
 BENCHMARK_TIME_SECONDS = 60
@@ -142,10 +143,14 @@ async def _make_inference_request(
     request: InferenceRequest,
 ) -> int:
     async for chunk in llm.execute(request, is_benchmark=True):
+        if chunk.status == InferenceStatusCodes.ERROR:
+            raise SdkError(
+                "Failed to call LLM, make sure GALADRIEL_LLM_BASE_URL is correct"
+            )
         chunk_data = chunk.chunk
         if not chunk_data:
             raise SdkError(
-                "Failed to call LLM, make sure GALADRIEL_LLM_BASE_URL is correct"
+                "Unexpected error: InferenceResponse chunk is None, but status is RUNNING"
             )
         if (
             _check_if_inference_done(chunk_data)

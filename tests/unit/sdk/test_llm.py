@@ -68,23 +68,23 @@ async def test_llm_execute_successful():
     mock_create.return_value = mock_aiter()
     mock_openai.chat.completions.create = mock_create
 
-    with patch("openai.AsyncOpenAI", return_value=mock_openai):
-        llm = Llm(INFERENCE_BASE_URL)
-        # Spy on `_run_streaming_inference` to check if it was called
-        with patch.object(
-            llm, "_run_streaming_inference", wraps=llm._run_streaming_inference
-        ) as mock_run_streaming_inference:
-            results = [item async for item in llm.execute(request)]
+    llm = Llm(INFERENCE_BASE_URL)
+    llm._client = mock_openai
+    # Spy on `_run_streaming_inference` to check if it was called
+    with patch.object(
+        llm, "_run_streaming_inference", wraps=llm._run_streaming_inference
+    ) as mock_run_streaming_inference:
+        results = [item async for item in llm.execute(request)]
 
-            assert len(results) == 2
-            assert isinstance(results[0], InferenceResponse)
-            assert results[0].chunk == {"choices": [{"delta": {"content": "chunk1"}}]}
-            assert results[0].error is None
-            assert isinstance(results[1], InferenceResponse)
-            assert results[1].chunk == {"choices": [{"delta": {"content": "chunk2"}}]}
-            assert results[1].error is None
-            # Ensure that `_run_streaming_inference` was called
-            mock_run_streaming_inference.assert_called_once_with(request)
+        assert len(results) == 2
+        assert isinstance(results[0], InferenceResponse)
+        assert results[0].chunk == {"choices": [{"delta": {"content": "chunk1"}}]}
+        assert results[0].error is None
+        assert isinstance(results[1], InferenceResponse)
+        assert results[1].chunk == {"choices": [{"delta": {"content": "chunk2"}}]}
+        assert results[1].error is None
+        # Ensure that `_run_streaming_inference` was called
+        mock_run_streaming_inference.assert_called_once_with(request)
 
 
 async def test_llm_execute_lmdeploy_tools():
@@ -96,25 +96,26 @@ async def test_llm_execute_lmdeploy_tools():
     mock_openai = AsyncMock()
     mock_openai.chat.completions.create.return_value = _get_mock_completion()
 
-    with patch("openai.AsyncOpenAI", return_value=mock_openai):
-        llm = Llm(INFERENCE_BASE_URL)
-        llm.engine = LLMEngine.LMDEPLOY
-        # Spy on `_run_inference` to check if it was called
-        with patch.object(
-            llm, "_run_inference", wraps=llm._run_inference
-        ) as mock_run_inference:
-            results = [item async for item in llm.execute(request)]
+    llm = Llm(INFERENCE_BASE_URL)
+    llm._client = mock_openai
 
-            assert len(results) == 2
-            assert isinstance(results[0], InferenceResponse)
-            assert results[0].chunk.choices[0].delta.content == "hello"
-            assert results[0].error is None
-            assert isinstance(results[1], InferenceResponse)
-            assert results[1].chunk.choices == []
-            assert results[1].error is None
+    llm.engine = LLMEngine.LMDEPLOY
+    # Spy on `_run_inference` to check if it was called
+    with patch.object(
+        llm, "_run_inference", wraps=llm._run_inference
+    ) as mock_run_inference:
+        results = [item async for item in llm.execute(request)]
 
-            # Ensure that `_run_inference` was called
-            mock_run_inference.assert_called_once_with(request)
+        assert len(results) == 2
+        assert isinstance(results[0], InferenceResponse)
+        assert results[0].chunk.choices[0].delta.content == "hello"
+        assert results[0].error is None
+        assert isinstance(results[1], InferenceResponse)
+        assert results[1].chunk.choices == []
+        assert results[1].error is None
+
+        # Ensure that `_run_inference` was called
+        mock_run_inference.assert_called_once_with(request)
 
 
 async def test_llm_execute_lmdeploy_without_tools():
@@ -132,64 +133,63 @@ async def test_llm_execute_lmdeploy_without_tools():
     mock_create.return_value = mock_aiter()
     mock_openai.chat.completions.create = mock_create
 
-    with patch("openai.AsyncOpenAI", return_value=mock_openai):
-        llm = Llm(INFERENCE_BASE_URL)
-        # Spy on `_run_streaming_inference` to check if it was called
-        with patch.object(
-            llm, "_run_streaming_inference", wraps=llm._run_streaming_inference
-        ) as mock_run_streaming_inference:
-            results = [item async for item in llm.execute(request)]
+    llm = Llm(INFERENCE_BASE_URL)
+    llm._client = mock_openai
+    # Spy on `_run_streaming_inference` to check if it was called
+    with patch.object(
+        llm, "_run_streaming_inference", wraps=llm._run_streaming_inference
+    ) as mock_run_streaming_inference:
+        results = [item async for item in llm.execute(request)]
 
-            assert len(results) == 2
-            assert isinstance(results[0], InferenceResponse)
-            assert results[0].chunk == {"choices": [{"delta": {"content": "chunk1"}}]}
-            assert results[0].error is None
-            assert isinstance(results[1], InferenceResponse)
-            assert results[1].chunk == {"choices": [{"delta": {"content": "chunk2"}}]}
-            assert results[1].error is None
-            # Ensure that `_run_streaming_inference` was called
-            mock_run_streaming_inference.assert_called_once_with(request)
+        assert len(results) == 2
+        assert isinstance(results[0], InferenceResponse)
+        assert results[0].chunk == {"choices": [{"delta": {"content": "chunk1"}}]}
+        assert results[0].error is None
+        assert isinstance(results[1], InferenceResponse)
+        assert results[1].chunk == {"choices": [{"delta": {"content": "chunk2"}}]}
+        assert results[1].error is None
+        # Ensure that `_run_streaming_inference` was called
+        mock_run_streaming_inference.assert_called_once_with(request)
 
 
 async def test_llm_execute_with_bad_request_exception():
     request = InferenceRequest(id="test_id", chat_request={"stream": True})
 
-    with patch("openai.AsyncOpenAI") as MockOpenAI:
-        response_mock = MagicMock()
-        response_mock.request = MagicMock()
-        response_mock.status_code = 400
-        MockOpenAI.return_value.chat.completions.create.side_effect = (
-            openai.BadRequestError(
-                message="Inference failed", response=response_mock, body=""
-            )
-        )
+    response_mock = MagicMock()
+    response_mock.request = MagicMock()
+    response_mock.status_code = 400
 
-        llm = Llm(INFERENCE_BASE_URL)
-        results = [item async for item in llm.execute(request)]
+    mock_openai = AsyncMock()
+    mock_openai.chat.completions.create.side_effect = openai.BadRequestError(
+        message="Inference failed", response=response_mock, body=""
+    )
 
-        assert len(results) == 1
-        assert isinstance(results[0], InferenceResponse)
-        assert results[0].error is not None
-        assert results[0].error.status_code == InferenceStatusCodes.BAD_REQUEST
-        assert results[0].error.message == "LLM Engine error: Inference failed"
+    llm = Llm(INFERENCE_BASE_URL)
+    llm._client = mock_openai
+    results = [item async for item in llm.execute(request)]
+
+    assert len(results) == 1
+    assert isinstance(results[0], InferenceResponse)
+    assert results[0].error is not None
+    assert results[0].error.status_code == InferenceStatusCodes.BAD_REQUEST
+    assert results[0].error.message == "LLM Engine error: Inference failed"
 
 
 async def test_llm_execute_with_generic_exception():
     request = InferenceRequest(id="test_id", chat_request={"stream": True})
 
-    with patch("openai.AsyncOpenAI") as MockOpenAI:
-        MockOpenAI.return_value.chat.completions.create.side_effect = Exception(
-            "Inference failed"
-        )
+    mock_openai = AsyncMock()
+    mock_openai.chat.completions.create.side_effect = Exception("Inference failed")
 
-        llm = Llm(INFERENCE_BASE_URL)
-        results = [item async for item in llm.execute(request)]
+    llm = Llm(INFERENCE_BASE_URL)
+    llm._client = mock_openai
+    results = [item async for item in llm.execute(request)]
 
-        assert len(results) == 1
-        assert isinstance(results[0], InferenceResponse)
-        assert results[0].error is not None
-        assert results[0].error.status_code == InferenceStatusCodes.UNKNOWN_ERROR
-        assert results[0].error.message == "LLM Engine error: Inference failed"
+    assert len(results) == 1
+    assert isinstance(results[0], InferenceResponse)
+    assert results[0].error is not None
+    assert results[0].error.status_code == InferenceStatusCodes.UNKNOWN_ERROR
+    assert results[0].error.message == "LLM Engine error: Inference failed"
 
 
 async def test_llm_execute_url_construction():

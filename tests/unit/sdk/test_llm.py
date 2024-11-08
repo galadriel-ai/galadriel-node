@@ -191,17 +191,13 @@ async def test_llm_execute_with_bad_request_exception():
     llm._client = mock_openai
     results = [item async for item in llm.execute(request)]
 
-    assert len(results) == 2
+    assert len(results) == 1
     assert isinstance(results[0], InferenceResponse)
     assert results[0].request_id == "test_id"
     assert results[0].error is not None
     assert results[0].status == InferenceStatusCodes.ERROR
     assert results[0].error.status_code == InferenceErrorStatusCodes.BAD_REQUEST
     assert results[0].error.message == "LLM Engine error: Inference failed"
-    assert results[1].request_id == "test_id"
-    assert results[1].error is None
-    assert results[1].chunk is None
-    assert results[1].status == InferenceStatusCodes.DONE
 
 
 async def test_llm_execute_with_generic_exception():
@@ -214,16 +210,12 @@ async def test_llm_execute_with_generic_exception():
     llm._client = mock_openai
     results = [item async for item in llm.execute(request)]
 
-    assert len(results) == 2
+    assert len(results) == 1
     assert isinstance(results[0], InferenceResponse)
     assert results[0].error is not None
     assert results[0].status == InferenceStatusCodes.ERROR
     assert results[0].error.status_code == InferenceErrorStatusCodes.UNKNOWN_ERROR
     assert results[0].error.message == "LLM Engine error: Inference failed"
-    assert results[1].request_id == "test_id"
-    assert results[1].error is None
-    assert results[1].chunk is None
-    assert results[1].status == InferenceStatusCodes.DONE
 
 
 async def test_llm_execute_url_construction():

@@ -52,12 +52,6 @@ class Llm:
         )
         async for chunk in inference_function(request):
             yield chunk
-        yield InferenceResponse(
-            request_id=request.id,
-            status=InferenceStatusCodes.DONE,
-            chunk=None,
-            error=None,
-        )
 
     async def _run_inference(
         self, request: InferenceRequest
@@ -74,6 +68,12 @@ class Llm:
                 chunk=chunk,
                 error=None,
                 status=InferenceStatusCodes.RUNNING,
+            )
+            yield InferenceResponse(
+                request_id=request.id,
+                status=InferenceStatusCodes.DONE,
+                chunk=None,
+                error=None,
             )
         except Exception as exc:
             yield await self._handle_error(request.id, exc)
@@ -93,6 +93,12 @@ class Llm:
                     status=InferenceStatusCodes.RUNNING,
                     chunk=chunk,
                 )
+            yield InferenceResponse(
+                request_id=request.id,
+                status=InferenceStatusCodes.DONE,
+                chunk=None,
+                error=None,
+            )
         except Exception as exc:
             yield await self._handle_error(request.id, exc)
 

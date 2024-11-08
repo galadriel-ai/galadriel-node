@@ -326,7 +326,7 @@ async def check_llm(llm_base_url: str, model_id: str) -> bool:
         else:
             rich.print(
                 f"[bold red]\N{CROSS MARK} LLM server at {llm_base_url} returned status code: "
-                f"{response.status_code}[/bold red]",
+                f"{response.status}[/bold red]",
                 flush=True,
             )
             return False

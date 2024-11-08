@@ -294,7 +294,7 @@ async def test_convert_completion_to_chunk():
     llm = Llm("https://api.openai.com/v1")
 
     mock_completion = _get_mock_completion()
-    chunk = await llm._convert_completion_to_chunk(mock_completion)
+    chunk = llm._convert_completion_to_chunk(mock_completion)
 
     assert isinstance(chunk, ChatCompletionChunk)
 

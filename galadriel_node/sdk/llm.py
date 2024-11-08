@@ -62,7 +62,7 @@ class Llm:
             completion = await self._client.chat.completions.create(
                 **request.chat_request
             )
-            chunk = await self._convert_completion_to_chunk(completion)
+            chunk = self._convert_completion_to_chunk(completion)
             yield InferenceResponse(
                 request_id=request.id,
                 chunk=chunk,
@@ -116,7 +116,7 @@ class Llm:
             ),
         )
 
-    async def _convert_completion_to_chunk(
+    def _convert_completion_to_chunk(
         self, completion: ChatCompletion
     ) -> ChatCompletionChunk:
         return ChatCompletionChunk(
@@ -127,10 +127,10 @@ class Llm:
             service_tier=completion.service_tier,
             system_fingerprint=completion.system_fingerprint,
             usage=completion.usage,
-            choices=await self._convert_choices(completion.choices),
+            choices=self._convert_choices(completion.choices),
         )
 
-    async def _convert_choices(self, choices: list[Choice]) -> list[ChunkChoice]:
+    def _convert_choices(self, choices: list[Choice]) -> list[ChunkChoice]:
         chunk_choices = []
         for choice in choices:
             tool_calls: Optional[List[ChoiceDeltaToolCall]] = None

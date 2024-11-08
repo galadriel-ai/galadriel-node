@@ -283,8 +283,7 @@ async def test_detect_llm_engine(owned_by: str, llm_engine: LLMEngine):
     mock_model_response.data = [MagicMock(owned_by=owned_by)]
     llm._client.models.list.return_value = mock_model_response
 
-    result = await llm.detect_llm_engine()
-    assert result == llm_engine
+    await llm.detect_llm_engine()
     assert llm.engine == llm_engine
 
 

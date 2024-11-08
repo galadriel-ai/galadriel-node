@@ -29,13 +29,19 @@ class Llm:
         )
         self.engine = LLMEngine.VLLM
 
-    async def detect_llm_engine(self) -> LLMEngine:
+    async def detect_llm_engine(self) -> None:
         try:
             models = await self._client.models.list()
-            self.engine = LLMEngine(models.data[0].owned_by.lower())
+            match models.data[0].owned_by.lower():
+                case "vllm":
+                    self.engine = LLMEngine.VLLM
+                case "lmdeploy":
+                    self.engine = LLMEngine.LMDEPLOY
+                case _:
+                    # Default to VLLM
+                    self.engine = LLMEngine.VLLM
         except Exception:
             pass
-        return self.engine
 
     async def execute(
         self,

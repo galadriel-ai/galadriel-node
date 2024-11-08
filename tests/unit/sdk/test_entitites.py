@@ -1,19 +1,17 @@
 import json
 
-from dataclasses import asdict
-from unittest.mock import MagicMock
 from openai.types.chat import ChatCompletionChunk
 
-from galadriel_node.sdk.entities import InferenceError
-from galadriel_node.sdk.entities import InferenceResponse
-from galadriel_node.sdk.entities import InferenceStatusCodes
+from galadriel_node.sdk.protocol.entities import InferenceError
+from galadriel_node.sdk.protocol.entities import InferenceResponse
+from galadriel_node.sdk.protocol.entities import InferenceErrorStatusCodes
 
 
 def test_inference_response_no_chunk():
     response = InferenceResponse(
         request_id="123",
         chunk=None,
-        error=InferenceError(InferenceStatusCodes.BAD_REQUEST, "error"),
+        error=InferenceError(InferenceErrorStatusCodes.BAD_REQUEST, "error"),
     )
 
     response_json = response.to_json()

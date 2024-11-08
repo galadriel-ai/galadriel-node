@@ -14,12 +14,13 @@ from openai.types.chat.chat_completion_chunk import ChoiceDeltaToolCall
 from openai.types.chat.chat_completion_chunk import ChoiceDeltaToolCallFunction
 from openai.types.chat.chat_completion_message_tool_call import Function
 from unittest.mock import AsyncMock, MagicMock, patch
-from galadriel_node.sdk.entities import (
-    LLMEngine,
+from galadriel_node.sdk.entities import LLMEngine
+from galadriel_node.sdk.protocol.entities import (
     InferenceError,
     InferenceRequest,
     InferenceResponse,
     InferenceStatusCodes,
+    InferenceErrorStatusCodes,
 )
 from galadriel_node.sdk.llm import Llm
 
@@ -76,13 +77,22 @@ async def test_llm_execute_successful():
     ) as mock_run_streaming_inference:
         results = [item async for item in llm.execute(request)]
 
-        assert len(results) == 2
+        assert len(results) == 3
         assert isinstance(results[0], InferenceResponse)
+        assert results[0].request_id == "test_id"
         assert results[0].chunk == {"choices": [{"delta": {"content": "chunk1"}}]}
         assert results[0].error is None
+        assert results[0].status == InferenceStatusCodes.RUNNING
         assert isinstance(results[1], InferenceResponse)
+        assert results[1].request_id == "test_id"
         assert results[1].chunk == {"choices": [{"delta": {"content": "chunk2"}}]}
         assert results[1].error is None
+        assert results[1].status == InferenceStatusCodes.RUNNING
+        assert isinstance(results[2], InferenceResponse)
+        assert results[2].request_id == "test_id"
+        assert results[2].chunk is None
+        assert results[2].error is None
+        assert results[2].status == InferenceStatusCodes.DONE
         # Ensure that `_run_streaming_inference` was called
         mock_run_streaming_inference.assert_called_once_with(request)
 
@@ -108,10 +118,14 @@ async def test_llm_execute_lmdeploy_tools():
 
         assert len(results) == 2
         assert isinstance(results[0], InferenceResponse)
+        assert results[0].request_id == "test_id"
+        assert results[0].status == InferenceStatusCodes.RUNNING
         assert results[0].chunk.choices[0].delta.content == "hello"
         assert results[0].error is None
         assert isinstance(results[1], InferenceResponse)
-        assert results[1].chunk.choices == []
+        assert results[1].request_id == "test_id"
+        assert results[1].status == InferenceStatusCodes.DONE
+        assert results[1].chunk is None
         assert results[1].error is None
 
         # Ensure that `_run_inference` was called
@@ -141,13 +155,22 @@ async def test_llm_execute_lmdeploy_without_tools():
     ) as mock_run_streaming_inference:
         results = [item async for item in llm.execute(request)]
 
-        assert len(results) == 2
+        assert len(results) == 3
         assert isinstance(results[0], InferenceResponse)
+        assert results[0].request_id == "test_id"
         assert results[0].chunk == {"choices": [{"delta": {"content": "chunk1"}}]}
         assert results[0].error is None
+        assert results[0].status == InferenceStatusCodes.RUNNING
         assert isinstance(results[1], InferenceResponse)
+        assert results[1].request_id == "test_id"
         assert results[1].chunk == {"choices": [{"delta": {"content": "chunk2"}}]}
         assert results[1].error is None
+        assert results[1].status == InferenceStatusCodes.RUNNING
+        assert isinstance(results[2], InferenceResponse)
+        assert results[2].request_id == "test_id"
+        assert results[2].chunk is None
+        assert results[2].error is None
+        assert results[2].status == InferenceStatusCodes.DONE
         # Ensure that `_run_streaming_inference` was called
         mock_run_streaming_inference.assert_called_once_with(request)
 
@@ -168,11 +191,17 @@ async def test_llm_execute_with_bad_request_exception():
     llm._client = mock_openai
     results = [item async for item in llm.execute(request)]
 
-    assert len(results) == 1
+    assert len(results) == 2
     assert isinstance(results[0], InferenceResponse)
+    assert results[0].request_id == "test_id"
     assert results[0].error is not None
-    assert results[0].error.status_code == InferenceStatusCodes.BAD_REQUEST
+    assert results[0].status == InferenceStatusCodes.ERROR
+    assert results[0].error.status_code == InferenceErrorStatusCodes.BAD_REQUEST
     assert results[0].error.message == "LLM Engine error: Inference failed"
+    assert results[1].request_id == "test_id"
+    assert results[1].error is None
+    assert results[1].chunk is None
+    assert results[1].status == InferenceStatusCodes.DONE
 
 
 async def test_llm_execute_with_generic_exception():
@@ -185,11 +214,16 @@ async def test_llm_execute_with_generic_exception():
     llm._client = mock_openai
     results = [item async for item in llm.execute(request)]
 
-    assert len(results) == 1
+    assert len(results) == 2
     assert isinstance(results[0], InferenceResponse)
     assert results[0].error is not None
-    assert results[0].error.status_code == InferenceStatusCodes.UNKNOWN_ERROR
+    assert results[0].status == InferenceStatusCodes.ERROR
+    assert results[0].error.status_code == InferenceErrorStatusCodes.UNKNOWN_ERROR
     assert results[0].error.message == "LLM Engine error: Inference failed"
+    assert results[1].request_id == "test_id"
+    assert results[1].error is None
+    assert results[1].chunk is None
+    assert results[1].status == InferenceStatusCodes.DONE
 
 
 async def test_llm_execute_url_construction():
@@ -225,7 +259,7 @@ async def test_llm_handle_error_with_status_code():
     assert isinstance(response, InferenceResponse)
     assert response.request_id == "test_id"
     assert isinstance(response.error, InferenceError)
-    assert response.error.status_code == InferenceStatusCodes.PERMISSION_DENIED
+    assert response.error.status_code == InferenceErrorStatusCodes.PERMISSION_DENIED
     assert response.error.message == "LLM Engine error: API Error"
 
 
@@ -238,7 +272,7 @@ async def test_llm_handle_unknown_error():
     assert isinstance(response, InferenceResponse)
     assert response.request_id == "test_id"
     assert isinstance(response.error, InferenceError)
-    assert response.error.status_code == InferenceStatusCodes.UNKNOWN_ERROR
+    assert response.error.status_code == InferenceErrorStatusCodes.UNKNOWN_ERROR
     assert response.error.message == "LLM Engine error: Unexpected error"
 
 
@@ -263,26 +297,25 @@ async def test_detect_llm_engine(owned_by: str, llm_engine: LLMEngine):
 
 
 @pytest.mark.asyncio
-async def test_convert_completion_to_chunks():
+async def test_convert_completion_to_chunk():
     # Initialize Llm instance
     llm = Llm("https://api.openai.com/v1")
 
     mock_completion = _get_mock_completion()
-    chunks = await llm._convert_completion_to_chunks(mock_completion)
+    chunk = await llm._convert_completion_to_chunk(mock_completion)
 
-    assert len(chunks) == 2
-    assert all(isinstance(chunk, ChatCompletionChunk) for chunk in chunks)
+    assert isinstance(chunk, ChatCompletionChunk)
 
-    assert chunks[0].id == "test_id"
-    assert chunks[0].created == 1234567890
-    assert chunks[0].model == "test_model"
-    assert chunks[0].object == "chat.completion.chunk"
-    assert chunks[0].service_tier == None
-    assert chunks[0].system_fingerprint == "fingerprint"
-    assert chunks[0].usage == CompletionUsage(
+    assert chunk.id == "test_id"
+    assert chunk.created == 1234567890
+    assert chunk.model == "test_model"
+    assert chunk.object == "chat.completion.chunk"
+    assert chunk.service_tier == None
+    assert chunk.system_fingerprint == "fingerprint"
+    assert chunk.usage == CompletionUsage(
         completion_tokens=20, prompt_tokens=10, total_tokens=30
     )
-    assert chunks[0].choices == [
+    assert chunk.choices == [
         ChunkChoice(
             delta=ChoiceDelta(
                 content="hello",
@@ -302,14 +335,3 @@ async def test_convert_completion_to_chunks():
             finish_reason="stop",
         )
     ]
-
-    assert chunks[1].id == "test_id"
-    assert chunks[1].created == 1234567890
-    assert chunks[1].model == "test_model"
-    assert chunks[1].object == "chat.completion.chunk"
-    assert chunks[1].service_tier == None
-    assert chunks[1].system_fingerprint == "fingerprint"
-    assert chunks[1].usage == CompletionUsage(
-        completion_tokens=20, prompt_tokens=10, total_tokens=30
-    )
-    assert chunks[1].choices == []

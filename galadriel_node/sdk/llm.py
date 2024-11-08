@@ -14,14 +14,14 @@ from openai.types.chat.chat_completion_chunk import ChoiceLogprobs
 from openai.types.chat.chat_completion_chunk import ChoiceDeltaToolCall
 from openai.types.chat.chat_completion_chunk import ChoiceDeltaToolCallFunction
 from galadriel_node.sdk.entities import LLMEngine
-from galadriel_node.sdk.entities import InferenceError
-from galadriel_node.sdk.entities import InferenceRequest
-from galadriel_node.sdk.entities import InferenceResponse
-from galadriel_node.sdk.entities import InferenceStatusCodes
+from galadriel_node.sdk.protocol.entities import InferenceError
+from galadriel_node.sdk.protocol.entities import InferenceRequest
+from galadriel_node.sdk.protocol.entities import InferenceResponse
+from galadriel_node.sdk.protocol.entities import InferenceStatusCodes
+from galadriel_node.sdk.protocol.entities import InferenceErrorStatusCodes
 
 
 class Llm:
-
     def __init__(self, inference_base_url: str):
         base_url: str = urljoin(inference_base_url, "/v1")
         self._client = openai.AsyncOpenAI(
@@ -52,6 +52,12 @@ class Llm:
         )
         async for chunk in inference_function(request):
             yield chunk
+        yield InferenceResponse(
+            request_id=request.id,
+            status=InferenceStatusCodes.DONE,
+            chunk=None,
+            error=None,
+        )
 
     async def _run_inference(
         self, request: InferenceRequest
@@ -62,13 +68,13 @@ class Llm:
             completion = await self._client.chat.completions.create(
                 **request.chat_request
             )
-            chunks = await self._convert_completion_to_chunks(completion)
-            for chunk in chunks:
-                yield InferenceResponse(
-                    request_id=request.id,
-                    chunk=chunk,
-                    error=None,
-                )
+            chunk = await self._convert_completion_to_chunk(completion)
+            yield InferenceResponse(
+                request_id=request.id,
+                chunk=chunk,
+                error=None,
+                status=InferenceStatusCodes.RUNNING,
+            )
         except Exception as exc:
             yield await self._handle_error(request.id, exc)
 
@@ -84,6 +90,7 @@ class Llm:
             async for chunk in completion:
                 yield InferenceResponse(
                     request_id=request.id,
+                    status=InferenceStatusCodes.RUNNING,
                     chunk=chunk,
                 )
         except Exception as exc:
@@ -91,46 +98,31 @@ class Llm:
 
     async def _handle_error(self, request_id: str, exc: Exception) -> InferenceResponse:
         if isinstance(exc, openai.APIStatusError):
-            status_code = InferenceStatusCodes(exc.status_code)
+            status_code = InferenceErrorStatusCodes(exc.status_code)
         else:
-            status_code = InferenceStatusCodes.UNKNOWN_ERROR
+            status_code = InferenceErrorStatusCodes.UNKNOWN_ERROR
         return InferenceResponse(
             request_id=request_id,
+            status=InferenceStatusCodes.ERROR,
             error=InferenceError(
                 status_code=status_code,
                 message=_llm_message_prefix(exc),
             ),
         )
 
-    async def _convert_completion_to_chunks(
+    async def _convert_completion_to_chunk(
         self, completion: ChatCompletion
-    ) -> List[ChatCompletionChunk]:
-        chunks = []
-        chunks.append(
-            ChatCompletionChunk(
-                id=completion.id,
-                created=completion.created,
-                model=completion.model,
-                object="chat.completion.chunk",
-                service_tier=completion.service_tier,
-                system_fingerprint=completion.system_fingerprint,
-                usage=completion.usage,
-                choices=await self._convert_choices(completion.choices),
-            )
+    ) -> ChatCompletionChunk:
+        return ChatCompletionChunk(
+            id=completion.id,
+            created=completion.created,
+            model=completion.model,
+            object="chat.completion.chunk",
+            service_tier=completion.service_tier,
+            system_fingerprint=completion.system_fingerprint,
+            usage=completion.usage,
+            choices=await self._convert_choices(completion.choices),
         )
-        chunks.append(
-            ChatCompletionChunk(
-                id=completion.id,
-                created=completion.created,
-                model=completion.model,
-                object="chat.completion.chunk",
-                service_tier=completion.service_tier,
-                system_fingerprint=completion.system_fingerprint,
-                usage=completion.usage,
-                choices=[],
-            )
-        )
-        return chunks
 
     async def _convert_choices(self, choices: list[Choice]) -> list[ChunkChoice]:
         chunk_choices = []

@@ -21,8 +21,9 @@ from galadriel_node.llm_backends import vllm
 from galadriel_node.sdk.jobs.api_ping_job import ApiPingJob
 from galadriel_node.sdk.jobs.inference_status_counter import InferenceStatusCounter
 from galadriel_node.sdk.jobs.reconnect_request_job import wait_for_reconnect
-from galadriel_node.sdk.entities import AuthenticationError, InferenceRequest, SdkError
+from galadriel_node.sdk.entities import AuthenticationError, SdkError
 from galadriel_node.sdk.llm import Llm
+from galadriel_node.sdk.protocol.entities import InferenceRequest
 from galadriel_node.sdk.protocol.protocol_handler import ProtocolHandler
 from galadriel_node.sdk.protocol.ping_pong_protocol import PingPongProtocol
 from galadriel_node.sdk.protocol.health_check_protocol import HealthCheckProtocol

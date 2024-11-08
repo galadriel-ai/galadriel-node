@@ -14,9 +14,9 @@ from openai.types.chat import ChatCompletionChunk
 
 from galadriel_node.config import config
 from galadriel_node.sdk import api
-from galadriel_node.sdk.entities import InferenceRequest
 from galadriel_node.sdk.entities import SdkError
 from galadriel_node.sdk.entities import AuthenticationError
+from galadriel_node.sdk.protocol.entities import InferenceRequest
 from galadriel_node.sdk.llm import Llm
 
 BENCHMARK_TIME_SECONDS = 60

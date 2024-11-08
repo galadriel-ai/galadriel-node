@@ -83,6 +83,7 @@ async def test_llm_execute_successful():
             assert isinstance(results[1], InferenceResponse)
             assert results[1].chunk == {"choices": [{"delta": {"content": "chunk2"}}]}
             assert results[1].error is None
+            # Ensure that `_run_streaming_inference` was called
             mock_run_streaming_inference.assert_called_once_with(request)
 
 
@@ -111,7 +112,43 @@ async def test_llm_execute_lmdeploy_tools():
             assert isinstance(results[1], InferenceResponse)
             assert results[1].chunk.choices == []
             assert results[1].error is None
+
+            # Ensure that `_run_inference` was called
             mock_run_inference.assert_called_once_with(request)
+
+
+async def test_llm_execute_lmdeploy_without_tools():
+    request = InferenceRequest(
+        id="test_id",
+        chat_request={"stream": False},
+    )
+    mock_openai = AsyncMock()
+    mock_create = AsyncMock()
+
+    async def mock_aiter():
+        yield {"choices": [{"delta": {"content": "chunk1"}}]}
+        yield {"choices": [{"delta": {"content": "chunk2"}}]}
+
+    mock_create.return_value = mock_aiter()
+    mock_openai.chat.completions.create = mock_create
+
+    with patch("openai.AsyncOpenAI", return_value=mock_openai):
+        llm = Llm(INFERENCE_BASE_URL)
+        # Spy on `_run_streaming_inference` to check if it was called
+        with patch.object(
+            llm, "_run_streaming_inference", wraps=llm._run_streaming_inference
+        ) as mock_run_streaming_inference:
+            results = [item async for item in llm.execute(request)]
+
+            assert len(results) == 2
+            assert isinstance(results[0], InferenceResponse)
+            assert results[0].chunk == {"choices": [{"delta": {"content": "chunk1"}}]}
+            assert results[0].error is None
+            assert isinstance(results[1], InferenceResponse)
+            assert results[1].chunk == {"choices": [{"delta": {"content": "chunk2"}}]}
+            assert results[1].error is None
+            # Ensure that `_run_streaming_inference` was called
+            mock_run_streaming_inference.assert_called_once_with(request)
 
 
 async def test_llm_execute_with_bad_request_exception():

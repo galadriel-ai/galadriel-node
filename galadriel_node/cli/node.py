@@ -60,8 +60,8 @@ async def process_request(
     """
     Handles a single inference request and sends the response back in chunks.
     """
-    await inference_status_counter.increment()
     try:
+        await inference_status_counter.increment()
         if debug:
             rich.print(f"REQUEST {request.id} START", flush=True)
         async for chunk in llm.execute(request):

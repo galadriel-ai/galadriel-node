@@ -10,12 +10,14 @@ from typing import Optional
 from urllib.parse import urljoin
 
 import aiohttp
+from openai.types.chat import ChatCompletionChunk
 
 from galadriel_node.config import config
 from galadriel_node.sdk import api
-from galadriel_node.sdk.entities import InferenceRequest
 from galadriel_node.sdk.entities import SdkError
 from galadriel_node.sdk.entities import AuthenticationError
+from galadriel_node.sdk.protocol.entities import InferenceRequest
+from galadriel_node.sdk.protocol.entities import InferenceStatusCodes
 from galadriel_node.sdk.llm import Llm
 
 BENCHMARK_TIME_SECONDS = 60
@@ -119,7 +121,7 @@ def _run_llm(benchmark_start: float, dataset: List[Dict], llm: Llm) -> int:
     i = 0
     completion_tokens = 0
     while time.time() - benchmark_start < BENCHMARK_TIME_SECONDS:
-        request_data = {**BASE_REQUEST, "messages": dataset[i]["chat"]}
+        request_data = {**BASE_REQUEST, "messages": [dataset[i]["chat"][0]]}
         request = InferenceRequest(id="test", chat_request=request_data)
         tokens = asyncio.run(_make_inference_request(benchmark_start, llm, request))
         completion_tokens += tokens
@@ -127,26 +129,36 @@ def _run_llm(benchmark_start: float, dataset: List[Dict], llm: Llm) -> int:
     return completion_tokens
 
 
+def _check_if_inference_done(chunk: ChatCompletionChunk) -> bool:
+    return not chunk.choices or (
+        len(chunk.choices) == 1
+        and chunk.choices[0].delta.content == ""
+        and chunk.choices[0].finish_reason is not None
+    )
+
+
 async def _make_inference_request(
     benchmark_start: float,
     llm: Llm,
     request: InferenceRequest,
 ) -> int:
+    completion_tokens = None
     async for chunk in llm.execute(request, is_benchmark=True):
-        chunk_data = chunk.chunk
-        if not chunk_data:
+        if chunk.status == InferenceStatusCodes.ERROR:
             raise SdkError(
                 "Failed to call LLM, make sure GALADRIEL_LLM_BASE_URL is correct"
             )
-        if (
-            not chunk_data.choices
-            and chunk_data.usage
-            and chunk_data.usage.completion_tokens
-        ):
-            return chunk_data.usage.completion_tokens
+        if chunk.chunk and chunk.chunk.usage:
+            completion_tokens = chunk.chunk.usage.completion_tokens
+        if chunk.status == InferenceStatusCodes.DONE:
+            if completion_tokens is not None:
+                return completion_tokens
+            raise SdkError("Unexpected error: No usage data available")
+        # yield to the event loop to allow checking time elapsed
+        await asyncio.sleep(0)
         if time.time() - benchmark_start > BENCHMARK_TIME_SECONDS:
-            if chunk_data.usage and chunk_data.usage.completion_tokens:
-                return chunk_data.usage.completion_tokens
+            if completion_tokens is not None:
+                return completion_tokens
             break
     print("        Request failed", flush=True)
     return 0

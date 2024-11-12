@@ -182,6 +182,10 @@ async def connect_and_process(
                     traceback.print_exc()
                 rich.print(f"Error occurred while processing message: {e}", flush=True)
                 return ConnectionResult(retry=True, reset_backoff=True)
+            finally:
+                rich.print("Closing the connection and cleaning up...", flush=True)
+                reconnect_request_job.cancel()
+                websocket_recv_job.cancel()
 
 
 async def retry_connection(rpc_url: str, api_key: str, node_id: str, debug: bool):

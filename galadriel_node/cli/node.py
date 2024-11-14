@@ -1,13 +1,17 @@
 import asyncio
+import json
+import logging
 import signal
 import subprocess
 import sys
 import traceback
 from dataclasses import dataclass
 from http import HTTPStatus
+from logging import getLogger
 from typing import Optional
 from urllib.parse import urljoin, urlparse
-import json
+from venv import logger
+
 import aiohttp
 import openai
 import rich
@@ -15,19 +19,19 @@ import typer
 import websockets
 from websockets.frames import CloseCode
 
-
 from galadriel_node.config import config
 from galadriel_node.llm_backends import vllm
+from galadriel_node.sdk.entities import AuthenticationError, SdkError
 from galadriel_node.sdk.jobs.api_ping_job import ApiPingJob
 from galadriel_node.sdk.jobs.inference_status_counter import InferenceStatusCounter
 from galadriel_node.sdk.jobs.reconnect_request_job import wait_for_reconnect
-from galadriel_node.sdk.entities import AuthenticationError, SdkError
 from galadriel_node.sdk.llm import Llm
-from galadriel_node.sdk.protocol.entities import InferenceRequest
-from galadriel_node.sdk.protocol.protocol_handler import ProtocolHandler
-from galadriel_node.sdk.protocol.ping_pong_protocol import PingPongProtocol
-from galadriel_node.sdk.protocol.health_check_protocol import HealthCheckProtocol
+from galadriel_node.sdk.logging_utils import init_logging
 from galadriel_node.sdk.protocol import protocol_settings
+from galadriel_node.sdk.protocol.entities import InferenceRequest
+from galadriel_node.sdk.protocol.health_check_protocol import HealthCheckProtocol
+from galadriel_node.sdk.protocol.ping_pong_protocol import PingPongProtocol
+from galadriel_node.sdk.protocol.protocol_handler import ProtocolHandler
 from galadriel_node.sdk.system.report_hardware import report_hardware
 from galadriel_node.sdk.system.report_performance import report_performance
 from galadriel_node.sdk.upgrade import version_aware_get
@@ -44,6 +48,8 @@ BACKOFF_MIN = 24  # Minimum backoff time in seconds
 BACKOFF_INCREMENT = 6  # Incremental backoff time in seconds
 BACKOFF_MAX = 300  # Maximum backoff time in seconds
 
+logger = getLogger()
+
 
 @dataclass
 class ConnectionResult:
@@ -54,7 +60,6 @@ class ConnectionResult:
 async def process_request(
     request: InferenceRequest,
     websocket,
-    debug: bool,
     send_lock: asyncio.Lock,
     inference_status_counter: InferenceStatusCounter,
 ) -> None:
@@ -63,20 +68,15 @@ async def process_request(
     """
     try:
         await inference_status_counter.increment()
-        if debug:
-            rich.print(f"REQUEST {request.id} START", flush=True)
+        logging.debug("REQUEST %s START", request.id)
         async for chunk in llm.execute(request):
-            if debug:
-                rich.print(f"Sending chunk: {chunk}", flush=True)
+            logging.debug("Sending chunk: %s", chunk)
             async with send_lock:
                 await websocket.send(chunk.to_json())
-        if debug:
-            rich.print(f"REQUEST {request.id} END", flush=True)
-    except Exception as e:
-        if debug:
-            traceback.print_exc()
-        rich.print(
-            f"Error occurred while processing inference request: {e}", flush=True
+            logging.debug("REQUEST %s END", request.id)
+    except Exception as _:
+        logging.error(
+            "Error occurred while processing inference request", exc_info=True
         )
     finally:
         await inference_status_counter.decrement()
@@ -84,15 +84,13 @@ async def process_request(
 
 # pylint: disable=R0914
 async def connect_and_process(
-    uri: str, headers: dict, node_id: str, api_ping_job: ApiPingJob, debug: bool
+    uri: str, headers: dict, node_id: str, api_ping_job: ApiPingJob
 ) -> ConnectionResult:
     """
     Establishes the WebSocket connection and processes incoming requests concurrently.
     """
     send_lock = asyncio.Lock()
     async with websockets.connect(uri, extra_headers=headers) as websocket:
-        rich.print(f"Connected to {uri}", flush=True)
-
         # Initialize the protocol handler and register the protocols
         protocol_handler = ProtocolHandler(node_id, websocket)
         ping_pong_protocol = PingPongProtocol(api_ping_job)
@@ -112,7 +110,7 @@ async def connect_and_process(
         inference_status_counter = InferenceStatusCounter()
         while True:
             try:
-                rich.print("Waiting for incoming messages...", flush=True)
+                logger.info("Waiting for incoming messages...")
 
                 # Create tasks for receiving messages and waiting for reconnect requests
                 reconnect_request_job = asyncio.create_task(
@@ -130,9 +128,7 @@ async def connect_and_process(
                     task.cancel()
 
                 if reconnect_request_job in done:
-                    rich.print(
-                        "Reconnect requested. Closing the connection...", flush=True
-                    )
+                    logger.info("Reconnect requested. Closing the connection...")
                     await ping_pong_protocol.set_reconnect_requested(False)
                     return ConnectionResult(retry=True, reset_backoff=True)
 
@@ -150,7 +146,6 @@ async def connect_and_process(
                             process_request(
                                 inference_request,
                                 websocket,
-                                debug,
                                 send_lock,
                                 inference_status_counter,
                             )
@@ -161,34 +156,29 @@ async def connect_and_process(
                             protocol_handler.handle(parsed_data, send_lock)
                         )
             except json.JSONDecodeError:
-                rich.print("Error while parsing json message", flush=True)
+                logger.info("Error while parsing json message")
                 return ConnectionResult(
                     retry=True, reset_backoff=True
                 )  # for now, just retry
             except websockets.ConnectionClosed as e:
-                rich.print(
-                    f"Received error: {e.reason}.",
-                    flush=True,
-                )
+                logger.info("Received error: %s", e)
                 match e.code:
                     case CloseCode.POLICY_VIOLATION:
                         return ConnectionResult(retry=True, reset_backoff=False)
                     case CloseCode.TRY_AGAIN_LATER:
                         return ConnectionResult(retry=True, reset_backoff=False)
-                rich.print(f"Connection closed: {e}.", flush=True)
+                logger.info("Connection closed: %s", e)
                 return ConnectionResult(retry=True, reset_backoff=True)
             except Exception as e:
-                if debug:
-                    traceback.print_exc()
-                rich.print(f"Error occurred while processing message: {e}", flush=True)
+                logger.error("Error occurred while processing message: %s", e)
                 return ConnectionResult(retry=True, reset_backoff=True)
             finally:
-                rich.print("Closing the connection and cleaning up...", flush=True)
+                logger.info("Closing the connection and cleaning up...")
                 reconnect_request_job.cancel()
                 websocket_recv_job.cancel()
 
 
-async def retry_connection(rpc_url: str, api_key: str, node_id: str, debug: bool):
+async def retry_connection(rpc_url: str, api_key: str, node_id: str):
     """
     Attempts to reconnect to the Galadriel server with exponential backoff.
     """
@@ -207,30 +197,28 @@ async def retry_connection(rpc_url: str, api_key: str, node_id: str, debug: bool
 
     while True:
         try:
-            result = await connect_and_process(
-                uri, headers, node_id, api_ping_job, debug
-            )
+            result = await connect_and_process(uri, headers, node_id, api_ping_job)
             if result.retry:
                 retries += 1
                 if result.reset_backoff:
                     retries = 0
                     backoff_time = BACKOFF_MIN
-                rich.print(f"Retry #{retries} in {backoff_time} seconds...")
+                logger.debug("Retry #%d in %d seconds...", retries, backoff_time)
             else:
                 break
         except websockets.ConnectionClosedError as e:
             retries += 1
-            rich.print(f"WebSocket connection closed: {e}. Retrying...", flush=True)
+            logger.error("WebSocket connection closed: %s. Retrying...", e)
         except websockets.InvalidStatusCode as e:
             retries += 1
-            rich.print(f"Invalid status code: {e}. Retrying...", flush=True)
+            logger.error("Invalid status code: %s. Retrying...", e)
         except Exception as e:
             retries += 1
-            if debug:
-                traceback.print_exc()
-            rich.print(
-                f"Websocket connection failed. Retry #{retries} in {backoff_time} seconds...",
-                flush=True,
+            logger.error("%s", e)
+            logger.error(
+                "Websocket connection failed. Retry #%d in %d seconds...",
+                retries,
+                backoff_time,
             )
 
         # Exponential backoff with offset
@@ -246,7 +234,7 @@ def handle_termination(loop, llm_pid):
 
     if llm_pid is not None:
         vllm.stop(llm_pid)
-        print(f"vLLM process with PID {llm_pid} has been stopped.")
+        logger.info("vLLM process with PID %d has been stopped.", llm_pid)
 
 
 # pylint: disable=R0917:
@@ -257,7 +245,6 @@ async def run_node(
     api_key: Optional[str],
     node_id: Optional[str],
     llm_base_url: Optional[str],
-    debug: bool,
 ):
     global llm
 
@@ -278,7 +265,7 @@ async def run_node(
                     'LLM check failed. Please make sure "GALADRIEL_LLM_BASE_URL" is correct.'
                 )
         else:
-            llm_pid = await run_llm(config.GALADRIEL_MODEL_ID, debug)
+            llm_pid = await run_llm(config.GALADRIEL_MODEL_ID)
             loop = asyncio.get_running_loop()
             for sig in (signal.SIGINT, signal.SIGTERM):
                 loop.add_signal_handler(sig, lambda: handle_termination(loop, llm_pid))
@@ -290,13 +277,14 @@ async def run_node(
         await report_performance(
             api_url, api_key, node_id, llm_base_url, config.GALADRIEL_MODEL_ID
         )
-        await retry_connection(rpc_url, api_key, node_id, debug)
+        await retry_connection(rpc_url, api_key, node_id)
     except asyncio.CancelledError:
-        rich.print("Stopping the node.", flush=True)
+        logger.error("Stopping the node.")
 
 
 async def llm_http_check(llm_base_url: str, total_timeout: float = 60.0):
     timeout = aiohttp.ClientTimeout(total=total_timeout)
+    logging.debug("Checking LLM server at %s", llm_base_url)
     async with aiohttp.ClientSession(timeout=timeout) as session:
         return await session.get(llm_base_url + "/v1/models/")
 
@@ -324,61 +312,60 @@ async def check_llm(llm_base_url: str, model_id: str) -> bool:
     try:
         response = await llm_http_check(llm_base_url)
         if response.ok:
-            rich.print(
-                f"[bold green]\N{CHECK MARK} LLM server at {llm_base_url} is accessible via HTTP."
-                "[/bold green]",
-                flush=True,
+            logger.info(
+                "[bold green]\N{CHECK MARK} LLM server at %s is accessible via HTTP.[/bold green]",
+                llm_base_url,
             )
         else:
-            rich.print(
-                f"[bold red]\N{CROSS MARK} LLM server at {llm_base_url} returned status code: "
-                f"{response.status}[/bold red]",
-                flush=True,
+            logger.info(
+                "[bold red]\N{CROSS MARK} LLM server at %s returned status code: %d[/bold red]",
+                llm_base_url,
+                response.status,
             )
             return False
     except Exception as e:
-        rich.print(
-            f"[bold red]\N{CROSS MARK} Failed to reach LLM server at {llm_base_url}: \n{e}[/bold red]",
-            flush=True,
+        logger.error(
+            "[bold red]\N{CROSS MARK} Failed to reach LLM server at %s: \n%s[/bold red]",
+            llm_base_url,
+            e,
         )
         return False
 
     try:
         response = await llm_sanity_check(llm_base_url, model_id)
         if response.status_code == HTTPStatus.OK:
-            rich.print(
-                f"[bold green]\N{CHECK MARK} LLM server at {llm_base_url} successfully generated "
-                "tokens.[/bold green]",
-                flush=True,
+            logger.info(
+                "[bold green]\N{CHECK MARK} LLM server at %s successfully generated tokens.[/bold green]",
+                llm_base_url,
             )
             return True
     except openai.APIStatusError as e:
-        rich.print(
-            f"[bold red]\N{CROSS MARK} LLM server at {llm_base_url} failed to generate tokens. "
-            f"APIStatusError: \n{e}[/bold red]",
-            flush=True,
+        logger.info(
+            "[bold red]\N{CROSS MARK} LLM server at %s failed to generate tokens. APIStatusError: \n%s[/bold red]",
+            llm_base_url,
+            e,
         )
         return False
     except Exception as e:
-        rich.print(
-            f"[bold red]\N{CROSS MARK} LLM server at {llm_base_url} failed to generate tokens."
-            f" Exception occurred: {e}[/bold red]",
-            flush=True,
+        logger.info(
+            "[bold red]\N{CROSS MARK} LLM server at %s failed to generate tokens. Exception occurred: %s[/bold red]",
+            llm_base_url,
+            e,
         )
         return False
     return False
 
 
-async def run_llm(model_id: str, debug: bool = False) -> Optional[int]:
+async def run_llm(model_id: str) -> Optional[int]:
     if vllm.is_installed():
-        rich.print("Starting vLLM...", flush=True)
-        pid = vllm.start(model_id, debug)
+        logger.info("Starting vLLM...")
+        pid = vllm.start(model_id)
         if pid is None:
             raise SdkError(
                 'Failed to start vLLM. Please check "vllm.log" for more information.'
             )
-        rich.print("vLLM started successfully.", flush=True)
-        rich.print("Waiting for vLLM to be ready.", flush=True)
+        logger.info("vLLM started successfully.")
+        logger.info("Waiting for vLLM to be ready.")
         while True:
             if not vllm.is_process_running(pid):
                 raise SdkError(
@@ -388,7 +375,7 @@ async def run_llm(model_id: str, debug: bool = False) -> Optional[int]:
             try:
                 response = await llm_http_check(vllm.LLM_BASE_URL, total_timeout=1.0)
                 if response.ok:
-                    rich.print("\nvLLM is ready.", flush=True)
+                    logging.info("\nvLLM is ready.")
                     break
             except Exception:
                 continue
@@ -425,20 +412,16 @@ def node_run(
     """
     Entry point for running the node with retry logic and connection handling.
     """
+    init_logging(debug)
     config.validate()
     try:
-        asyncio.run(run_node(api_url, rpc_url, api_key, node_id, llm_base_url, debug))
+        asyncio.run(run_node(api_url, rpc_url, api_key, node_id, llm_base_url))
     except AuthenticationError:
-        rich.print(
-            "Authentication failed. Please check your API key and try again.",
-            flush=True,
-        )
+        logger.error("Authentication failed. Please check your API key and try again.")
     except SdkError as e:
-        rich.print(f"Got an Exception when trying to run the node: \n{e}", flush=True)
+        logger.error("Got an Exception when trying to run the node: %s", e)
     except Exception:
-        rich.print(
-            "Got an unexpected Exception when trying to run the node: ", flush=True
-        )
+        logger.error("Got an unexpected Exception when trying to run the node: ")
         traceback.print_exc()
 
 
@@ -447,7 +430,9 @@ def node_status(
     api_url: str = typer.Option(config.GALADRIEL_API_URL, help="API url"),
     api_key: str = typer.Option(config.GALADRIEL_API_KEY, help="API key"),
     node_id: str = typer.Option(config.GALADRIEL_NODE_ID, help="Node ID"),
+    debug: bool = typer.Option(False, help="Enable debug mode"),
 ):
+    init_logging(debug)
     config.validate()
     status, response_json = asyncio.run(
         version_aware_get(
@@ -465,15 +450,15 @@ def node_status(
                 typer.echo("status: " + status_text)
         run_duration = response_json.get("run_duration_seconds")
         if run_duration:
-            rich.print(f"run_duration_seconds: {run_duration}", flush=True)
+            logger.info("run_duration_seconds: %s", run_duration)
         excluded_keys = ["status", "run_duration_seconds"]
         for k, v in response_json.items():
             if k not in excluded_keys:
-                rich.print(f"{k}: {v}", flush=True)
+                logger.info("%s: %s", k, v)
     elif status == HTTPStatus.NOT_FOUND:
-        rich.print("Node has not been registered yet..", flush=True)
+        logger.info("Node has not been registered yet..")
     else:
-        rich.print("Failed to get node status..", flush=True)
+        logger.info("Failed to get node status..")
 
 
 @node_app.command("llm-status", help="Get LLM status")
@@ -482,7 +467,9 @@ def llm_status(
     llm_base_url: Optional[str] = typer.Option(
         config.GALADRIEL_LLM_BASE_URL, help="LLM base url"
     ),
+    debug: bool = typer.Option(False, help="Enable debug mode"),
 ):
+    init_logging(debug)
     config.validate()
     if not llm_base_url:
         llm_base_url = vllm.LLM_BASE_URL
@@ -494,7 +481,9 @@ def node_stats(
     api_url: str = typer.Option(config.GALADRIEL_API_URL, help="API url"),
     api_key: str = typer.Option(config.GALADRIEL_API_KEY, help="API key"),
     node_id: str = typer.Option(config.GALADRIEL_NODE_ID, help="Node ID"),
+    debug: bool = typer.Option(False, help="Enable debug mode"),
 ):
+    init_logging(debug)
     config.validate()
     status, response_json = asyncio.run(
         version_aware_get(
@@ -502,6 +491,7 @@ def node_stats(
         )
     )
     if status == HTTPStatus.OK and response_json:
+        rich.print("Received stats:")
         excluded_keys = ["completed_inferences"]
         for k, v in response_json.items():
             if k not in excluded_keys:
@@ -513,23 +503,29 @@ def node_stats(
 
 
 @node_app.command("upgrade", help="Upgrade the node to the latest version")
-def node_upgrade():
+def node_upgrade(
+    debug: bool = typer.Option(False, help="Enable debug mode"),
+):
+    init_logging(debug)
     try:
-        print("Updating galadriel CLI to the latest version...")
+        logger.info("Updating galadriel CLI to the latest version...")
         subprocess.check_call(
             [sys.executable, "-m", "pip", "install", "--upgrade", "galadriel-node"]
         )
-        print("galadriel CLI has been successfully updated to the latest version.")
+        logger.info(
+            "galadriel CLI has been successfully updated to the latest version."
+        )
     except subprocess.CalledProcessError:
-        print(
-            "An error occurred while updating galadriel CLI. Please check your internet connection and try again."
+        logger.info(
+            "An error occurred while updating galadriel CLI. Please check your internet connection and try again.",
         )
     except Exception as e:
-        print(f"An unexpected error occurred: {str(e)}")
+        logger.error("An unexpected error occurred: %s", str(e))
 
 
 if __name__ == "__main__":
     try:
+        init_logging(True)
         asyncio.run(
             run_node(
                 config.GALADRIEL_API_URL,
@@ -537,13 +533,11 @@ if __name__ == "__main__":
                 config.GALADRIEL_API_KEY,
                 config.GALADRIEL_NODE_ID,
                 config.GALADRIEL_LLM_BASE_URL,
-                True,
             )
         )
     except SdkError as e:
-        rich.print(f"Got an Exception when trying to run the node: \n{e}", flush=True)
+        logger.error("Got an Exception when trying to run the node.", exc_info=True)
     except Exception as e:
-        rich.print(
-            "Got an unexpected Exception when trying to run the node: ", flush=True
+        logger.error(
+            "Got an unexpected Exception when trying to run the node.", exc_info=True
         )
-        traceback.print_exc()

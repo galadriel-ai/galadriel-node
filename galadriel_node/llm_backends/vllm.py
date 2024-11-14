@@ -1,6 +1,7 @@
 import importlib.metadata
 import subprocess
 from typing import Optional
+from venv import logger
 
 import psutil
 
@@ -34,12 +35,12 @@ def stop(pid: int) -> bool:
         process.wait(timeout=2)
         return True
     except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.TimeoutExpired) as e:
-        print(f"Failed to forcibly kill process with PID {pid}: {e}")
+        logger.error("Failed to forcibly kill process with PID %d: %s", pid, e)
         return False
 
 
 # pylint: disable=R1732
-def start(model_name: str, debug: bool = False) -> Optional[int]:
+def start(model_name: str) -> Optional[int]:
     gpu_info = get_gpu_info()
     try:
         command = [
@@ -71,12 +72,10 @@ def start(model_name: str, debug: bool = False) -> Optional[int]:
             process = subprocess.Popen(
                 command, stdout=log_file, stderr=log_file, start_new_session=True
             )
-            if debug:
-                print(
-                    f'Started vllm process with PID: {process.pid}, logging to "vllm.log"'
-                )
+            logger.debug(
+                'Started vllm process with PID: %d, logging to "vllm.log"', process.pid
+            )
             return process.pid
     except Exception as e:
-        if debug:
-            print(f"Error starting vllm process: {e}")
+        logger.debug("Error starting vllm process: %s", e)
         return None

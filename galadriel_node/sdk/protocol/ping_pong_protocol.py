@@ -1,19 +1,21 @@
 import asyncio
 import json
+from logging import getLogger
 from typing import Any, Optional
 
 import rich
-
 from fastapi.encoders import jsonable_encoder
 
 from galadriel_node.sdk.jobs.api_ping_job import ApiPingJob
+from galadriel_node.sdk.protocol import protocol_settings
 from galadriel_node.sdk.protocol.entities import (
     PingRequest,
     PongResponse,
     PingPongMessageType,
     NodeReconnectRequest,
 )
-from galadriel_node.sdk.protocol import protocol_settings
+
+logger = getLogger()
 
 
 # pylint: disable=too-few-public-methods,
@@ -26,7 +28,9 @@ class PingPongProtocol:
         self.api_ping_job = api_ping_job
         self.reconnect_requested = False
         self._lock = asyncio.Lock()
-        rich.print(f"{protocol_settings.PING_PONG_PROTOCOL_NAME}: Protocol initialized")
+        logger.info(
+            "%s: Protocol initialized", protocol_settings.PING_PONG_PROTOCOL_NAME
+        )
 
     # Handle the responses from the client
     async def handle(self, data: Any, my_node_id: str) -> str | None:
@@ -37,9 +41,10 @@ class PingPongProtocol:
             == PingPongMessageType.RECONNECT_REQUEST
             and node_reconnect_request.reconnect_request
         ):
-            rich.print(
-                f"{protocol_settings.PING_PONG_PROTOCOL_NAME}: Received reconnect request."
-                "There is a more performing server found. Trying to connect to this server."
+            logger.info(
+                "%s: Received reconnect request. "
+                "There is a more performing server found. Trying to connect to this server.",
+                protocol_settings.PING_PONG_PROTOCOL_NAME,
             )
             await self.set_reconnect_requested(node_reconnect_request.reconnect_request)
             return None
@@ -49,14 +54,18 @@ class PingPongProtocol:
         # validate them.
         ping_request = _extract_and_validate_ping_request(data)
         if ping_request is None:
-            rich.print(
-                f"{protocol_settings.PING_PONG_PROTOCOL_NAME}: Invalid data received: {data}"
+            logger.info(
+                "%s: Invalid data received: %s",
+                protocol_settings.PING_PONG_PROTOCOL_NAME,
+                data,
             )
             return None
 
-        rich.print(
-            f"{protocol_settings.PING_PONG_PROTOCOL_NAME}: Received ping request for {ping_request.node_id}, "
-            f"nonce: {ping_request.nonce}"
+        logger.info(
+            "%s: Received ping request for %s, nonce: %s",
+            protocol_settings.PING_PONG_PROTOCOL_NAME,
+            ping_request.node_id,
+            ping_request.nonce,
         )
 
         # Protocol checks
@@ -105,25 +114,30 @@ class PingPongProtocol:
 def _protocol_validations(my_node_id: str, ping_request: PingRequest) -> bool:
     # 1 - check if the ping is for the expected node
     if my_node_id != ping_request.node_id:
-        rich.print(
-            f"{protocol_settings.PING_PONG_PROTOCOL_NAME}: Ignoring ping received for unexpected node "
-            f"{ping_request.node_id}"
+        logger.info(
+            "%s: Ignoring ping received for unexpected node %s",
+            protocol_settings.PING_PONG_PROTOCOL_NAME,
+            ping_request.node_id,
         )
         return False
 
     # 2 - check if we have indeed received PING message
     if ping_request.message_type != PingPongMessageType.PING:
-        rich.print(
-            f"{protocol_settings.PING_PONG_PROTOCOL_NAME}: Received message other than ping from node "
-            f"{ping_request.node_id}, {ping_request.message_type}, {PingPongMessageType.PING}"
+        logger.info(
+            "%s: Received message other than ping from node %s, %s, %s",
+            protocol_settings.PING_PONG_PROTOCOL_NAME,
+            ping_request.node_id,
+            ping_request.message_type,
+            PingPongMessageType.PING,
         )
         return False
 
     # 3 - check the version compatibility
     if ping_request.protocol_version != protocol_settings.PING_PONG_PROTOCOL_VERSION:
-        rich.print(
-            f"{protocol_settings.PING_PONG_PROTOCOL_NAME}: Received ping with invalid protocol version from node "
-            f"{ping_request.node_id}"
+        logger.info(
+            "%s: Received ping with invalid protocol version from node %s",
+            protocol_settings.PING_PONG_PROTOCOL_NAME,
+            ping_request.node_id,
         )
         return False
     return True

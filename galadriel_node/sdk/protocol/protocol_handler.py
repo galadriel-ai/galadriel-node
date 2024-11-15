@@ -37,18 +37,19 @@ class ProtocolHandler:
             logger.error("protocol_handler: protocol data is None")
             return
 
-        if protocol_name not in self.protocols:
+        protocol = self.protocols.get(protocol_name)
+        if protocol is None:
             logger.error(f"protocol_handler: Invalid protocol name {protocol_name}")
             return
 
-        proto = self.protocols[protocol_name]
+        logger.error(f"protocol_handler: Handle protocol {protocol_name}")
         try:
-            response = await proto.handle(protocol_data, self.node_id)
+            response = await protocol.handle(protocol_data, self.node_id)
             if response is not None:
                 async with send_lock:
                     await self.websocket.send(response)
         finally:
             time_taken = (time.time() * 1000) - start_time
             logger.info(
-                f"protocol_handler: Time taken to process request: {time_taken}ms"
+                f"protocol_handler: protocol {protocol_name} took {time_taken}ms to process request"
             )

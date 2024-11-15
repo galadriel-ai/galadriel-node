@@ -280,7 +280,6 @@ async def run_node(
 
 async def llm_http_check(llm_base_url: str, total_timeout: float = 60.0):
     timeout = aiohttp.ClientTimeout(total=total_timeout)
-    logging.debug(f"Checking LLM server at {llm_base_url}")
     async with aiohttp.ClientSession(timeout=timeout) as session:
         return await session.get(llm_base_url + "/v1/models/")
 

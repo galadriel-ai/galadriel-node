@@ -23,6 +23,7 @@ from galadriel_node.sdk.protocol.entities import InferenceErrorStatusCodes
 
 logger = logging.getLogger()
 
+
 class Llm:
     def __init__(self, inference_base_url: str):
         base_url: str = urljoin(inference_base_url, "/v1")
@@ -51,7 +52,7 @@ class Llm:
         is_benchmark: bool = False,
     ) -> AsyncGenerator[InferenceResponse, None]:
         if not is_benchmark:
-            logger.info("Running inference, id=%s", request.id)
+            logger.info(f"Running inference, id={request.id}")
         # Use streaming unless using LMDeploy with tools
         inference_function = (
             self._run_inference

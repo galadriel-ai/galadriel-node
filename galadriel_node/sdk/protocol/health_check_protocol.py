@@ -22,20 +22,17 @@ class HealthCheckProtocol:
     PROTOCOL_VERSION = "1.0"
 
     def __init__(self):
-        logger.info("%s: Protocol initialized", self.PROTOCOL_NAME)
+        logger.info(f"{self.PROTOCOL_NAME}: Protocol initialized")
 
     async def handle(self, data: Any, my_node_id: str) -> str | None:
         try:
             request = HealthCheckRequest(**data)
         except Exception:
-            logger.error("%s: Invalid data received: %s", self.PROTOCOL_NAME, data)
+            logger.error(f"{self.PROTOCOL_NAME}: Invalid data received: {data}")
             return None
 
         logger.debug(
-            "%s: Received health request for %s, nonce: %s",
-            self.PROTOCOL_NAME,
-            request.node_id,
-            request.nonce,
+            f"{self.PROTOCOL_NAME}: Received health request for {request.node_id}, nonce: {request.nonce}"
         )
         if _protocol_validations(my_node_id, request) is False:
             return None
@@ -63,9 +60,7 @@ class HealthCheckProtocol:
         data = jsonable_encoder(health_check_response)
         response_message = json.dumps({"protocol": self.PROTOCOL_NAME, "data": data})
         logger.debug(
-            "%s: Sent health check response, nonce: %s",
-            self.PROTOCOL_NAME,
-            health_check_response.nonce,
+            f"{self.PROTOCOL_NAME}: Sent health check response, nonce: {health_check_response.nonce}"
         )
         return response_message
 
@@ -75,25 +70,23 @@ def _protocol_validations(
 ) -> bool:
     if my_node_id != health_check_request.node_id:
         logger.debug(
-            "%s: Ignoring health check received for unexpected node %s",
-            HealthCheckProtocol.PROTOCOL_NAME,
-            health_check_request.node_id,
+            f"{HealthCheckProtocol.PROTOCOL_NAME}: "
+            f"Ignoring health check received for unexpected node {health_check_request.node_id}"
         )
         return False
     if health_check_request.message_type != HealthCheckMessageType.HEALTH_CHECK_REQUEST:
         logger.debug(
-            "%s: Received message other than health check from node %s, %s, %s",
-            HealthCheckProtocol.PROTOCOL_NAME,
-            health_check_request.node_id,
-            health_check_request.message_type,
-            HealthCheckMessageType.HEALTH_CHECK_REQUEST,
+            f"{HealthCheckProtocol.PROTOCOL_NAME} "
+            f"Received message other than health check from node "
+            f"{health_check_request.node_id}, "
+            f"{health_check_request.message_type}, "
+            f"{HealthCheckMessageType.HEALTH_CHECK_REQUEST}"
         )
         return False
     if health_check_request.protocol_version != HealthCheckProtocol.PROTOCOL_VERSION:
         logger.debug(
-            "%s: Received health check with invalid protocol version from node %s",
-            HealthCheckProtocol.PROTOCOL_NAME,
-            health_check_request.node_id,
+            f"{HealthCheckProtocol.PROTOCOL_NAME}: "
+            f"Received health check with invalid protocol version from node {health_check_request.node_id}"
         )
         return False
     return True

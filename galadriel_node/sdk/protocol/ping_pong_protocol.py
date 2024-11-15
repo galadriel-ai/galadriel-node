@@ -29,7 +29,7 @@ class PingPongProtocol:
         self.reconnect_requested = False
         self._lock = asyncio.Lock()
         logger.info(
-            "%s: Protocol initialized", protocol_settings.PING_PONG_PROTOCOL_NAME
+            f"{protocol_settings.PING_PONG_PROTOCOL_NAME}: Protocol initialized"
         )
 
     # Handle the responses from the client
@@ -42,9 +42,8 @@ class PingPongProtocol:
             and node_reconnect_request.reconnect_request
         ):
             logger.info(
-                "%s: Received reconnect request. "
-                "There is a more performing server found. Trying to connect to this server.",
-                protocol_settings.PING_PONG_PROTOCOL_NAME,
+                f"{protocol_settings.PING_PONG_PROTOCOL_NAME}: Received reconnect request. "
+                "There is a more performing server found. Trying to connect to this server."
             )
             await self.set_reconnect_requested(node_reconnect_request.reconnect_request)
             return None
@@ -55,17 +54,13 @@ class PingPongProtocol:
         ping_request = _extract_and_validate_ping_request(data)
         if ping_request is None:
             logger.info(
-                "%s: Invalid data received: %s",
-                protocol_settings.PING_PONG_PROTOCOL_NAME,
-                data,
+                f"{protocol_settings.PING_PONG_PROTOCOL_NAME}: Invalid data received: {data}"
             )
             return None
 
         logger.info(
-            "%s: Received ping request for %s, nonce: %s",
-            protocol_settings.PING_PONG_PROTOCOL_NAME,
-            ping_request.node_id,
-            ping_request.nonce,
+            f"{protocol_settings.PING_PONG_PROTOCOL_NAME}: "
+            f"Received ping request for {ping_request.node_id}, nonce: {ping_request.nonce}"
         )
 
         # Protocol checks
@@ -115,29 +110,25 @@ def _protocol_validations(my_node_id: str, ping_request: PingRequest) -> bool:
     # 1 - check if the ping is for the expected node
     if my_node_id != ping_request.node_id:
         logger.info(
-            "%s: Ignoring ping received for unexpected node %s",
-            protocol_settings.PING_PONG_PROTOCOL_NAME,
-            ping_request.node_id,
+            f"{protocol_settings.PING_PONG_PROTOCOL_NAME}: "
+            f"Ignoring ping received for unexpected node {ping_request.node_id}"
         )
         return False
 
     # 2 - check if we have indeed received PING message
     if ping_request.message_type != PingPongMessageType.PING:
         logger.info(
-            "%s: Received message other than ping from node %s, %s, %s",
-            protocol_settings.PING_PONG_PROTOCOL_NAME,
-            ping_request.node_id,
-            ping_request.message_type,
-            PingPongMessageType.PING,
+            f"{protocol_settings.PING_PONG_PROTOCOL_NAME}: "
+            f"Received message other than ping from node "
+            f"{ping_request.node_id}, {ping_request.message_type}, {PingPongMessageType.PING}"
         )
         return False
 
     # 3 - check the version compatibility
     if ping_request.protocol_version != protocol_settings.PING_PONG_PROTOCOL_VERSION:
         logger.info(
-            "%s: Received ping with invalid protocol version from node %s",
-            protocol_settings.PING_PONG_PROTOCOL_NAME,
-            ping_request.node_id,
+            f"{protocol_settings.PING_PONG_PROTOCOL_NAME}: "
+            f"Received ping with invalid protocol version from node {ping_request.node_id}"
         )
         return False
     return True

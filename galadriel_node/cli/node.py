@@ -4,7 +4,6 @@ import logging
 import signal
 import subprocess
 import sys
-import traceback
 from dataclasses import dataclass
 from http import HTTPStatus
 from logging import getLogger
@@ -67,12 +66,12 @@ async def process_request(
     """
     try:
         await inference_status_counter.increment()
-        logging.debug("REQUEST %s START", request.id)
+        logging.debug(f"REQUEST {request.id} START")
         async for chunk in llm.execute(request):
-            logging.debug("Sending chunk: %s", chunk)
+            logging.debug(f"Sending chunk: {chunk}")
             async with send_lock:
                 await websocket.send(chunk.to_json())
-            logging.debug("REQUEST %s END", request.id)
+            logging.debug(f"REQUEST {request.id} END")
     except Exception as _:
         logging.error(
             "Error occurred while processing inference request", exc_info=True
@@ -160,13 +159,13 @@ async def connect_and_process(
                     retry=True, reset_backoff=True
                 )  # for now, just retry
             except websockets.ConnectionClosed as e:
-                logger.info("Received error: %s", e)
+                logger.info(f"Received error: {e}")
                 match e.code:
                     case CloseCode.POLICY_VIOLATION:
                         return ConnectionResult(retry=True, reset_backoff=False)
                     case CloseCode.TRY_AGAIN_LATER:
                         return ConnectionResult(retry=True, reset_backoff=False)
-                logger.info("Connection closed: %s", e)
+                logger.info(f"Connection closed: {e}")
                 return ConnectionResult(retry=True, reset_backoff=True)
             except Exception as _:
                 logger.error("Error occurred while processing message.", exc_info=True)
@@ -202,21 +201,19 @@ async def retry_connection(rpc_url: str, api_key: str, node_id: str):
                 if result.reset_backoff:
                     retries = 0
                     backoff_time = BACKOFF_MIN
-                logger.debug("Retry #%d in %d seconds...", retries, backoff_time)
+                logger.debug(f"Retry #{retries} in {backoff_time} seconds...")
             else:
                 break
         except websockets.ConnectionClosedError as e:
             retries += 1
-            logger.error("WebSocket connection closed: %s. Retrying...", e)
+            logger.error(f"WebSocket connection closed: {e}. Retrying...")
         except websockets.InvalidStatusCode as e:
             retries += 1
-            logger.error("Invalid status code: %s. Retrying...", e)
+            logger.error(f"Invalid status code: {e}. Retrying...")
         except Exception as _:
             retries += 1
             logger.error(
-                "Websocket connection failed. Retry #%d in %d seconds...",
-                retries,
-                backoff_time,
+                f"Websocket connection failed. Retry #{retries} in {backoff_time} seconds..."
             )
             logger.error("Connection error", exc_info=True)
 
@@ -233,7 +230,7 @@ def handle_termination(loop, llm_pid):
 
     if llm_pid is not None:
         vllm.stop(llm_pid)
-        logger.info("vLLM process with PID %d has been stopped.", llm_pid)
+        logger.info(f"vLLM process with PID {llm_pid} has been stopped.")
 
 
 # pylint: disable=R0917:
@@ -283,7 +280,7 @@ async def run_node(
 
 async def llm_http_check(llm_base_url: str, total_timeout: float = 60.0):
     timeout = aiohttp.ClientTimeout(total=total_timeout)
-    logging.debug("Checking LLM server at %s", llm_base_url)
+    logging.debug(f"Checking LLM server at {llm_base_url}")
     async with aiohttp.ClientSession(timeout=timeout) as session:
         return await session.get(llm_base_url + "/v1/models/")
 
@@ -312,20 +309,17 @@ async def check_llm(llm_base_url: str, model_id: str) -> bool:
         response = await llm_http_check(llm_base_url)
         if response.ok:
             logger.info(
-                "[bold green]\N{CHECK MARK} LLM server at %s is accessible via HTTP.[/bold green]",
-                llm_base_url,
+                f"[bold green]\N{CHECK MARK} LLM server at {llm_base_url} is accessible via HTTP.[/bold green]"
             )
         else:
             logger.info(
-                "[bold red]\N{CROSS MARK} LLM server at %s returned status code: %d[/bold red]",
-                llm_base_url,
-                response.status,
+                f"[bold red]\N{CROSS MARK} LLM server at {llm_base_url} "
+                f"returned status code: {response.status}[/bold red]"
             )
             return False
     except Exception as e:
         logger.error(
-            "[bold red]\N{CROSS MARK} Failed to reach LLM server at %s: \n%s[/bold red]",
-            llm_base_url,
+            f"[bold red]\N{CROSS MARK} Failed to reach LLM server at {llm_base_url}: \n{e}[/bold red]",
             e,
         )
         return False
@@ -334,22 +328,19 @@ async def check_llm(llm_base_url: str, model_id: str) -> bool:
         response = await llm_sanity_check(llm_base_url, model_id)
         if response.status_code == HTTPStatus.OK:
             logger.info(
-                "[bold green]\N{CHECK MARK} LLM server at %s successfully generated tokens.[/bold green]",
-                llm_base_url,
+                f"[bold green]\N{CHECK MARK} LLM server at {llm_base_url} successfully generated tokens.[/bold green]"
             )
             return True
     except openai.APIStatusError as e:
         logger.info(
-            "[bold red]\N{CROSS MARK} LLM server at %s failed to generate tokens. APIStatusError: \n%s[/bold red]",
-            llm_base_url,
-            e,
+            f"[bold red]\N{CROSS MARK} LLM server at {llm_base_url} "
+            f"failed to generate tokens. APIStatusError: \n{e}[/bold red]"
         )
         return False
     except Exception as e:
         logger.error(
-            "[bold red]\N{CROSS MARK} LLM server at %s failed to generate tokens. Exception occurred: %s[/bold red]",
-            llm_base_url,
-            e,
+            f"[bold red]\N{CROSS MARK} LLM server at {llm_base_url} "
+            f"failed to generate tokens. Exception occurred: {e}[/bold red]"
         )
         return False
     return False
@@ -418,10 +409,11 @@ def node_run(
     except AuthenticationError:
         logger.error("Authentication failed. Please check your API key and try again.")
     except SdkError as e:
-        logger.error("Got an Exception when trying to run the node: %s", e)
+        logger.error(f"Got an Exception when trying to run the node: {e}")
     except Exception:
-        logger.error("Got an unexpected Exception when trying to run the node: ")
-        traceback.print_exc()
+        logger.error(
+            "Got an unexpected Exception when trying to run the node: ", exc_info=True
+        )
 
 
 @node_app.command("status", help="Get node status")

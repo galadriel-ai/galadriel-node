@@ -17,4 +17,4 @@ def execute(environment: str):
     _config.save(config_dict=config_dict)
 
     logger.info("\nGaladriel successfully initialised")
-    logger.info("To change values edit: %s", config.CONFIG_FILE_PATH)
+    logger.info(f"To change values edit: {config.CONFIG_FILE_PATH}")

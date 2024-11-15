@@ -12,6 +12,7 @@ LLM_BASE_URL = "http://127.0.0.1:19434"
 
 logger = getLogger()
 
+
 def is_installed() -> bool:
     try:
         importlib.metadata.version("vllm")
@@ -36,7 +37,7 @@ def stop(pid: int) -> bool:
         process.wait(timeout=2)
         return True
     except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.TimeoutExpired) as e:
-        logger.error("Failed to forcibly kill process with PID %d: %s", pid, e)
+        logger.error(f"Failed to forcibly kill process with PID {pid}: {e}")
         return False
 
 
@@ -74,7 +75,7 @@ def start(model_name: str) -> Optional[int]:
                 command, stdout=log_file, stderr=log_file, start_new_session=True
             )
             logger.debug(
-                'Started vllm process with PID: %d, logging to "vllm.log"', process.pid
+                f'Started vllm process with PID: {process.pid}, logging to "vllm.log"'
             )
             return process.pid
     except Exception as _:

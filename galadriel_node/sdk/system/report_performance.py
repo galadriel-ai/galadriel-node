@@ -73,10 +73,9 @@ async def _get_benchmark_tokens_per_sec(llm_base_url: str) -> float:
     logger.info("    Loading prompts dataset")
     dataset: List[Dict] = _load_dataset()
 
-    logger.info("    Using %d threads", NUM_THREADS)
+    logger.info(f"    Using {NUM_THREADS} threads")
     logger.info(
-        "    Running inference requests, this will take around %d seconds...",
-        BENCHMARK_TIME_SECONDS,
+        f"    Running inference requests, this will take around {BENCHMARK_TIME_SECONDS} seconds..."
     )
     llm = Llm(llm_base_url)
     datasets = _split_dataset(dataset, NUM_THREADS)
@@ -94,8 +93,8 @@ async def _get_benchmark_tokens_per_sec(llm_base_url: str) -> float:
     time_elapsed = benchmark_end - benchmark_start
     tokens_per_sec = completion_tokens_all_threads / time_elapsed
     logger.info("    Benchmarking done!")
-    logger.info("    Time elapsed: %s", time_elapsed)
-    logger.info("    Average tokens/sec: %s", tokens_per_sec)
+    logger.info(f"    Time elapsed: {time_elapsed}")
+    logger.info(f"    Average tokens/sec: {tokens_per_sec}")
     return tokens_per_sec
 
 

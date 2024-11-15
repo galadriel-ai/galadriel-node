@@ -2,7 +2,6 @@ import asyncio
 from logging import getLogger
 from typing import Optional
 
-import rich
 from ping3 import ping
 
 from galadriel_node.config import config
@@ -28,11 +27,11 @@ class ApiPingJob:
 
     def _check_api_ping_time(self) -> Optional[int]:
         ping_time = ping(self.domain, unit="ms")
-        logger.debug("Ping to domain: %s", self.domain)
+        logger.debug(f"Ping to domain: {self.domain}")
         if not ping_time:
-            rich.print("Failed to ping the Galadriel API.")
+            logger.info("Failed to ping the Galadriel API.")
             return None
-        logger.debug("API ping time: %sms", ping_time)
+        logger.debug(f"API ping time: {ping_time}ms")
         return int(ping_time)
 
     async def _append_ping_time(self, ping_time: Optional[int]):

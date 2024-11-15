@@ -1,3 +1,4 @@
+import logging
 from typing import List
 from typing import Optional
 from typing import AsyncGenerator
@@ -20,6 +21,7 @@ from galadriel_node.sdk.protocol.entities import InferenceResponse
 from galadriel_node.sdk.protocol.entities import InferenceStatusCodes
 from galadriel_node.sdk.protocol.entities import InferenceErrorStatusCodes
 
+logger = logging.getLogger()
 
 class Llm:
     def __init__(self, inference_base_url: str):
@@ -49,7 +51,7 @@ class Llm:
         is_benchmark: bool = False,
     ) -> AsyncGenerator[InferenceResponse, None]:
         if not is_benchmark:
-            print(f"Running inference, id={request.id}", flush=True)
+            logger.info("Running inference, id=%s", request.id)
         # Use streaming unless using LMDeploy with tools
         inference_function = (
             self._run_inference

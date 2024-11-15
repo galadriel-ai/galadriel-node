@@ -454,7 +454,7 @@ def node_status(
         excluded_keys = ["status", "run_duration_seconds"]
         for k, v in response_json.items():
             if k not in excluded_keys:
-                logger.info("%s: %s", k, v)
+                rich.print(f"{k}: {v}", flush=True)
     elif status == HTTPStatus.NOT_FOUND:
         logger.info("Node has not been registered yet..")
     else:

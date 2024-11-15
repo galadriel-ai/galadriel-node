@@ -1,3 +1,4 @@
+import logging
 import platform
 from http import HTTPStatus
 from typing import Tuple
@@ -28,10 +29,12 @@ SUPPORTED_GPUS = [
 MIN_DOWNLOAD_SPEED = 10  # MB/s
 MIN_UPLOAD_SPEED = 10  # MB/s
 
+logger = logging.getLogger()
+
 
 async def report_hardware(api_url: str, api_key: str, node_id: str) -> None:
     if await _get_info_already_exists(api_url, api_key, node_id):
-        print("Node info is already saved", flush=True)
+        logger.info("Node info is already saved")
         return None
     if config.GALADRIEL_ENVIRONMENT == "local":
         version = _get_version()

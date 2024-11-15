@@ -1,20 +1,18 @@
-import asyncio
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch, call
+from unittest.mock import AsyncMock, patch, call
 
-from galadriel_node.config import config
-from galadriel_node.sdk.jobs.reconnect_request_job import wait_for_reconnect
+import pytest
+
 from galadriel_node.cli.node import (
     run_node,
     run_llm,
     retry_connection,
-    connect_and_process,
     BACKOFF_MIN,
     BACKOFF_INCREMENT,
     BACKOFF_MAX,
     ConnectionResult,
     SdkError,
 )
+from galadriel_node.config import config
 from galadriel_node.llm_backends.vllm import LLM_BASE_URL
 
 
@@ -41,7 +39,6 @@ async def test_retry_connection_with_exceptions():
                 "mock_rpc_url",
                 "mock_api_key",
                 "mock_node_id",
-                False,
             )
 
             assert mock_connect_and_process.call_count == 6
@@ -74,7 +71,6 @@ async def test_retry_connection_keyboard_interrupt():
                 "mock_rpc_url",
                 "mock_api_key",
                 "mock_node_id",
-                False,
             )
 
         assert mock_connect_and_process.await_count == 1
@@ -98,7 +94,7 @@ async def test_run_vllm_when_vllm_installed_and_not_running():
         mock_check_llm.return_value = True
         mock_llm_http_check.return_value.ok = True
 
-        result = await run_llm(model_id, debug)
+        result = await run_llm(model_id)
 
         assert result == process_pid
         mock_start.assert_called_once()
@@ -112,7 +108,7 @@ async def test_run_vllm_when_vllm_not_installedl():
 
     with patch("galadriel_node.llm_backends.vllm.is_installed", return_value=False):
         with pytest.raises(SdkError, match="vLLM is not installed"):
-            await run_llm(model_id, debug)
+            await run_llm(model_id)
 
 
 async def test_run_vllm_when_vllm_process_dies():
@@ -131,7 +127,7 @@ async def test_run_vllm_when_vllm_process_dies():
         with pytest.raises(
             SdkError, match=r"vLLM process \(PID: 12345\) died unexpectedly"
         ):
-            await run_llm(model_id, debug)
+            await run_llm(model_id)
 
 
 async def test_run_node_with_llm_base_url():
@@ -140,7 +136,6 @@ async def test_run_node_with_llm_base_url():
     api_key = "mock_api_key"
     node_id = "mock_node_id"
     llm_base_url = "mock_llm_base_url"
-    debug = False
 
     with patch(
         "galadriel_node.cli.node.check_llm", new_callable=AsyncMock
@@ -157,7 +152,7 @@ async def test_run_node_with_llm_base_url():
     ) as mock_run_llm:
         mock_check_llm.return_value = True
 
-        await run_node(api_url, rpc_url, api_key, node_id, llm_base_url, debug)
+        await run_node(api_url, rpc_url, api_key, node_id, llm_base_url)
 
         mock_check_llm.assert_called_once_with(llm_base_url, config.GALADRIEL_MODEL_ID)
 
@@ -173,7 +168,6 @@ async def test_run_node_without_llm_base_url():
     api_key = "mock_api_key"
     node_id = "mock_node_id"
     llm_base_url = None
-    debug = False
     process_pid = 12345
 
     with patch(
@@ -189,9 +183,9 @@ async def test_run_node_without_llm_base_url():
     ):
         mock_run_llm.return_value = process_pid
 
-        await run_node(api_url, rpc_url, api_key, node_id, llm_base_url, debug)
+        await run_node(api_url, rpc_url, api_key, node_id, llm_base_url)
 
-        mock_run_llm.assert_called_once_with(config.GALADRIEL_MODEL_ID, debug)
+        mock_run_llm.assert_called_once_with(config.GALADRIEL_MODEL_ID)
 
         assert mock_report_hardware.called
         assert mock_report_performance.called
@@ -204,7 +198,6 @@ async def test_run_node_with_llm_base_url_check_fails():
     api_key = "mock_api_key"
     node_id = "mock_node_id"
     llm_base_url = "mock_llm_base_url"
-    debug = False
 
     with patch(
         "galadriel_node.cli.node.check_llm", new_callable=AsyncMock
@@ -214,6 +207,6 @@ async def test_run_node_with_llm_base_url_check_fails():
         mock_check_llm.return_value = False
 
         with pytest.raises(SdkError, match="LLM check failed"):
-            await run_node(api_url, rpc_url, api_key, node_id, llm_base_url, debug)
+            await run_node(api_url, rpc_url, api_key, node_id, llm_base_url)
 
         mock_check_llm.assert_called_once_with(llm_base_url, config.GALADRIEL_MODEL_ID)

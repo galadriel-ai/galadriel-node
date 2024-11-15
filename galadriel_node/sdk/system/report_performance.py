@@ -14,11 +14,12 @@ from openai.types.chat import ChatCompletionChunk
 
 from galadriel_node.config import config
 from galadriel_node.sdk import api
-from galadriel_node.sdk.entities import SdkError
 from galadriel_node.sdk.entities import AuthenticationError
+from galadriel_node.sdk.entities import SdkError
+from galadriel_node.sdk.llm import Llm
 from galadriel_node.sdk.protocol.entities import InferenceRequest
 from galadriel_node.sdk.protocol.entities import InferenceStatusCodes
-from galadriel_node.sdk.llm import Llm
+from galadriel_node.sdk.system.report_hardware import logger
 
 BENCHMARK_TIME_SECONDS = 60
 NUM_THREADS = 16
@@ -47,9 +48,9 @@ async def report_performance(
             model_name, config.MINIMUM_COMPLETIONS_TOKENS_PER_SECOND
         )
         if existing_tokens_per_second > min_tokens_per_sec:
-            print("Node benchmarking is already done", flush=True)
+            logger.info("Node benchmarking is already done")
             return None
-        print("Node benchmarking results are too low, retrying", flush=True)
+        logger.info("Node benchmarking results are too low, retrying")
 
     tokens_per_sec = await _get_benchmark_tokens_per_sec(llm_base_url)
     await _post_benchmark(model_name, tokens_per_sec, api_url, api_key, node_id)
@@ -68,16 +69,14 @@ async def _get_benchmark(
 
 
 async def _get_benchmark_tokens_per_sec(llm_base_url: str) -> float:
-    print("Starting LLM benchmarking...", flush=True)
-    print("    Loading prompts dataset", flush=True)
+    logger.info("Starting LLM benchmarking...")
+    logger.info("    Loading prompts dataset")
     dataset: List[Dict] = _load_dataset()
 
-    print(f"    Using {NUM_THREADS} threads", flush=True)
-    print(
-        f"    Running inference requests, this will take around {BENCHMARK_TIME_SECONDS} seconds...",
-        flush=True,
+    logger.info(f"    Using {NUM_THREADS} threads")
+    logger.info(
+        f"    Running inference requests, this will take around {BENCHMARK_TIME_SECONDS} seconds..."
     )
-
     llm = Llm(llm_base_url)
     datasets = _split_dataset(dataset, NUM_THREADS)
     loop = asyncio.get_running_loop()
@@ -93,9 +92,9 @@ async def _get_benchmark_tokens_per_sec(llm_base_url: str) -> float:
     completion_tokens_all_threads = sum(results)
     time_elapsed = benchmark_end - benchmark_start
     tokens_per_sec = completion_tokens_all_threads / time_elapsed
-    print("    Benchmarking done!", flush=True)
-    print(f"    Time elapsed: {time_elapsed}", flush=True)
-    print(f"    Average tokens/sec: {tokens_per_sec}", flush=True)
+    logger.info("    Benchmarking done!")
+    logger.info(f"    Time elapsed: {time_elapsed}")
+    logger.info(f"    Average tokens/sec: {tokens_per_sec}")
     return tokens_per_sec
 
 
@@ -160,7 +159,7 @@ async def _make_inference_request(
             if completion_tokens is not None:
                 return completion_tokens
             break
-    print("        Request failed", flush=True)
+    logger.info("        Request failed")
     return 0
 
 
@@ -183,7 +182,7 @@ async def _post_benchmark(
         ) as response:
             await response.json()
             if response.status == HTTPStatus.OK:
-                print("Successfully sent benchmark results", flush=True)
+                logger.info("Successfully sent benchmark results")
             elif response.status == HTTPStatus.UNAUTHORIZED:
                 raise AuthenticationError("Unauthorized to save benchmark results")
             else:

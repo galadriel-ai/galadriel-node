@@ -1,5 +1,6 @@
 import importlib.metadata
 import subprocess
+from logging import getLogger
 from typing import Optional
 
 import psutil
@@ -8,6 +9,8 @@ from galadriel_node.sdk.system.report_hardware import get_gpu_info
 
 CONTEXT_SIZE = 8192
 LLM_BASE_URL = "http://127.0.0.1:19434"
+
+logger = getLogger()
 
 
 def is_installed() -> bool:
@@ -34,12 +37,12 @@ def stop(pid: int) -> bool:
         process.wait(timeout=2)
         return True
     except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.TimeoutExpired) as e:
-        print(f"Failed to forcibly kill process with PID {pid}: {e}")
+        logger.error(f"Failed to forcibly kill process with PID {pid}: {e}")
         return False
 
 
 # pylint: disable=R1732
-def start(model_name: str, debug: bool = False) -> Optional[int]:
+def start(model_name: str) -> Optional[int]:
     gpu_info = get_gpu_info()
     try:
         command = [
@@ -71,12 +74,10 @@ def start(model_name: str, debug: bool = False) -> Optional[int]:
             process = subprocess.Popen(
                 command, stdout=log_file, stderr=log_file, start_new_session=True
             )
-            if debug:
-                print(
-                    f'Started vllm process with PID: {process.pid}, logging to "vllm.log"'
-                )
+            logger.debug(
+                f'Started vllm process with PID: {process.pid}, logging to "vllm.log"'
+            )
             return process.pid
-    except Exception as e:
-        if debug:
-            print(f"Error starting vllm process: {e}")
+    except Exception as _:
+        logger.error("Error starting vllm process.", exc_info=True)
         return None

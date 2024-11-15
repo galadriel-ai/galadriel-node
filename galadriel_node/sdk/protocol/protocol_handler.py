@@ -27,22 +27,22 @@ class ProtocolHandler:
     async def handle(self, parsed_data: Any, send_lock: asyncio.Lock):
         # see how much time we take to process this request
         start_time = time.time() * 1000
+        protocol_name = parsed_data.get("protocol")
+        protocol_data = parsed_data.get("data")
+        if protocol_name is None:
+            logger.error("protocol_handler: protocol name is None")
+            return
+
+        if protocol_data is None:
+            logger.error("protocol_handler: protocol data is None")
+            return
+
+        if protocol_name not in self.protocols:
+            logger.error(f"protocol_handler: Invalid protocol name {protocol_name}")
+            return
+
+        proto = self.protocols[protocol_name]
         try:
-            protocol_name = parsed_data.get("protocol")
-            protocol_data = parsed_data.get("data")
-            if protocol_name is None:
-                logger.error("protocol_handler: protocol name is None")
-                return
-
-            if protocol_data is None:
-                logger.error("protocol_handler: protocol data is None")
-                return
-
-            if protocol_name not in self.protocols:
-                logger.error(f"protocol_handler: Invalid protocol name {protocol_name}")
-                return
-
-            proto = self.protocols[protocol_name]
             response = await proto.handle(protocol_data, self.node_id)
             if response is not None:
                 async with send_lock:

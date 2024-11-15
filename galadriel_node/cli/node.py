@@ -10,7 +10,6 @@ from http import HTTPStatus
 from logging import getLogger
 from typing import Optional
 from urllib.parse import urljoin, urlparse
-from venv import logger
 
 import aiohttp
 import openai
@@ -169,8 +168,8 @@ async def connect_and_process(
                         return ConnectionResult(retry=True, reset_backoff=False)
                 logger.info("Connection closed: %s", e)
                 return ConnectionResult(retry=True, reset_backoff=True)
-            except Exception as e:
-                logger.error("Error occurred while processing message: %s", e)
+            except Exception as _:
+                logger.error("Error occurred while processing message.", exc_info=True)
                 return ConnectionResult(retry=True, reset_backoff=True)
             finally:
                 logger.info("Closing the connection and cleaning up...")
@@ -212,14 +211,14 @@ async def retry_connection(rpc_url: str, api_key: str, node_id: str):
         except websockets.InvalidStatusCode as e:
             retries += 1
             logger.error("Invalid status code: %s. Retrying...", e)
-        except Exception as e:
+        except Exception as _:
             retries += 1
-            logger.error("%s", e)
             logger.error(
                 "Websocket connection failed. Retry #%d in %d seconds...",
                 retries,
                 backoff_time,
             )
+            logger.error("Connection error", exc_info=True)
 
         # Exponential backoff with offset
         await asyncio.sleep(backoff_time)
@@ -347,7 +346,7 @@ async def check_llm(llm_base_url: str, model_id: str) -> bool:
         )
         return False
     except Exception as e:
-        logger.info(
+        logger.error(
             "[bold red]\N{CROSS MARK} LLM server at %s failed to generate tokens. Exception occurred: %s[/bold red]",
             llm_base_url,
             e,
@@ -450,7 +449,7 @@ def node_status(
                 typer.echo("status: " + status_text)
         run_duration = response_json.get("run_duration_seconds")
         if run_duration:
-            logger.info("run_duration_seconds: %s", run_duration)
+            logger.info(f"run_duration_seconds: {run_duration}")
         excluded_keys = ["status", "run_duration_seconds"]
         for k, v in response_json.items():
             if k not in excluded_keys:
@@ -519,8 +518,8 @@ def node_upgrade(
         logger.info(
             "An error occurred while updating galadriel CLI. Please check your internet connection and try again.",
         )
-    except Exception as e:
-        logger.error("An unexpected error occurred: %s", str(e))
+    except Exception as _:
+        logger.error("An unexpected error occurred.", exc_info=True)
 
 
 if __name__ == "__main__":

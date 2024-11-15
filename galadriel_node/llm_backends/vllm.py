@@ -1,7 +1,7 @@
 import importlib.metadata
 import subprocess
+from logging import getLogger
 from typing import Optional
-from venv import logger
 
 import psutil
 
@@ -10,6 +10,7 @@ from galadriel_node.sdk.system.report_hardware import get_gpu_info
 CONTEXT_SIZE = 8192
 LLM_BASE_URL = "http://127.0.0.1:19434"
 
+logger = getLogger()
 
 def is_installed() -> bool:
     try:
@@ -76,6 +77,6 @@ def start(model_name: str) -> Optional[int]:
                 'Started vllm process with PID: %d, logging to "vllm.log"', process.pid
             )
             return process.pid
-    except Exception as e:
-        logger.debug("Error starting vllm process: %s", e)
+    except Exception as _:
+        logger.error("Error starting vllm process.", exc_info=True)
         return None

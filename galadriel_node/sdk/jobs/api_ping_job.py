@@ -22,9 +22,9 @@ class ApiPingJob:
                 await asyncio.sleep(config.GALADRIEL_API_PING_INTERVAL)
                 ping_time = self._check_api_ping_time()
                 await self._append_ping_time(ping_time)
-            except Exception as e:
+            except Exception as _:
                 await self._append_ping_time(None)
-                logger.error("Error occurs in API ping job: %s", e)
+                logger.error("Error occurs in API ping job.", exc_info=True)
 
     def _check_api_ping_time(self) -> Optional[int]:
         ping_time = ping(self.domain, unit="ms")

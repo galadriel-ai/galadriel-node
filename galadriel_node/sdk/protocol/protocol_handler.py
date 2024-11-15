@@ -1,8 +1,10 @@
-import time
 import asyncio
+import time
+from logging import getLogger
 from typing import Any
 from typing import Dict
-import rich
+
+logger = getLogger()
 
 
 # Handler for all the protocols
@@ -28,11 +30,16 @@ class ProtocolHandler:
         try:
             protocol_name = parsed_data.get("protocol")
             protocol_data = parsed_data.get("data")
-            if protocol_name is None or protocol_data is None:
-                rich.print("protocol_handler: Invalid protocol name or data")
+            if protocol_name is None:
+                logger.error("protocol_handler: protocol name is None")
                 return
+
+            if protocol_data is None:
+                logger.error("protocol_handler: protocol data is None")
+                return
+
             if protocol_name not in self.protocols:
-                rich.print("protocol_handler: Invalid protocol name")
+                logger.error(f"protocol_handler: Invalid protocol name {protocol_name}")
                 return
 
             proto = self.protocols[protocol_name]
@@ -42,6 +49,6 @@ class ProtocolHandler:
                     await self.websocket.send(response)
         finally:
             time_taken = (time.time() * 1000) - start_time
-            rich.print(
+            logger.info(
                 f"protocol_handler: Time taken to process request: {time_taken}ms"
             )

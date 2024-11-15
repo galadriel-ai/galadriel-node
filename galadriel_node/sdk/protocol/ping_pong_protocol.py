@@ -3,7 +3,6 @@ import json
 from logging import getLogger
 from typing import Any, Optional
 
-import rich
 from fastapi.encoders import jsonable_encoder
 
 from galadriel_node.sdk.jobs.api_ping_job import ApiPingJob
@@ -88,7 +87,7 @@ class PingPongProtocol:
         pong_message = json.dumps(
             {"protocol": protocol_settings.PING_PONG_PROTOCOL_NAME, "data": data}
         )
-        rich.print(
+        logger.info(
             f"{protocol_settings.PING_PONG_PROTOCOL_NAME}: Sent pong , "
             f"nonce: {pong_response.nonce}, "
             f"rtt: {self.rtt}, "

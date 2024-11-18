@@ -1,16 +1,16 @@
 import importlib.metadata
 import subprocess
-from logging import getLogger
 from typing import Optional
 
 import psutil
 
+from galadriel_node.sdk.logging_utils import get_node_logger
 from galadriel_node.sdk.system.report_hardware import get_gpu_info
 
 CONTEXT_SIZE = 8192
 LLM_BASE_URL = "http://127.0.0.1:19434"
 
-logger = getLogger()
+logger = get_node_logger()
 
 
 def is_installed() -> bool:

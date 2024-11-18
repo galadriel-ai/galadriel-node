@@ -1,4 +1,3 @@
-import logging
 from typing import List
 from typing import Optional
 from typing import AsyncGenerator
@@ -15,13 +14,14 @@ from openai.types.chat.chat_completion_chunk import ChoiceLogprobs
 from openai.types.chat.chat_completion_chunk import ChoiceDeltaToolCall
 from openai.types.chat.chat_completion_chunk import ChoiceDeltaToolCallFunction
 from galadriel_node.sdk.entities import LLMEngine
+from galadriel_node.sdk.logging_utils import get_node_logger
 from galadriel_node.sdk.protocol.entities import InferenceError
 from galadriel_node.sdk.protocol.entities import InferenceRequest
 from galadriel_node.sdk.protocol.entities import InferenceResponse
 from galadriel_node.sdk.protocol.entities import InferenceStatusCodes
 from galadriel_node.sdk.protocol.entities import InferenceErrorStatusCodes
 
-logger = logging.getLogger()
+logger = get_node_logger()
 
 
 class Llm:

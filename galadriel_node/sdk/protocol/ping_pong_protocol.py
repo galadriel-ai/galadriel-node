@@ -1,11 +1,11 @@
 import asyncio
 import json
-from logging import getLogger
 from typing import Any, Optional
 
 from fastapi.encoders import jsonable_encoder
 
 from galadriel_node.sdk.jobs.api_ping_job import ApiPingJob
+from galadriel_node.sdk.logging_utils import get_node_logger
 from galadriel_node.sdk.protocol import protocol_settings
 from galadriel_node.sdk.protocol.entities import (
     PingRequest,
@@ -14,7 +14,7 @@ from galadriel_node.sdk.protocol.entities import (
     NodeReconnectRequest,
 )
 
-logger = getLogger()
+logger = get_node_logger()
 
 
 # pylint: disable=too-few-public-methods,

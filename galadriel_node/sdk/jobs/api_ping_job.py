@@ -1,12 +1,12 @@
 import asyncio
-from logging import getLogger
 from typing import Optional
 
 from ping3 import ping
 
 from galadriel_node.config import config
+from galadriel_node.sdk.logging_utils import get_node_logger
 
-logger = getLogger()
+logger = get_node_logger()
 
 
 class ApiPingJob:

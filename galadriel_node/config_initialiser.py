@@ -1,8 +1,7 @@
-from logging import getLogger
-
 from galadriel_node import config
+from galadriel_node.sdk.logging_utils import get_node_logger
 
-logger = getLogger()
+logger = get_node_logger()
 
 
 def execute(environment: str):

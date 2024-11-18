@@ -1,9 +1,9 @@
 from http import HTTPStatus
-from logging import getLogger
 
 from galadriel_node.sdk import api
+from galadriel_node.sdk.logging_utils import get_node_logger
 
-logger = getLogger()
+logger = get_node_logger()
 
 
 async def version_aware_get(api_url, endpoint, api_key, query_params=None):

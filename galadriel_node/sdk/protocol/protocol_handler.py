@@ -1,10 +1,11 @@
 import asyncio
 import time
-from logging import getLogger
 from typing import Any
 from typing import Dict
 
-logger = getLogger()
+from galadriel_node.sdk.logging_utils import get_node_logger
+
+logger = get_node_logger()
 
 
 # Handler for all the protocols

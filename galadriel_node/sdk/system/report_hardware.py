@@ -1,4 +1,3 @@
-import logging
 import platform
 from http import HTTPStatus
 from typing import Tuple
@@ -16,6 +15,7 @@ from galadriel_node.config import config
 from galadriel_node.sdk import api
 from galadriel_node.sdk.entities import SdkError
 from galadriel_node.sdk.entities import AuthenticationError
+from galadriel_node.sdk.logging_utils import get_node_logger
 from galadriel_node.sdk.system.entities import GPUInfo
 from galadriel_node.sdk.system.entities import NodeInfo
 
@@ -29,7 +29,7 @@ SUPPORTED_GPUS = [
 MIN_DOWNLOAD_SPEED = 10  # MB/s
 MIN_UPLOAD_SPEED = 10  # MB/s
 
-logger = logging.getLogger()
+logger = get_node_logger()
 
 
 async def report_hardware(api_url: str, api_key: str, node_id: str) -> None:

@@ -6,7 +6,6 @@ import subprocess
 import sys
 from dataclasses import dataclass
 from http import HTTPStatus
-from logging import getLogger
 from typing import Optional
 from urllib.parse import urljoin, urlparse
 
@@ -24,7 +23,7 @@ from galadriel_node.sdk.jobs.api_ping_job import ApiPingJob
 from galadriel_node.sdk.jobs.inference_status_counter import InferenceStatusCounter
 from galadriel_node.sdk.jobs.reconnect_request_job import wait_for_reconnect
 from galadriel_node.sdk.llm import Llm
-from galadriel_node.sdk.logging_utils import init_logging
+from galadriel_node.sdk.logging_utils import init_logging, get_node_logger
 from galadriel_node.sdk.protocol import protocol_settings
 from galadriel_node.sdk.protocol.entities import InferenceRequest
 from galadriel_node.sdk.protocol.health_check_protocol import HealthCheckProtocol
@@ -46,7 +45,7 @@ BACKOFF_MIN = 24  # Minimum backoff time in seconds
 BACKOFF_INCREMENT = 6  # Incremental backoff time in seconds
 BACKOFF_MAX = 300  # Maximum backoff time in seconds
 
-logger = getLogger()
+logger = get_node_logger()
 
 
 @dataclass
@@ -280,7 +279,6 @@ async def run_node(
 
 async def llm_http_check(llm_base_url: str, total_timeout: float = 60.0):
     timeout = aiohttp.ClientTimeout(total=total_timeout)
-    logging.debug(f"Checking LLM server at {llm_base_url}")
     async with aiohttp.ClientSession(timeout=timeout) as session:
         return await session.get(llm_base_url + "/v1/models/")
 

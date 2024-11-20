@@ -52,7 +52,7 @@ def start(model_name: str) -> Optional[int]:
             "--max-model-len",
             "8192",
             "--gpu-memory-utilization",
-            "1",
+            "0.95",
             "--host",
             "127.0.0.1",
             "--port",

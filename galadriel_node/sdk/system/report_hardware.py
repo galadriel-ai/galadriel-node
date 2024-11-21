@@ -1,10 +1,9 @@
+import importlib
 import platform
 from http import HTTPStatus
 from typing import Tuple
 from urllib.parse import urljoin
 
-
-import importlib
 import aiohttp
 import cpuinfo
 import psutil
@@ -13,8 +12,8 @@ from gpustat import GPUStatCollection
 
 from galadriel_node.config import config
 from galadriel_node.sdk import api
-from galadriel_node.sdk.entities import SdkError
 from galadriel_node.sdk.entities import AuthenticationError
+from galadriel_node.sdk.entities import SdkError
 from galadriel_node.sdk.logging_utils import get_node_logger
 from galadriel_node.sdk.system.entities import GPUInfo
 from galadriel_node.sdk.system.entities import NodeInfo
@@ -42,6 +41,7 @@ async def report_hardware(api_url: str, api_key: str, node_id: str) -> None:
             gpu_model=SUPPORTED_GPUS[0],
             gpu_count=1,
             vram=20000,
+            power_limit=350,
             cpu_model="macOS-14.4.1-arm64-arm-64bit",
             cpu_count=8,
             ram=16384,
@@ -70,6 +70,7 @@ async def report_hardware(api_url: str, api_key: str, node_id: str) -> None:
             gpu_model=gpu_info.gpu_model,
             vram=gpu_info.vram,
             gpu_count=gpu_info.gpu_count,
+            power_limit=gpu_info.power_limit,
             cpu_model=cpu_model,
             cpu_count=cpu_count,
             ram=total_mem_mb,
@@ -84,28 +85,29 @@ async def report_hardware(api_url: str, api_key: str, node_id: str) -> None:
 def get_gpu_info() -> GPUInfo:
     try:
         query = GPUStatCollection.new_query()
-        data = query.jsonify()
     except Exception:
         raise SdkError(
             "No supported GPU found, make sure `nvidia-smi` works, NVIDIA driver versions must be R450.00 or higher."
         )
 
-    if not data["gpus"]:
+    if not query.gpus:
         raise SdkError(
             "No supported GPU found, make sure you have a supported NVIDIA GPU."
         )
 
-    gpus = [gpu for gpu in data["gpus"] if "NVIDIA" in gpu["name"]]
-    if not gpus:
+    nvidia_gpus = [gpu for gpu in query.gpus if "NVIDIA" in gpu.name]
+    if not nvidia_gpus:
         raise SdkError(
-            "No supported GPU found, make sure you have a supported NVIDIA GPU."
+            "No supported Nvidia GPU found, make sure you have a supported NVIDIA GPU."
         )
 
-    gpu_name = gpus[0]["name"]
-    gpu_vram_mb = gpus[0]["memory.total"] * 1.048576
-    gpu_count = len(gpus)
-
-    return GPUInfo(gpu_model=gpu_name, vram=int(gpu_vram_mb), gpu_count=gpu_count)
+    gpu = nvidia_gpus[0]
+    return GPUInfo(
+        gpu_model=gpu.name,
+        vram=int(gpu.memory_total * 1.048576),
+        gpu_count=len(nvidia_gpus),
+        power_limit=gpu.power_limit or 0,
+    )
 
 
 def _get_cpu_info() -> Tuple[str, int]:

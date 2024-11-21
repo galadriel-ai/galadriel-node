@@ -7,6 +7,7 @@ class GPUInfo:
     gpu_model: str
     vram: int
     gpu_count: int
+    power_limit: int
 
 
 @dataclass
@@ -24,6 +25,7 @@ class NodeInfo(GPUInfo):
 class GPUUtilization:
     gpu_percent: int
     vram_percent: int
+    power_percent: int
 
 
 @dataclass

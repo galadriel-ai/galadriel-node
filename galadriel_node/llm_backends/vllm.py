@@ -59,7 +59,8 @@ def start(model_name: str) -> Optional[int]:
             "19434",
             "--disable-frontend-multiprocessing",
         ]
-        if gpu_info.vram <= 8192:
+        # 12GB vram is not supported, not sure about what is in between
+        if gpu_info.vram <= 20000:
             command.extend(
                 [
                     "--kv_cache_dtype",

@@ -1,8 +1,10 @@
+import asyncio
 import importlib.resources
 from typing import List
 from urllib.parse import urljoin
 
 import openai
+from tqdm import tqdm
 
 from galadriel_node.sdk.logging_utils import get_node_logger
 from galadriel_node.sdk.protocol.entities import InferenceRequest
@@ -10,20 +12,28 @@ from galadriel_node.sdk.time_tracker import TimeTracker
 
 logger = get_node_logger()
 
-BENCHMARK_COUNT = 10
+
+async def execute(llm_base_url: str, model_id: str, concurrency: int, requests: int) -> None:
+    tasks = []
+    for _ in range(concurrency):
+        task = asyncio.create_task(_loop_inferences(llm_base_url, model_id, requests))
+        tasks.append(task)
+
+    results = await asyncio.gather(*tasks)
+    all_trackers = []
+    for result in results:
+        all_trackers += result
+
+    _print_final_results(all_trackers)
 
 
-async def execute(llm_base_url: str, model_id: str) -> None:
+async def _loop_inferences(llm_base_url: str, model_id: str, requests: int) -> List[TimeTracker]:
     trackers = []
-    for _ in range(BENCHMARK_COUNT):
+    for _ in tqdm(range(requests)):
         tracker = await _run_inference(llm_base_url, model_id)
-        print("\nResults:")
-        print("  prompt_tokens:", tracker.get_prompt_tokens())
-        print("  time_to_first_token:", tracker.get_time_to_first_token())
-        print("  total_time:", tracker.get_total_time())
         trackers.append(tracker)
 
-    _print_final_results(trackers)
+    return trackers
 
 
 async def _run_inference(llm_base_url: str, model_id: str) -> TimeTracker:
@@ -65,11 +75,15 @@ def _get_text():
 
 
 def _print_final_results(trackers: List[TimeTracker]) -> None:
+    if not trackers:
+        return
+
     ttfts = []
     for tracker in trackers:
         ttfts.append(tracker.get_time_to_first_token())
 
     print("\nFinal Result:")
+    print("  prompt_tokens:", trackers[0].get_prompt_tokens())
     print("  min:", min(ttfts))
     print("  max:", max(ttfts))
     print("  avg:", sum(ttfts) / len(ttfts))

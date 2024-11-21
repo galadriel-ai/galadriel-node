@@ -472,13 +472,15 @@ def benchmark(
     llm_base_url: Optional[str] = typer.Option(
         config.GALADRIEL_LLM_BASE_URL, help="LLM base url"
     ),
+    concurrency: int = typer.Option(1, help="How many concurrent requests"),
+    requests: int = typer.Option(10, help="How many requests"),
     debug: bool = typer.Option(False, help="Enable debug mode"),
 ):
     init_logging(debug)
     config.validate()
     if not llm_base_url:
         llm_base_url = vllm.LLM_BASE_URL
-    asyncio.run(long_benchmark.execute(llm_base_url, model_id))
+    asyncio.run(long_benchmark.execute(llm_base_url, model_id, concurrency, requests))
 
 
 @node_app.command("stats", help="Get node stats")

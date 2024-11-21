@@ -13,7 +13,9 @@ from galadriel_node.sdk.time_tracker import TimeTracker
 logger = get_node_logger()
 
 
-async def execute(llm_base_url: str, model_id: str, concurrency: int, requests: int) -> None:
+async def execute(
+    llm_base_url: str, model_id: str, concurrency: int, requests: int
+) -> None:
     tasks = []
     for _ in range(concurrency):
         task = asyncio.create_task(_loop_inferences(llm_base_url, model_id, requests))
@@ -27,7 +29,9 @@ async def execute(llm_base_url: str, model_id: str, concurrency: int, requests: 
     _print_final_results(all_trackers)
 
 
-async def _loop_inferences(llm_base_url: str, model_id: str, requests: int) -> List[TimeTracker]:
+async def _loop_inferences(
+    llm_base_url: str, model_id: str, requests: int
+) -> List[TimeTracker]:
     trackers = []
     for _ in tqdm(range(requests)):
         tracker = await _run_inference(llm_base_url, model_id)

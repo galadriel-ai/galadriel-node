@@ -430,13 +430,12 @@ def node_status(
     )
     if status == HTTPStatus.OK and response_json:
         run_status = response_json.get("status")
+        run_status_description = response_json.get("status_description")
         if run_status:
-            if run_status == "online":
-                status_text = typer.style(run_status, fg=typer.colors.GREEN, bold=True)
-                typer.echo("status: " + status_text)
-            else:
-                status_text = typer.style(run_status, fg=typer.colors.RED, bold=True)
-                typer.echo("status: " + status_text)
+            status_text = typer.style(
+                run_status_description or run_status, fg=typer.colors.WHITE, bold=True
+            )
+            typer.echo("status: " + status_text)
         run_duration = response_json.get("run_duration_seconds")
         if run_duration:
             logger.info(f"run_duration_seconds: {run_duration}")

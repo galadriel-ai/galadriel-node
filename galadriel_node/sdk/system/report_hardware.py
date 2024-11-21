@@ -84,28 +84,27 @@ async def report_hardware(api_url: str, api_key: str, node_id: str) -> None:
 def get_gpu_info() -> GPUInfo:
     try:
         query = GPUStatCollection.new_query()
-        data = query.jsonify()
     except Exception:
         raise SdkError(
             "No supported GPU found, make sure `nvidia-smi` works, NVIDIA driver versions must be R450.00 or higher."
         )
 
-    if not data["gpus"]:
+    if not query.gpus:
         raise SdkError(
             "No supported GPU found, make sure you have a supported NVIDIA GPU."
         )
 
-    gpus = [gpu for gpu in data["gpus"] if "NVIDIA" in gpu["name"]]
-    if not gpus:
+    nvidia_gpus = [gpu for gpu in query.gpus if "NVIDIA" in gpu.name]
+    if not nvidia_gpus:
         raise SdkError(
-            "No supported GPU found, make sure you have a supported NVIDIA GPU."
+            "No supported Nvidia GPU found, make sure you have a supported NVIDIA GPU."
         )
 
-    gpu_name = gpus[0]["name"]
-    gpu_vram_mb = gpus[0]["memory.total"] * 1.048576
-    gpu_count = len(gpus)
-
-    return GPUInfo(gpu_model=gpu_name, vram=int(gpu_vram_mb), gpu_count=gpu_count)
+    gpu = nvidia_gpus[0]
+    return GPUInfo(
+        gpu_model=gpu.name,
+        vram=int(gpu.memory_total * 1.048576),
+        gpu_count=len(nvidia_gpus))
 
 
 def _get_cpu_info() -> Tuple[str, int]:

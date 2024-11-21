@@ -41,7 +41,7 @@ async def report_hardware(api_url: str, api_key: str, node_id: str) -> None:
             gpu_model=SUPPORTED_GPUS[0],
             gpu_count=1,
             vram=20000,
-            power_limit=0,
+            power_limit=350,
             cpu_model="macOS-14.4.1-arm64-arm-64bit",
             cpu_count=8,
             ram=16384,

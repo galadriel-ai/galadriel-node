@@ -25,6 +25,7 @@ class NodeInfo(GPUInfo):
 class GPUUtilization:
     gpu_percent: int
     vram_percent: int
+    power_percent: int
 
 
 @dataclass

@@ -20,7 +20,13 @@ async def execute() -> NodeUtilization:
             GPUUtilization(
                 gpu_percent=gpu.utilization,
                 vram_percent=round(gpu.memory_used / gpu.memory_total * 100),
+                power_percent=get_power_percent(gpu),
             )
             for gpu in query.gpus
         ],
     )
+
+def get_power_percent(gpu):
+    if gpu.power_draw is None or gpu.power_limit is None or gpu.power_limit == 0:
+        return 0
+    return round(gpu.power_draw / gpu.power_limit * 100)

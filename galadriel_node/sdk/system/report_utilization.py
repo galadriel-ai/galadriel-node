@@ -26,6 +26,7 @@ async def execute() -> NodeUtilization:
         ],
     )
 
+
 def get_power_percent(gpu):
     if gpu.power_draw is None or gpu.power_limit is None or gpu.power_limit == 0:
         return 0

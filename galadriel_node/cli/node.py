@@ -430,11 +430,8 @@ def node_status(
     )
     if status == HTTPStatus.OK and response_json:
         run_status = response_json.get("status")
-        run_status_description = response_json.get("status_description")
         if run_status:
-            status_text = typer.style(
-                run_status_description or run_status, fg=typer.colors.WHITE, bold=True
-            )
+            status_text = typer.style(run_status, fg=typer.colors.WHITE, bold=True)
             typer.echo("status: " + status_text)
         run_duration = response_json.get("run_duration_seconds")
         if run_duration:

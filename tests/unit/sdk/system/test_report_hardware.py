@@ -56,6 +56,7 @@ async def test_report_hardware(
     cpu_model = "Intel(R) Core(TM) i9-10900K CPU @ 3.70GHz"
     cpu_count = 10
     ram = 32768
+    power_limit = 350
     operating_system = "Linux-5.4.0-42-generic-x86_64-with-glibc2.29"
     version = "0.0.6"
 
@@ -70,7 +71,7 @@ async def test_report_hardware(
 
     # Mock get_gpu_info
     def mock_get_gpu_info():
-        return GPUInfo(gpu_name, vram, gpu_count)
+        return GPUInfo(gpu_name, vram, gpu_count, power_limit)
 
     monkeypatch.setattr(
         "galadriel_node.sdk.system.report_hardware.get_gpu_info", mock_get_gpu_info

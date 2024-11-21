@@ -33,15 +33,15 @@ async def _loop_inferences(
     llm_base_url: str, model_id: str, requests: int
 ) -> List[TimeTracker]:
     trackers = []
+    text = _get_text()
     for _ in tqdm(range(requests)):
-        tracker = await _run_inference(llm_base_url, model_id)
+        tracker = await _run_inference(llm_base_url, model_id, text)
         trackers.append(tracker)
 
     return trackers
 
 
-async def _run_inference(llm_base_url: str, model_id: str) -> TimeTracker:
-    text = _get_text()
+async def _run_inference(llm_base_url: str, model_id: str, text: str) -> TimeTracker:
     base_url: str = urljoin(llm_base_url, "/v1")
     client = openai.AsyncOpenAI(base_url=base_url, api_key="sk-no-key-required")
     request = InferenceRequest(

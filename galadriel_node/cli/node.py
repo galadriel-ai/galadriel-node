@@ -472,7 +472,7 @@ def benchmark(
     llm_base_url: Optional[str] = typer.Option(
         config.GALADRIEL_LLM_BASE_URL, help="LLM base url"
     ),
-    concurrency: int = typer.Option(1, help="How many concurrent requests"),
+    concurrency: int = typer.Option(2, help="How many concurrent requests"),
     requests: int = typer.Option(10, help="How many requests"),
     debug: bool = typer.Option(False, help="Enable debug mode"),
 ):

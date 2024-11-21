@@ -1,10 +1,9 @@
+import importlib
 import platform
 from http import HTTPStatus
 from typing import Tuple
 from urllib.parse import urljoin
 
-
-import importlib
 import aiohttp
 import cpuinfo
 import psutil
@@ -13,8 +12,8 @@ from gpustat import GPUStatCollection
 
 from galadriel_node.config import config
 from galadriel_node.sdk import api
-from galadriel_node.sdk.entities import SdkError
 from galadriel_node.sdk.entities import AuthenticationError
+from galadriel_node.sdk.entities import SdkError
 from galadriel_node.sdk.logging_utils import get_node_logger
 from galadriel_node.sdk.system.entities import GPUInfo
 from galadriel_node.sdk.system.entities import NodeInfo
@@ -42,6 +41,7 @@ async def report_hardware(api_url: str, api_key: str, node_id: str) -> None:
             gpu_model=SUPPORTED_GPUS[0],
             gpu_count=1,
             vram=20000,
+            power_limit=0,
             cpu_model="macOS-14.4.1-arm64-arm-64bit",
             cpu_count=8,
             ram=16384,
@@ -70,6 +70,7 @@ async def report_hardware(api_url: str, api_key: str, node_id: str) -> None:
             gpu_model=gpu_info.gpu_model,
             vram=gpu_info.vram,
             gpu_count=gpu_info.gpu_count,
+            power_limit=gpu_info.power_limit,
             cpu_model=cpu_model,
             cpu_count=cpu_count,
             ram=total_mem_mb,
@@ -104,7 +105,9 @@ def get_gpu_info() -> GPUInfo:
     return GPUInfo(
         gpu_model=gpu.name,
         vram=int(gpu.memory_total * 1.048576),
-        gpu_count=len(nvidia_gpus))
+        gpu_count=len(nvidia_gpus),
+        power_limit=gpu.power_limit or 0,
+    )
 
 
 def _get_cpu_info() -> Tuple[str, int]:

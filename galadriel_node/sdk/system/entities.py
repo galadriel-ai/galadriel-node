@@ -7,6 +7,7 @@ class GPUInfo:
     gpu_model: str
     vram: int
     gpu_count: int
+    power_limit: int
 
 
 @dataclass

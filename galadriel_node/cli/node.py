@@ -16,6 +16,7 @@ import typer
 import websockets
 from websockets.frames import CloseCode
 
+from galadriel_node.sdk import long_benchmark
 from galadriel_node.config import config
 from galadriel_node.llm_backends import vllm
 from galadriel_node.sdk.entities import AuthenticationError, SdkError
@@ -463,6 +464,23 @@ def llm_status(
     if not llm_base_url:
         llm_base_url = vllm.LLM_BASE_URL
     asyncio.run(check_llm(llm_base_url, model_id))
+
+
+@node_app.command("benchmark", help="Benchmarks the node")
+def benchmark(
+    model_id: str = typer.Option(config.GALADRIEL_MODEL_ID, help="Model ID"),
+    llm_base_url: Optional[str] = typer.Option(
+        config.GALADRIEL_LLM_BASE_URL, help="LLM base url"
+    ),
+    concurrency: int = typer.Option(2, help="How many concurrent requests"),
+    requests: int = typer.Option(10, help="How many requests per worker"),
+    debug: bool = typer.Option(False, help="Enable debug mode"),
+):
+    init_logging(debug)
+    config.validate()
+    if not llm_base_url:
+        llm_base_url = vllm.LLM_BASE_URL
+    asyncio.run(long_benchmark.execute(llm_base_url, model_id, concurrency, requests))
 
 
 @node_app.command("stats", help="Get node stats")

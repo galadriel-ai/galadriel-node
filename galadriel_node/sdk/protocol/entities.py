@@ -1,6 +1,6 @@
 import json
 from enum import Enum
-from typing import List, Dict, Optional
+from typing import List, Dict, Literal, Optional
 from dataclasses import dataclass
 
 from pydantic import BaseModel
@@ -167,3 +167,16 @@ class InferenceResponse:
                 "status": self.status.value if self.status else None,
             }
         )
+
+
+class ImageGenerationWebsocketRequest(BaseModel):
+    request_id: str = Field(description="Unique ID for the request")
+    prompt: str = Field(description="Prompt for the image generation")
+    image: Optional[str] = Field(description="Base64 encoded image as input")
+    n: int = Field(description="Number of images to generate")
+    size: Optional[str] = Field(description="The size of the generated images.")
+
+
+class ImageGenerationWebsocketResponse(BaseModel):
+    request_id: str = Field(description="Unique ID for the request")
+    images: List[str] = Field(description="Base64 encoded images as output")

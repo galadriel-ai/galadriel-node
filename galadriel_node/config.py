@@ -46,6 +46,8 @@ class Config:
 
         self.GALADRIEL_ENVIRONMENT = os.getenv("GALADRIEL_ENVIRONMENT", environment)
 
+        self.GALADRIEL_IMAGE_GENERATION_MODEL = os.getenv("GALADRIEL_IMAGE_GENERATION_MODEL", None)
+
         # Network settings
         default_values = DEFAULT_PRODUCTION_VALUES
         if self.GALADRIEL_ENVIRONMENT != "production":

@@ -20,6 +20,7 @@ from galadriel_node.sdk import long_benchmark
 from galadriel_node.config import config
 from galadriel_node.llm_backends import vllm
 from galadriel_node.sdk.entities import AuthenticationError, SdkError
+from galadriel_node.sdk.image_generation import ImageGeneration
 from galadriel_node.sdk.jobs.api_ping_job import ApiPingJob
 from galadriel_node.sdk.jobs.inference_status_counter import InferenceStatusCounter
 from galadriel_node.sdk.jobs.reconnect_request_job import wait_for_reconnect
@@ -35,6 +36,7 @@ from galadriel_node.sdk.system.report_performance import report_performance
 from galadriel_node.sdk.upgrade import version_aware_get
 
 llm = Llm(config.GALADRIEL_LLM_BASE_URL or "")
+image_generation_engine = None  # type: ignore
 
 node_app = typer.Typer(
     name="node",
@@ -112,7 +114,9 @@ async def connect_and_process(
 
                 # Create tasks for receiving messages and waiting for reconnect requests
                 reconnect_request_job = asyncio.create_task(
-                    wait_for_reconnect(inference_status_counter, ping_pong_protocol)
+                    wait_for_reconnect(
+                        inference_status_counter, image_generation_engine, ping_pong_protocol
+                    )
                 )
                 websocket_recv_job = asyncio.create_task(websocket.recv())
 
@@ -148,11 +152,18 @@ async def connect_and_process(
                                 inference_status_counter,
                             )
                         )
+                    elif image_generation_engine is not None:
+                        image_request = image_generation_engine.validate_request(data=parsed_data)
+                        if image_request is not None:
+                            asyncio.create_task(
+                                image_generation_engine.process_request(
+                                    image_request, websocket, send_lock
+                                )
+                            )
+                        else:
+                            await protocol_handler.handle(parsed_data, send_lock)
                     else:
-                        # Handle the message using the protocol handler
-                        asyncio.create_task(
-                            protocol_handler.handle(parsed_data, send_lock)
-                        )
+                        await protocol_handler.handle(parsed_data, send_lock)
             except json.JSONDecodeError:
                 logger.info("Error while parsing json message")
                 return ConnectionResult(
@@ -186,6 +197,8 @@ async def retry_connection(rpc_url: str, api_key: str, node_id: str):
         "Model": config.GALADRIEL_MODEL_ID,
         "Node-Id": node_id,
     }
+    if config.GALADRIEL_IMAGE_GENERATION_MODEL is not None:
+        headers["Image-Generation-Model"] = config.GALADRIEL_IMAGE_GENERATION_MODEL
     retries = 0
     backoff_time = BACKOFF_MIN
 
@@ -201,7 +214,7 @@ async def retry_connection(rpc_url: str, api_key: str, node_id: str):
                 if result.reset_backoff:
                     retries = 0
                     backoff_time = BACKOFF_MIN
-                logger.debug(f"Retry #{retries} in {backoff_time} seconds...")
+                logger.info(f"Retry #{retries} in {backoff_time} seconds...")
             else:
                 break
         except websockets.ConnectionClosedError as e:
@@ -243,6 +256,7 @@ async def run_node(
     llm_base_url: Optional[str],
 ):
     global llm
+    global image_generation_engine
 
     if not api_key:
         raise SdkError("GALADRIEL_API_KEY env variable not set")
@@ -254,26 +268,33 @@ async def run_node(
         api_url, "node/info", api_key, query_params={"node_id": node_id}
     )
     try:
-        if llm_base_url:
-            result = await check_llm(llm_base_url, config.GALADRIEL_MODEL_ID)
-            if not result:
-                raise SdkError(
-                    'LLM check failed. Please make sure "GALADRIEL_LLM_BASE_URL" is correct.'
-                )
+        if config.GALADRIEL_IMAGE_GENERATION_MODEL is not None:
+            # Initialize image generation engine with the specified model
+            image_generation_engine = ImageGeneration(config.GALADRIEL_IMAGE_GENERATION_MODEL)
+            await report_hardware(api_url, api_key, node_id)
+            # TODO Need to report performance for image generation node
+            await retry_connection(rpc_url, api_key, node_id)
         else:
-            llm_pid = await run_llm(config.GALADRIEL_MODEL_ID)
-            loop = asyncio.get_running_loop()
-            for sig in (signal.SIGINT, signal.SIGTERM):
-                loop.add_signal_handler(sig, lambda: handle_termination(loop, llm_pid))
-            llm_base_url = vllm.LLM_BASE_URL
-        # Initialize llm with llm_base_url
-        llm = Llm(llm_base_url)
-        await llm.detect_llm_engine()
-        await report_hardware(api_url, api_key, node_id)
-        await report_performance(
-            api_url, api_key, node_id, llm_base_url, config.GALADRIEL_MODEL_ID
-        )
-        await retry_connection(rpc_url, api_key, node_id)
+            if llm_base_url:
+                result = await check_llm(llm_base_url, config.GALADRIEL_MODEL_ID)
+                if not result:
+                    raise SdkError(
+                        'LLM check failed. Please make sure "GALADRIEL_LLM_BASE_URL" is correct.'
+                    )
+            else:
+                llm_pid = await run_llm(config.GALADRIEL_MODEL_ID)
+                loop = asyncio.get_running_loop()
+                for sig in (signal.SIGINT, signal.SIGTERM):
+                    loop.add_signal_handler(sig, lambda: handle_termination(loop, llm_pid))
+                llm_base_url = vllm.LLM_BASE_URL
+            # Initialize llm with llm_base_url
+            llm = Llm(llm_base_url)
+            await llm.detect_llm_engine()
+            await report_hardware(api_url, api_key, node_id)
+            await report_performance(
+                api_url, api_key, node_id, llm_base_url, config.GALADRIEL_MODEL_ID
+            )
+            await retry_connection(rpc_url, api_key, node_id)
     except asyncio.CancelledError:
         logger.error("Stopping the node.")
 

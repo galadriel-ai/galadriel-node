@@ -25,6 +25,8 @@ speedtest-cli = "^2.1.3"
 fastapi = "^0.115.0"
 vllm = {version = "0.6.4.post1", platform = "linux"}
 ping3 = "^4.0.8"
+diffusers = "^0.31.0"
+transformers = "^4.0.0"
 
 [tool.poetry.dev-dependencies]
 black = "^24.8.0"

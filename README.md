@@ -1,8 +1,10 @@
 # Galadriel inference node
 
+Galadriel is building the world’s largest distributed LLM inference network - for developers to scale their LLM apps while cutting costs.
+
 Run a Galadriel GPU node to provide LLM inference to the network.
 
-Check out the [documentation](https://docs.galadriel.com/nodes).
+Check out the quickstart in the [documentation](https://docs.galadriel.com/nodes/quickstart) to get started.
 
 
 ## Requirements
@@ -19,8 +21,7 @@ Check out the [documentation](https://docs.galadriel.com/nodes).
 - nvidia drivers, version > 450. `nvidia-smi` must work
 
 ### API keys
-- A valid galadriel API key
-- A valid [huggingface](https://huggingface.co/) access token
+- A valid galadriel API key, gotten from the Galadriel [dashboard](https://dashboard.galadriel.com/)
 
 ### Run a GPU node from the command line
 
@@ -49,18 +50,12 @@ galadriel init
 ```shell
 galadriel node run
 ```
-If this is your first time running the GPU node, it will perform hardware validation and LLM benchmarking, to ensure your setup is working correctly and is fast enough.
+If this is your first time running the GPU node, it will perform hardware validation and LLM benchmarking, 
+to ensure your setup is working correctly and is fast enough.
 
 **Or run with nohup to run in the background**
 ```shell
 nohup galadriel node run > logs.log 2>&1 &
-```
-
-**Or include .env values in the command**
-```shell
-GALADRIEL_LLM_BASE_URL="http://localhost:8000" galadriel node run
-# or with nohup
-GALADRIEL_LLM_BASE_URL="http://localhost:8000" nohup galadriel node run > logs.log 2>&1 &
 ```
 
 **Check node status**
@@ -69,17 +64,20 @@ galadriel node status
 ```
 Should see status: online
 
+
+### Additional commands
+
 **Check LLM status**
 ```shell
 galadriel node llm-status
 ```
-Should see status like:
+The output should contain:
 ```
 ✓ LLM server at http://your_llm_address is accessible via HTTP.
 ✓ LLM server at http://your_llm_address successfully generated tokens.
 ```
 
-**Check node metrics**
+**Check node stats**
 ```shell
 galadriel node stats
 ```

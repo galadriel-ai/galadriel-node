@@ -71,7 +71,7 @@ Should see status: online
 ```shell
 galadriel node llm-status
 ```
-Should see something like this:
+The output should contain:
 ```
 ✓ LLM server at http://your_llm_address is accessible via HTTP.
 ✓ LLM server at http://your_llm_address successfully generated tokens.

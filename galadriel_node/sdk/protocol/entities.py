@@ -1,6 +1,6 @@
 import json
 from enum import Enum
-from typing import List, Dict, Literal, Optional
+from typing import List, Dict, Optional
 from dataclasses import dataclass
 
 from pydantic import BaseModel

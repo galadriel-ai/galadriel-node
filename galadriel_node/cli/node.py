@@ -36,6 +36,7 @@ from galadriel_node.sdk.system.report_performance import report_performance
 from galadriel_node.sdk.upgrade import version_aware_get
 
 llm = Llm(config.GALADRIEL_LLM_BASE_URL or "")
+# pylint: disable=invalid-name
 image_generation_engine = None  # type: ignore
 
 node_app = typer.Typer(
@@ -82,7 +83,7 @@ async def process_request(
         await inference_status_counter.decrement()
 
 
-# pylint: disable=R0914
+# pylint: disable=R0912, R0914
 async def connect_and_process(
     uri: str, headers: dict, node_id: str, api_ping_job: ApiPingJob
 ) -> ConnectionResult:
@@ -115,7 +116,9 @@ async def connect_and_process(
                 # Create tasks for receiving messages and waiting for reconnect requests
                 reconnect_request_job = asyncio.create_task(
                     wait_for_reconnect(
-                        inference_status_counter, image_generation_engine, ping_pong_protocol
+                        inference_status_counter,
+                        image_generation_engine,
+                        ping_pong_protocol,
                     )
                 )
                 websocket_recv_job = asyncio.create_task(websocket.recv())
@@ -153,7 +156,9 @@ async def connect_and_process(
                             )
                         )
                     elif image_generation_engine is not None:
-                        image_request = image_generation_engine.validate_request(data=parsed_data)
+                        image_request = image_generation_engine.validate_request(
+                            data=parsed_data
+                        )
                         if image_request is not None:
                             asyncio.create_task(
                                 image_generation_engine.process_request(
@@ -270,7 +275,9 @@ async def run_node(
     try:
         if config.GALADRIEL_IMAGE_GENERATION_MODEL is not None:
             # Initialize image generation engine with the specified model
-            image_generation_engine = ImageGeneration(config.GALADRIEL_IMAGE_GENERATION_MODEL)
+            image_generation_engine = ImageGeneration(
+                config.GALADRIEL_IMAGE_GENERATION_MODEL
+            )
             await report_hardware(api_url, api_key, node_id)
             # TODO Need to report performance for image generation node
             await retry_connection(rpc_url, api_key, node_id)
@@ -285,7 +292,9 @@ async def run_node(
                 llm_pid = await run_llm(config.GALADRIEL_MODEL_ID)
                 loop = asyncio.get_running_loop()
                 for sig in (signal.SIGINT, signal.SIGTERM):
-                    loop.add_signal_handler(sig, lambda: handle_termination(loop, llm_pid))
+                    loop.add_signal_handler(
+                        sig, lambda: handle_termination(loop, llm_pid)
+                    )
                 llm_base_url = vllm.LLM_BASE_URL
             # Initialize llm with llm_base_url
             llm = Llm(llm_base_url)

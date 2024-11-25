@@ -5,9 +5,7 @@ from typing import Any, Optional
 from fastapi.encoders import jsonable_encoder
 from websockets import WebSocketClientProtocol
 
-from galadriel_node.sdk.jobs.api_ping_job import ApiPingJob
 from galadriel_node.sdk.logging_utils import get_node_logger
-from galadriel_node.sdk.protocol import protocol_settings
 from galadriel_node.sdk.protocol.entities import (
     ImageGenerationWebsocketRequest,
     ImageGenerationWebsocketResponse,
@@ -24,7 +22,7 @@ class ImageGeneration:
         self.counter = 0
         self.lock = asyncio.Lock()
         self.pipeline = Diffusers(model)
-        logger.info(f"ImageGeneration engine initialized")
+        logger.info("ImageGeneration engine initialized")
 
     async def process_request(
         self,
@@ -33,7 +31,9 @@ class ImageGeneration:
         send_lock: asyncio.Lock,
     ) -> None:
 
-        logger.info(f"Received image generation request. Request Id: {request.request_id}")
+        logger.info(
+            f"Received image generation request. Request Id: {request.request_id}"
+        )
 
         # Generate the image
         images = self.pipeline.generate_images(
@@ -60,7 +60,9 @@ class ImageGeneration:
                 await websocket.send(encoded_response_data)
             logger.debug(f"REQUEST {request.request_id} END")
         except Exception as e:
-            logger.error(f"Failed to send response for request {request.request_id}: {e}")
+            logger.error(
+                f"Failed to send response for request {request.request_id}: {e}"
+            )
         finally:
             async with self.lock:
                 if self.counter > 0:

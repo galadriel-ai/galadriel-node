@@ -173,7 +173,9 @@ async def test_run_node_without_llm_base_url():
     llm_base_url = None
     process_pid = 12345
 
-    with patch("galadriel_node.cli.node.run_llm", new_callable=AsyncMock) as mock_run_llm, patch(
+    with patch(
+        "galadriel_node.cli.node.run_llm", new_callable=AsyncMock
+    ) as mock_run_llm, patch(
         "galadriel_node.cli.node.report_hardware", new_callable=AsyncMock
     ) as mock_report_hardware, patch(
         "galadriel_node.cli.node.report_performance", new_callable=AsyncMock
@@ -239,7 +241,8 @@ async def test_run_node_with_image_generation_model():
     ) as mock_retry_connection, patch(
         "galadriel_node.cli.node.version_aware_get", new_callable=AsyncMock
     ), patch(
-        "galadriel_node.config.config.GALADRIEL_IMAGE_GENERATION_MODEL", new=image_generation_model
+        "galadriel_node.config.config.GALADRIEL_IMAGE_GENERATION_MODEL",
+        new=image_generation_model,
     ), patch(
         "galadriel_node.sdk.image_generation.ImageGeneration", new_callable=AsyncMock
     ) as mock_image_generation, patch.object(

@@ -77,6 +77,7 @@ class HealthCheckRequest(BaseModel):
 class HealthCheckGPUUtilization(BaseModel):
     gpu_percent: int = Field(description="GPU utilization, percent")
     vram_percent: int = Field(description="VRAM utilization, percent")
+    power_percent: int = Field(description="Power utilization, percent")
 
 
 class HealthCheckResponse(BaseModel):

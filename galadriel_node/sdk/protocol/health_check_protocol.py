@@ -95,7 +95,9 @@ def _protocol_validations(
 def _convert_gpu_stats(utilization: NodeUtilization) -> List[HealthCheckGPUUtilization]:
     return [
         HealthCheckGPUUtilization(
-            gpu_percent=gpu.gpu_percent, vram_percent=gpu.vram_percent
+            gpu_percent=gpu.gpu_percent,
+            vram_percent=gpu.vram_percent,
+            power_percent=gpu.power_percent,
         )
         for gpu in utilization.gpus
     ]

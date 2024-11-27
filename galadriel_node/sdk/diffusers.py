@@ -46,7 +46,9 @@ class Diffusers:
                     prompt=prompt, num_images_per_prompt=n, image=pil_image
                 ).images
             else:
-                generated_images = self.pipeline(prompt=prompt, num_images_per_prompt=n).images
+                generated_images = self.pipeline(
+                    prompt=prompt, num_images_per_prompt=n
+                ).images
             return [_encode_image_to_base64(image) for image in generated_images]
         except Exception as e:
             raise SdkError(f"Failed to generate images: {e}")

@@ -37,7 +37,7 @@ from galadriel_node.sdk.upgrade import version_aware_get
 
 llm = Llm(config.GALADRIEL_LLM_BASE_URL or "")
 # pylint: disable=invalid-name
-image_generation_engine = None  # type: ignore
+image_generation_engine: Optional[ImageGeneration] = None
 
 node_app = typer.Typer(
     name="node",
@@ -199,11 +199,10 @@ async def retry_connection(rpc_url: str, api_key: str, node_id: str):
     uri = f"{rpc_url}/ws"
     headers = {
         "Authorization": f"Bearer {api_key}",
-        "Model": config.GALADRIEL_MODEL_ID,
+        "Model": config.GALADRIEL_IMAGE_GENERATION_MODEL or config.GALADRIEL_MODEL_ID,
+        "Model-Type": "DIFFUSION" if config.GALADRIEL_IMAGE_GENERATION_MODEL else "LLM",
         "Node-Id": node_id,
     }
-    if config.GALADRIEL_IMAGE_GENERATION_MODEL is not None:
-        headers["Image-Generation-Model"] = config.GALADRIEL_IMAGE_GENERATION_MODEL
     retries = 0
     backoff_time = BACKOFF_MIN
 

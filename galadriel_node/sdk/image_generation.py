@@ -36,18 +36,27 @@ class ImageGeneration:
         )
 
         # Generate the image
-        images = self.pipeline.generate_images(
-            request.prompt,
-            request.image,
-            request.n,
-        )
+        generation_response = None
+        try:
+            images = self.pipeline.generate_images(
+                request.prompt,
+                request.image,
+                request.n,
+            )
+            generation_response = ImageGenerationWebsocketResponse(
+                request_id=request.request_id,
+                images=images,
+                error=None,
+            )
+        except Exception as e:
+            logger.error(f"Errors during image generation: {e}")
+            generation_response = ImageGenerationWebsocketResponse(
+                request_id=request.request_id,
+                images=[],
+                error=str(e),
+            )
 
         # Send the response to the client
-        generation_response = ImageGenerationWebsocketResponse(
-            request_id=request.request_id,
-            images=images,
-        )
-
         response_data = jsonable_encoder(generation_response)
         encoded_response_data = json.dumps(response_data)
         logger.info(f"Sent image generation response for request {request.request_id}")

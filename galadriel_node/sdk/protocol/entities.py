@@ -180,3 +180,4 @@ class ImageGenerationWebsocketRequest(BaseModel):
 class ImageGenerationWebsocketResponse(BaseModel):
     request_id: str = Field(description="Unique ID for the request")
     images: List[str] = Field(description="Base64 encoded images as output")
+    error: Optional[str] = Field(description="Error message if the request failed")

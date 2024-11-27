@@ -39,16 +39,17 @@ class Diffusers:
         self, prompt: str, image: Optional[str] = None, n: int = 1
     ) -> List[str]:
         generated_images: List[Image.Image]
-        if image is not None:
-            pil_image = _decode_image_from_base64(image)
-            generated_images = self.pipeline(
-                prompt=prompt, num_images_per_prompt=n, image=pil_image
-            ).images
-        else:
-            generated_images = self.pipeline(
-                prompt=prompt, num_images_per_prompt=n
-            ).images
-        return [_encode_image_to_base64(image) for image in generated_images]
+        try:
+            if image is not None:
+                pil_image = _decode_image_from_base64(image)
+                generated_images = self.pipeline(
+                    prompt=prompt, num_images_per_prompt=n, image=pil_image
+                ).images
+            else:
+                generated_images = self.pipeline(prompt=prompt, num_images_per_prompt=n).images
+            return [_encode_image_to_base64(image) for image in generated_images]
+        except Exception as e:
+            raise SdkError(f"Failed to generate images: {e}")
 
 
 def _encode_image_to_base64(image: Image.Image) -> str:

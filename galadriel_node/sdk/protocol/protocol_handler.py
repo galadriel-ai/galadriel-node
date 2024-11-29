@@ -43,7 +43,7 @@ class ProtocolHandler:
             logger.error(f"protocol_handler: Invalid protocol name {protocol_name}")
             return
 
-        logger.error(f"protocol_handler: Handle protocol {protocol_name}")
+        logger.info(f"protocol_handler: Handle protocol {protocol_name}")
         try:
             response = await protocol.handle(protocol_data, self.node_id)
             if response is not None:

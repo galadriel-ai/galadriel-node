@@ -191,7 +191,6 @@ async def connect_and_process(
                 logger.error("Error occurred while processing message.", exc_info=True)
                 return ConnectionResult(retry=True, reset_backoff=True)
             finally:
-                logger.info("Closing the connection and cleaning up...")
                 reconnect_request_job.cancel()
                 websocket_recv_job.cancel()
 

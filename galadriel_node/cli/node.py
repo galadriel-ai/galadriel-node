@@ -35,7 +35,8 @@ from galadriel_node.sdk.system.report_hardware import report_hardware
 from galadriel_node.sdk.system.report_performance import report_performance
 from galadriel_node.sdk.upgrade import version_aware_get
 
-llm = Llm(config.GALADRIEL_LLM_BASE_URL or "")
+# pylint: disable=invalid-name
+llm: Optional[Llm] = None
 # pylint: disable=invalid-name
 image_generation_engine: Optional[ImageGeneration] = None
 
@@ -67,6 +68,9 @@ async def process_request(
     """
     Handles a single inference request and sends the response back in chunks.
     """
+    if llm is None:
+        logger.error("LLM is not initialized.")
+        return
     try:
         await inference_status_counter.increment()
         logging.debug(f"REQUEST {request.id} START")
@@ -146,7 +150,7 @@ async def connect_and_process(
                     inference_request = InferenceRequest.get_inference_request(
                         parsed_data
                     )
-                    if inference_request is not None:
+                    if inference_request is not None and llm is not None:
                         asyncio.create_task(
                             process_request(
                                 inference_request,
@@ -198,8 +202,8 @@ async def retry_connection(rpc_url: str, api_key: str, node_id: str):
     uri = f"{rpc_url}/ws"
     headers = {
         "Authorization": f"Bearer {api_key}",
-        "Model": config.GALADRIEL_IMAGE_GENERATION_MODEL or config.GALADRIEL_MODEL_ID,
-        "Model-Type": "DIFFUSION" if config.GALADRIEL_IMAGE_GENERATION_MODEL else "LLM",
+        "Model": config.GALADRIEL_MODEL_ID,
+        "Model-Type": config.GALADRIEL_MODEL_TYPE,
         "Node-Id": node_id,
     }
     retries = 0
@@ -271,11 +275,9 @@ async def run_node(
         api_url, "node/info", api_key, query_params={"node_id": node_id}
     )
     try:
-        if config.GALADRIEL_IMAGE_GENERATION_MODEL is not None:
+        if config.GALADRIEL_MODEL_TYPE == "DIFFUSION":
             # Initialize image generation engine with the specified model
-            image_generation_engine = ImageGeneration(
-                config.GALADRIEL_IMAGE_GENERATION_MODEL
-            )
+            image_generation_engine = ImageGeneration(config.GALADRIEL_MODEL_ID)
             await report_hardware(api_url, api_key, node_id)
             # TODO Need to report performance for image generation node
             await retry_connection(rpc_url, api_key, node_id)

@@ -18,6 +18,7 @@ DEFAULT_PRODUCTION_VALUES = {
     "GALADRIEL_RPC_URL": f"wss://{PRODUCTION_DOMAIN}/v1/node",
     "GALADRIEL_API_DOMAIN": "api.galadriel.com",
     "GALADRIEL_MODEL_ID": "neuralmagic/Meta-Llama-3.1-8B-Instruct-FP8",
+    "GALADRIEL_MODEL_TYPE": "LLM",
 }
 
 DEFAULT_LOCAL_VALUES = {
@@ -26,6 +27,7 @@ DEFAULT_LOCAL_VALUES = {
     "GALADRIEL_LLM_BASE_URL": "http://10.132.0.33:11434",
     "GALADRIEL_API_DOMAIN": "api.galadriel.com",
     "GALADRIEL_MODEL_ID": "hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4",
+    "GALADRIEL_MODEL_TYPE": "LLM",
 }
 
 
@@ -45,10 +47,6 @@ class Config:
             load_dotenv(dotenv_path=CONFIG_FILE_PATH)
 
         self.GALADRIEL_ENVIRONMENT = os.getenv("GALADRIEL_ENVIRONMENT", environment)
-
-        self.GALADRIEL_IMAGE_GENERATION_MODEL = os.getenv(
-            "GALADRIEL_IMAGE_GENERATION_MODEL", None
-        )
 
         # Network settings
         default_values = DEFAULT_PRODUCTION_VALUES
@@ -74,6 +72,9 @@ class Config:
         self.GALADRIEL_MODEL_ID = os.getenv(
             "GALADRIEL_MODEL_ID",
             default_values["GALADRIEL_MODEL_ID"],
+        )
+        self.GALADRIEL_MODEL_TYPE = os.getenv(
+            "GALADRIEL_MODEL_TYPE", default_values["GALADRIEL_MODEL_TYPE"]
         )
 
         self.GALADRIEL_LLM_BASE_URL = self.parse_val(
@@ -109,6 +110,7 @@ class Config:
             "GALADRIEL_RPC_URL": self.GALADRIEL_RPC_URL,
             "GALADRIEL_API_KEY": self.GALADRIEL_API_KEY,
             "GALADRIEL_MODEL_ID": self.GALADRIEL_MODEL_ID,
+            "GALADRIEL_MODEL_TYPE": self.GALADRIEL_MODEL_TYPE,
             "GALADRIEL_LLM_BASE_URL": self.GALADRIEL_LLM_BASE_URL,
             "GALADRIEL_MODEL_COMMIT_HASH": self.GALADRIEL_MODEL_COMMIT_HASH,
         }

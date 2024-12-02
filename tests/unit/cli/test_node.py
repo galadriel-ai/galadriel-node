@@ -151,7 +151,7 @@ async def test_run_node_with_llm_base_url():
     ), patch(
         "galadriel_node.cli.node.run_llm", new_callable=AsyncMock
     ) as mock_run_llm, patch(
-        "galadriel_node.config.config.GALADRIEL_IMAGE_GENERATION_MODEL", new=None
+        "galadriel_node.config.config.GALADRIEL_MODEL_TYPE", new="LLM"
     ):
         mock_check_llm.return_value = True
 
@@ -184,7 +184,7 @@ async def test_run_node_without_llm_base_url():
     ) as mock_retry_connection, patch(
         "galadriel_node.cli.node.version_aware_get", new_callable=AsyncMock
     ), patch(
-        "galadriel_node.config.config.GALADRIEL_IMAGE_GENERATION_MODEL", new=None
+        "galadriel_node.config.config.GALADRIEL_MODEL_TYPE", new="LLM"
     ):
         mock_run_llm.return_value = process_pid
 
@@ -209,7 +209,7 @@ async def test_run_node_with_llm_base_url_check_fails():
     ) as mock_check_llm, patch(
         "galadriel_node.cli.node.version_aware_get", new_callable=AsyncMock
     ), patch(
-        "galadriel_node.config.config.GALADRIEL_IMAGE_GENERATION_MODEL", new=None
+        "galadriel_node.config.config.GALADRIEL_MODEL_TYPE", new="LLM"
     ):
         mock_check_llm.return_value = False
 
@@ -241,8 +241,7 @@ async def test_run_node_with_image_generation_model():
     ) as mock_retry_connection, patch(
         "galadriel_node.cli.node.version_aware_get", new_callable=AsyncMock
     ), patch(
-        "galadriel_node.config.config.GALADRIEL_IMAGE_GENERATION_MODEL",
-        new=image_generation_model,
+        "galadriel_node.config.config.GALADRIEL_MODEL_TYPE", new="DIFFUSION"
     ), patch(
         "galadriel_node.sdk.image_generation.ImageGeneration", new_callable=AsyncMock
     ) as mock_image_generation, patch.object(

@@ -20,8 +20,7 @@ def init_logging(debug: bool):
     formatter = logging.Formatter("%(message)s", datefmt="%Y-%m-%d %H:%M:%S")
     rich_handler.setFormatter(formatter)
     logger.addHandler(rich_handler)
-    if len(logger.handlers) > 1:
-        logger.removeHandler(logger.handlers[1])
+    logger.propagate = False
 
 
 def get_node_logger():

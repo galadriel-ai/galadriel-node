@@ -159,7 +159,7 @@ async def _make_inference_request(
             if completion_tokens is not None:
                 return completion_tokens
             break
-    logger.info("        Request failed")
+    # logger.info("        Request failed")
     return 0
 
 

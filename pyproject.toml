@@ -28,14 +28,14 @@ ping3 = "^4.0.8"
 diffusers = {version = "^0.31.0", optional = true}
 transformers = {version = "^4.0.0", optional = true}
 accelerate = {version = "^1.1.0", optional = true}
+black = {version = "^24.8.0", optional = true}
+pytest = {version = "^8.3.2", optional = true}
+pytest-asyncio = {version = "0.24.0", optional = true}
+pytest-mock = {version = "^3.14.0", optional = true}
 
-[tool.poetry.dev-dependencies]
-black = "^24.8.0"
-pytest = "^8.3.2"
-pytest-asyncio = "0.24.0"
-pytest-mock = "^3.14.0"
 
 [tool.poetry.extras]
+dev = ["black", "pytest", "pytest-asyncio", "pytest-mock"]
 image-generation = ["diffusers", "transformers", "accelerate"]
 
 [build-system]

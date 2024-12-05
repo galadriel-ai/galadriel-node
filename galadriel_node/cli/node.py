@@ -20,7 +20,7 @@ from galadriel_node.sdk import long_benchmark
 from galadriel_node.config import config
 from galadriel_node.llm_backends import vllm
 from galadriel_node.sdk.entities import AuthenticationError, SdkError
-from galadriel_node.sdk.image_generation import ImageGeneration
+from galadriel_node.sdk.image_generation import ImageGeneration, validate_image_generation_request
 from galadriel_node.sdk.jobs.api_ping_job import ApiPingJob
 from galadriel_node.sdk.util.inference_status_counter import LockedCounter
 from galadriel_node.sdk.jobs.reconnect_request_job import wait_for_reconnect
@@ -160,7 +160,7 @@ async def connect_and_process(
                             )
                         )
                     elif image_generation_engine is not None:
-                        image_request = image_generation_engine.validate_request(
+                        image_request = validate_image_generation_request(
                             data=parsed_data
                         )
                         if image_request is not None:

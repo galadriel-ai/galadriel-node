@@ -17,7 +17,7 @@ logger = get_node_logger()
 
 
 # pylint: disable=too-few-public-methods,
-def validate_request(data: Any) -> Optional[ImageGenerationWebsocketRequest]:
+def validate_image_generation_request(data: Any) -> Optional[ImageGenerationWebsocketRequest]:
     try:
         image_generation_request = ImageGenerationWebsocketRequest(
             request_id=data.get("request_id"),
@@ -45,7 +45,9 @@ class ImageGeneration:
         websocket: WebSocketClientProtocol,
         send_lock: asyncio.Lock,
     ) -> None:
-        logger.info(f"Received image generation request. Request Id: {request.request_id}")
+        logger.info(
+            f"Received image generation request. Request Id: {request.request_id}"
+        )
         try:
             await self.counter.increment()
             response = await self.generate_images(request)
@@ -53,7 +55,9 @@ class ImageGeneration:
             encoded_response_data = json.dumps(response_data)
             async with send_lock:
                 await websocket.send(encoded_response_data)
-            logger.info(f"Sent image generation response for request {request.request_id}")
+            logger.info(
+                f"Sent image generation response for request {request.request_id}"
+            )
         except Exception as e:
             logger.error(
                 f"Failed to send response for request {request.request_id}: {e}"

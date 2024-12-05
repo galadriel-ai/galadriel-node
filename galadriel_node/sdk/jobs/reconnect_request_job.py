@@ -20,7 +20,13 @@ async def wait_for_reconnect(
         # If image generation engine is not None, check if it is idle
         no_pending_image_generation_requests = True
         if image_generation_engine is not None:
-            no_pending_image_generation_requests = await image_generation_engine.no_pending_requests()
+            no_pending_image_generation_requests = (
+                await image_generation_engine.no_pending_requests()
+            )
 
-        if reconnect_requested and no_pending_llm_inference_requests and no_pending_image_generation_requests:
+        if (
+            reconnect_requested
+            and no_pending_llm_inference_requests
+            and no_pending_image_generation_requests
+        ):
             return True

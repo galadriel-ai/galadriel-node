@@ -45,23 +45,15 @@ class ImageGeneration:
         websocket: WebSocketClientProtocol,
         send_lock: asyncio.Lock,
     ) -> None:
-
-        logger.info(
-            f"Received image generation request. Request Id: {request.request_id}"
-        )
-
-        # Generate the image
-        response = await self.generate_images(request)
-        response_data = jsonable_encoder(response)
-        encoded_response_data = json.dumps(response_data)
-        logger.info(f"Sent image generation response for request {request.request_id}")
-
+        logger.info(f"Received image generation request. Request Id: {request.request_id}")
         try:
             await self.counter.increment()
-            logger.debug(f"Response data: {response_data}")
+            response = await self.generate_images(request)
+            response_data = jsonable_encoder(response)
+            encoded_response_data = json.dumps(response_data)
             async with send_lock:
                 await websocket.send(encoded_response_data)
-            logger.debug(f"REQUEST {request.request_id} END")
+            logger.info(f"Sent image generation response for request {request.request_id}")
         except Exception as e:
             logger.error(
                 f"Failed to send response for request {request.request_id}: {e}"

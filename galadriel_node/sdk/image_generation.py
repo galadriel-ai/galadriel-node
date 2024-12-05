@@ -11,6 +11,7 @@ from galadriel_node.sdk.protocol.entities import (
     ImageGenerationWebsocketResponse,
 )
 from galadriel_node.sdk.diffusers import Diffusers
+from galadriel_node.sdk.util.inference_status_counter import LockedCounter
 
 logger = get_node_logger()
 
@@ -19,7 +20,7 @@ logger = get_node_logger()
 class ImageGeneration:
 
     def __init__(self, model: str):
-        self.counter = 0
+        self.counter = LockedCounter()
         self.lock = asyncio.Lock()
         self.pipeline = Diffusers(model)
         logger.info("ImageGeneration engine initialized")
@@ -62,8 +63,7 @@ class ImageGeneration:
         logger.info(f"Sent image generation response for request {request.request_id}")
 
         try:
-            async with self.lock:
-                self.counter += 1
+            await self.counter.increment()
             logger.debug(f"Response data: {response_data}")
             async with send_lock:
                 await websocket.send(encoded_response_data)
@@ -73,9 +73,7 @@ class ImageGeneration:
                 f"Failed to send response for request {request.request_id}: {e}"
             )
         finally:
-            async with self.lock:
-                if self.counter > 0:
-                    self.counter -= 1
+            await self.counter.decrement()
         return
 
     def validate_request(self, data: Any) -> Optional[ImageGenerationWebsocketRequest]:
@@ -92,5 +90,4 @@ class ImageGeneration:
             return None
 
     async def is_idle(self) -> bool:
-        async with self.lock:
-            return self.counter == 0
+        return await self.counter.is_zero()

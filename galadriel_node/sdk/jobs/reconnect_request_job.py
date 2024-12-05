@@ -3,12 +3,12 @@ from typing import Optional
 
 from galadriel_node.config import config
 from galadriel_node.sdk.image_generation import ImageGeneration
-from galadriel_node.sdk.jobs.inference_status_counter import InferenceStatusCounter
+from galadriel_node.sdk.util.inference_status_counter import LockedCounter
 from galadriel_node.sdk.protocol.ping_pong_protocol import PingPongProtocol
 
 
 async def wait_for_reconnect(
-    inference_status_counter: InferenceStatusCounter,
+    inference_status_counter: LockedCounter,
     image_generation_engine: Optional[ImageGeneration],
     ping_pong_protocol: PingPongProtocol,
 ) -> bool:

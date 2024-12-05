@@ -22,7 +22,7 @@ from galadriel_node.llm_backends import vllm
 from galadriel_node.sdk.entities import AuthenticationError, SdkError
 from galadriel_node.sdk.image_generation import ImageGeneration
 from galadriel_node.sdk.jobs.api_ping_job import ApiPingJob
-from galadriel_node.sdk.jobs.inference_status_counter import InferenceStatusCounter
+from galadriel_node.sdk.util.inference_status_counter import LockedCounter
 from galadriel_node.sdk.jobs.reconnect_request_job import wait_for_reconnect
 from galadriel_node.sdk.llm import Llm
 from galadriel_node.sdk.logging_utils import init_logging, get_node_logger
@@ -63,7 +63,7 @@ async def process_request(
     request: InferenceRequest,
     websocket,
     send_lock: asyncio.Lock,
-    inference_status_counter: InferenceStatusCounter,
+    inference_status_counter: LockedCounter,
 ) -> None:
     """
     Handles a single inference request and sends the response back in chunks.
@@ -112,7 +112,7 @@ async def connect_and_process(
         # encapsulate these stuff in functions or better classes so in this function connect_and_process,
         # we just simply instantiate an object and call the function it exposes, without worrying about
         # all these low-level stuff.
-        inference_status_counter = InferenceStatusCounter()
+        inference_status_counter = LockedCounter()
         while True:
             try:
                 logger.info("Waiting for incoming messages...")

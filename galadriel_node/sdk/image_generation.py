@@ -51,27 +51,8 @@ class ImageGeneration:
         )
 
         # Generate the image
-        generation_response = None
-        try:
-            images = self.pipeline.generate_images(
-                request.prompt,
-                request.image,
-                request.n,
-            )
-            generation_response = ImageGenerationWebsocketResponse(
-                request_id=request.request_id,
-                images=images,
-                error=None,
-            )
-        except Exception as e:
-            logger.error(f"Errors during image generation: {e}")
-            generation_response = ImageGenerationWebsocketResponse(
-                request_id=request.request_id,
-                images=[],
-                error=str(e),
-            )
-
-        response_data = jsonable_encoder(generation_response)
+        response = await self.generate_images(request)
+        response_data = jsonable_encoder(response)
         encoded_response_data = json.dumps(response_data)
         logger.info(f"Sent image generation response for request {request.request_id}")
 
@@ -88,6 +69,26 @@ class ImageGeneration:
         finally:
             await self.counter.decrement()
         return
+
+    async def generate_images(self, request):
+        try:
+            images = self.pipeline.generate_images(
+                request.prompt,
+                request.image,
+                request.n,
+            )
+            return ImageGenerationWebsocketResponse(
+                request_id=request.request_id,
+                images=images,
+                error=None,
+            )
+        except Exception as e:
+            logger.error(f"Errors during image generation: {e}")
+            return ImageGenerationWebsocketResponse(
+                request_id=request.request_id,
+                images=[],
+                error=str(e),
+            )
 
     async def no_pending_requests(self) -> bool:
         return await self.counter.is_zero()

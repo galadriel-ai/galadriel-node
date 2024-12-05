@@ -71,7 +71,6 @@ class ImageGeneration:
                 error=str(e),
             )
 
-        # Send the response to the client
         response_data = jsonable_encoder(generation_response)
         encoded_response_data = json.dumps(response_data)
         logger.info(f"Sent image generation response for request {request.request_id}")

@@ -76,7 +76,7 @@ def test_validate_request_invalid_data(image_generation):
 
 @pytest.mark.asyncio
 async def test_is_idle(image_generation):
-    assert await image_generation.is_idle() is True
+    assert await image_generation.no_pending_requests() is True
     async with image_generation.lock:
         image_generation.counter += 1
-    assert await image_generation.is_idle() is False
+    assert await image_generation.no_pending_requests() is False

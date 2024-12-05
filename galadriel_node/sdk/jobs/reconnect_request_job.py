@@ -15,12 +15,12 @@ async def wait_for_reconnect(
     while True:
         await asyncio.sleep(config.RECONNECT_JOB_INTERVAL)
 
-        is_zero = await inference_status_counter.is_zero()
+        no_pending_llm_inference_requests = await inference_status_counter.is_zero()
         reconnect_requested = await ping_pong_protocol.get_reconnect_requested()
         # If image generation engine is not None, check if it is idle
-        is_idle = True
+        no_pending_image_generation_requests = True
         if image_generation_engine is not None:
-            is_idle = await image_generation_engine.is_idle()
+            no_pending_image_generation_requests = await image_generation_engine.no_pending_requests()
 
-        if is_zero and is_idle and reconnect_requested:
+        if reconnect_requested and no_pending_llm_inference_requests and no_pending_image_generation_requests:
             return True

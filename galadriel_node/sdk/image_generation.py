@@ -89,5 +89,5 @@ class ImageGeneration:
             await self.counter.decrement()
         return
 
-    async def is_idle(self) -> bool:
+    async def no_pending_requests(self) -> bool:
         return await self.counter.is_zero()

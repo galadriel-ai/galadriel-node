@@ -25,7 +25,7 @@ from galadriel_node.sdk.image_generation import (
     validate_image_generation_request,
 )
 from galadriel_node.sdk.jobs.api_ping_job import ApiPingJob
-from galadriel_node.sdk.util.inference_status_counter import LockedCounter
+from galadriel_node.sdk.util.locked_counter import LockedCounter
 from galadriel_node.sdk.jobs.reconnect_request_job import wait_for_reconnect
 from galadriel_node.sdk.llm import Llm
 from galadriel_node.sdk.logging_utils import init_logging, get_node_logger

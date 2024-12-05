@@ -11,7 +11,7 @@ from galadriel_node.sdk.protocol.entities import (
     ImageGenerationWebsocketResponse,
 )
 from galadriel_node.sdk.diffusers import Diffusers
-from galadriel_node.sdk.util.inference_status_counter import LockedCounter
+from galadriel_node.sdk.util.locked_counter import LockedCounter
 
 logger = get_node_logger()
 

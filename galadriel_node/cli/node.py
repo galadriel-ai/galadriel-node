@@ -20,7 +20,10 @@ from galadriel_node.sdk import long_benchmark
 from galadriel_node.config import config
 from galadriel_node.llm_backends import vllm
 from galadriel_node.sdk.entities import AuthenticationError, SdkError
-from galadriel_node.sdk.image_generation import ImageGeneration, validate_image_generation_request
+from galadriel_node.sdk.image_generation import (
+    ImageGeneration,
+    validate_image_generation_request,
+)
 from galadriel_node.sdk.jobs.api_ping_job import ApiPingJob
 from galadriel_node.sdk.util.inference_status_counter import LockedCounter
 from galadriel_node.sdk.jobs.reconnect_request_job import wait_for_reconnect

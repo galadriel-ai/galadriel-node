@@ -17,7 +17,9 @@ logger = get_node_logger()
 
 
 # pylint: disable=too-few-public-methods,
-def validate_image_generation_request(data: Any) -> Optional[ImageGenerationWebsocketRequest]:
+def validate_image_generation_request(
+    data: Any,
+) -> Optional[ImageGenerationWebsocketRequest]:
     try:
         image_generation_request = ImageGenerationWebsocketRequest(
             request_id=data.get("request_id"),

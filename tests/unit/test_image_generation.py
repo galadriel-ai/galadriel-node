@@ -1,14 +1,12 @@
 import json
-from typing import List
 import pytest
 import asyncio
 from unittest.mock import MagicMock, AsyncMock, patch
 from websockets import WebSocketClientProtocol
 from galadriel_node.sdk.diffusers import Diffusers
-from galadriel_node.sdk.image_generation import ImageGeneration
+from galadriel_node.sdk.image_generation import ImageGeneration, validate_image_generation_request
 from galadriel_node.sdk.protocol.entities import (
     ImageGenerationWebsocketRequest,
-    ImageGenerationWebsocketResponse,
 )
 
 
@@ -59,7 +57,7 @@ def test_validate_request(image_generation):
         "n": 1,
         "size": None,
     }
-    request = image_generation.validate_request(data)
+    request = validate_image_generation_request(data)
     assert request is not None
     assert request.request_id == data["request_id"]
     assert request.prompt == data["prompt"]
@@ -70,13 +68,12 @@ def test_validate_request(image_generation):
 
 def test_validate_request_invalid_data(image_generation):
     data = {"invalid_key": "invalid_value"}
-    request = image_generation.validate_request(data)
+    request = validate_image_generation_request(data)
     assert request is None
 
 
 @pytest.mark.asyncio
 async def test_is_idle(image_generation):
     assert await image_generation.no_pending_requests() is True
-    async with image_generation.lock:
-        image_generation.counter += 1
+    await image_generation.counter.increment()
     assert await image_generation.no_pending_requests() is False

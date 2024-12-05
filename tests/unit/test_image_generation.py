@@ -4,7 +4,10 @@ import asyncio
 from unittest.mock import MagicMock, AsyncMock, patch
 from websockets import WebSocketClientProtocol
 from galadriel_node.sdk.diffusers import Diffusers
-from galadriel_node.sdk.image_generation import ImageGeneration, validate_image_generation_request
+from galadriel_node.sdk.image_generation import (
+    ImageGeneration,
+    validate_image_generation_request,
+)
 from galadriel_node.sdk.protocol.entities import (
     ImageGenerationWebsocketRequest,
 )

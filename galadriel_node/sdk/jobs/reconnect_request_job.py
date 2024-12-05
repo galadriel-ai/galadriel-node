@@ -17,7 +17,6 @@ async def wait_for_reconnect(
 
         no_pending_llm_inference_requests = await inference_status_counter.is_zero()
         reconnect_requested = await ping_pong_protocol.get_reconnect_requested()
-        # If image generation engine is not None, check if it is idle
         no_pending_image_generation_requests = True
         if image_generation_engine is not None:
             no_pending_image_generation_requests = (

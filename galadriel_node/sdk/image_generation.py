@@ -17,6 +17,20 @@ logger = get_node_logger()
 
 
 # pylint: disable=too-few-public-methods,
+def validate_request(data: Any) -> Optional[ImageGenerationWebsocketRequest]:
+    try:
+        image_generation_request = ImageGenerationWebsocketRequest(
+            request_id=data.get("request_id"),
+            prompt=data.get("prompt"),
+            image=data.get("image"),
+            n=data.get("n"),
+            size=data.get("size"),
+        )
+        return image_generation_request
+    except Exception:
+        return None
+
+
 class ImageGeneration:
 
     def __init__(self, model: str):
@@ -75,19 +89,6 @@ class ImageGeneration:
         finally:
             await self.counter.decrement()
         return
-
-    def validate_request(self, data: Any) -> Optional[ImageGenerationWebsocketRequest]:
-        try:
-            image_generation_request = ImageGenerationWebsocketRequest(
-                request_id=data.get("request_id"),
-                prompt=data.get("prompt"),
-                image=data.get("image"),
-                n=data.get("n"),
-                size=data.get("size"),
-            )
-            return image_generation_request
-        except Exception:
-            return None
 
     async def is_idle(self) -> bool:
         return await self.counter.is_zero()

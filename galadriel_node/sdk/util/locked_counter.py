@@ -1,7 +1,7 @@
 import asyncio
 
 
-class InferenceStatusCounter:
+class LockedCounter:
     def __init__(self):
         self._counter = 0
         self._lock = asyncio.Lock()

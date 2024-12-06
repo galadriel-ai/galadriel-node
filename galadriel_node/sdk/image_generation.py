@@ -11,15 +11,32 @@ from galadriel_node.sdk.protocol.entities import (
     ImageGenerationWebsocketResponse,
 )
 from galadriel_node.sdk.diffusers import Diffusers
+from galadriel_node.sdk.util.locked_counter import LockedCounter
 
 logger = get_node_logger()
 
 
 # pylint: disable=too-few-public-methods,
+def validate_image_generation_request(
+    data: Any,
+) -> Optional[ImageGenerationWebsocketRequest]:
+    try:
+        image_generation_request = ImageGenerationWebsocketRequest(
+            request_id=data.get("request_id"),
+            prompt=data.get("prompt"),
+            image=data.get("image"),
+            n=data.get("n"),
+            size=data.get("size"),
+        )
+        return image_generation_request
+    except Exception:
+        return None
+
+
 class ImageGeneration:
 
     def __init__(self, model: str):
-        self.counter = 0
+        self.counter = LockedCounter()
         self.lock = asyncio.Lock()
         self.pipeline = Diffusers(model)
         logger.info("ImageGeneration engine initialized")
@@ -30,67 +47,46 @@ class ImageGeneration:
         websocket: WebSocketClientProtocol,
         send_lock: asyncio.Lock,
     ) -> None:
-
         logger.info(
             f"Received image generation request. Request Id: {request.request_id}"
         )
+        try:
+            await self.counter.increment()
+            response = await self.generate_images(request)
+            response_data = jsonable_encoder(response)
+            encoded_response_data = json.dumps(response_data)
+            async with send_lock:
+                await websocket.send(encoded_response_data)
+            logger.info(
+                f"Sent image generation response for request {request.request_id}"
+            )
+        except Exception as e:
+            logger.error(
+                f"Failed to send response for request {request.request_id}: {e}"
+            )
+        finally:
+            await self.counter.decrement()
+        return
 
-        # Generate the image
-        generation_response = None
+    async def generate_images(self, request):
         try:
             images = self.pipeline.generate_images(
                 request.prompt,
                 request.image,
                 request.n,
             )
-            generation_response = ImageGenerationWebsocketResponse(
+            return ImageGenerationWebsocketResponse(
                 request_id=request.request_id,
                 images=images,
                 error=None,
             )
         except Exception as e:
             logger.error(f"Errors during image generation: {e}")
-            generation_response = ImageGenerationWebsocketResponse(
+            return ImageGenerationWebsocketResponse(
                 request_id=request.request_id,
                 images=[],
                 error=str(e),
             )
 
-        # Send the response to the client
-        response_data = jsonable_encoder(generation_response)
-        encoded_response_data = json.dumps(response_data)
-        logger.info(f"Sent image generation response for request {request.request_id}")
-
-        try:
-            async with self.lock:
-                self.counter += 1
-            logger.debug(f"Response data: {response_data}")
-            async with send_lock:
-                await websocket.send(encoded_response_data)
-            logger.debug(f"REQUEST {request.request_id} END")
-        except Exception as e:
-            logger.error(
-                f"Failed to send response for request {request.request_id}: {e}"
-            )
-        finally:
-            async with self.lock:
-                if self.counter > 0:
-                    self.counter -= 1
-        return
-
-    def validate_request(self, data: Any) -> Optional[ImageGenerationWebsocketRequest]:
-        try:
-            image_generation_request = ImageGenerationWebsocketRequest(
-                request_id=data.get("request_id"),
-                prompt=data.get("prompt"),
-                image=data.get("image"),
-                n=data.get("n"),
-                size=data.get("size"),
-            )
-            return image_generation_request
-        except Exception:
-            return None
-
-    async def is_idle(self) -> bool:
-        async with self.lock:
-            return self.counter == 0
+    async def no_pending_requests(self) -> bool:
+        return await self.counter.is_zero()

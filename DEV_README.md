@@ -24,7 +24,7 @@ pip install -e .
 #### Setup local env variables
 Run the following command to go through a setup wizard for your local galadriel node:
 ```shell
-python galadriel_node/cli/app.py init
+python galadriel_node/cli/app.py init --environment local
 ```
 Make sure to set the `GALADRIEL_LLM_BASE_URL` to the remote GPU worker, instead of your localhost.
 

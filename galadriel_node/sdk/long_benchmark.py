@@ -9,6 +9,8 @@ from tqdm import tqdm
 from galadriel_node.sdk.logging_utils import get_node_logger
 from galadriel_node.sdk.protocol.entities import InferenceRequest
 from galadriel_node.sdk.time_tracker import TimeTracker
+from rich import print as rprint
+from rich.panel import Panel
 
 logger = get_node_logger()
 
@@ -64,9 +66,9 @@ async def _run_inference(llm_base_url: str, model_id: str, text: str) -> TimeTra
         async for chunk in completion:
             tracker.chunk_received(chunk)
     except openai.APIStatusError as exc:
-        print("EXC:", exc)
+        rprint("EXC:", exc)
     except Exception as exc:
-        print("EXC:", exc)
+        rprint("EXC:", exc)
 
     return tracker
 
@@ -86,8 +88,11 @@ def _print_final_results(trackers: List[TimeTracker]) -> None:
     for tracker in trackers:
         ttfts.append(tracker.get_time_to_first_token())
 
-    print("\nFinal Result:")
-    print("  prompt_tokens:", trackers[0].get_prompt_tokens())
-    print("  min:", min(ttfts))
-    print("  max:", max(ttfts))
-    print("  avg:", sum(ttfts) / len(ttfts))
+    rprint(Panel.fit(
+        f"[yellow]Prompt Tokens:[/yellow] {trackers[0].get_prompt_tokens()}\n"
+        f"[yellow]Min:[/yellow] {min(ttfts)}\n"
+        f"[yellow]Max:[/yellow] {max(ttfts)}\n"
+        f"[yellow]Avg:[/yellow] {sum(ttfts) / len(ttfts)}",
+        title="Final Result",
+        border_style="green"
+    ))

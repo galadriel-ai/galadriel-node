@@ -4,20 +4,18 @@ from typing import List
 from urllib.parse import urljoin
 
 import openai
+from rich import print as rprint
+from rich.panel import Panel
 from tqdm import tqdm
 
 from galadriel_node.sdk.logging_utils import get_node_logger
 from galadriel_node.sdk.protocol.entities import InferenceRequest
 from galadriel_node.sdk.time_tracker import TimeTracker
-from rich import print as rprint
-from rich.panel import Panel
 
 logger = get_node_logger()
 
 
-async def execute(
-    llm_base_url: str, model_id: str, concurrency: int, requests: int
-) -> None:
+async def execute(llm_base_url: str, model_id: str, concurrency: int, requests: int) -> None:
     tasks = []
     for _ in range(concurrency):
         task = asyncio.create_task(_loop_inferences(llm_base_url, model_id, requests))
@@ -31,9 +29,7 @@ async def execute(
     _print_final_results(all_trackers)
 
 
-async def _loop_inferences(
-    llm_base_url: str, model_id: str, requests: int
-) -> List[TimeTracker]:
+async def _loop_inferences(llm_base_url: str, model_id: str, requests: int) -> List[TimeTracker]:
     trackers = []
     text = _get_text()
     for _ in tqdm(range(requests)):
@@ -74,9 +70,9 @@ async def _run_inference(llm_base_url: str, model_id: str, text: str) -> TimeTra
 
 
 def _get_text():
-    with importlib.resources.files("galadriel_node.sdk.datasets").joinpath(
-        "ai_wiki_8k.txt"
-    ).open("r", encoding="utf-8") as file:
+    with importlib.resources.files("galadriel_node.sdk.datasets").joinpath("ai_wiki_8k.txt").open(
+        "r", encoding="utf-8"
+    ) as file:
         return file.read()
 
 
@@ -88,11 +84,13 @@ def _print_final_results(trackers: List[TimeTracker]) -> None:
     for tracker in trackers:
         ttfts.append(tracker.get_time_to_first_token())
 
-    rprint(Panel.fit(
-        f"[yellow]Prompt Tokens:[/yellow] {trackers[0].get_prompt_tokens()}\n"
-        f"[yellow]Min:[/yellow] {min(ttfts)}\n"
-        f"[yellow]Max:[/yellow] {max(ttfts)}\n"
-        f"[yellow]Avg:[/yellow] {sum(ttfts) / len(ttfts)}",
-        title="Final Result",
-        border_style="green"
-    ))
+    rprint(
+        Panel.fit(
+            f"[yellow]Prompt Tokens:[/yellow] {trackers[0].get_prompt_tokens()}\n"
+            f"[yellow]Min:[/yellow] {min(ttfts)}\n"
+            f"[yellow]Max:[/yellow] {max(ttfts)}\n"
+            f"[yellow]Avg:[/yellow] {sum(ttfts) / len(ttfts)}",
+            title="Final Result",
+            border_style="green",
+        )
+    )

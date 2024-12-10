@@ -32,10 +32,13 @@ black = {version = "^24.8.0", optional = true}
 pytest = {version = "^8.3.2", optional = true}
 pytest-asyncio = {version = "0.24.0", optional = true}
 pytest-mock = {version = "^3.14.0", optional = true}
+pylint = {version = "^3.2.7", optional = true}
+mypy = {version = "^1.11.2", optional = true}
+pre-commit = {version = "^3.0.0", optional = true}
 
 
 [tool.poetry.extras]
-dev = ["black", "pytest", "pytest-asyncio", "pytest-mock"]
+dev = ["black", "pytest", "pytest-asyncio", "pytest-mock", "pre-commit", "mypy", "pylint"]
 image-generation = ["diffusers", "transformers", "accelerate"]
 
 [build-system]

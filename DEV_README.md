@@ -19,7 +19,6 @@ deactivate
 python3 -m venv venv
 source venv/bin/activate
 pip install -e '.[dev]'
-pre-commit install
 ```
 
 #### Setup local env variables
@@ -51,7 +50,6 @@ python galadriel_node/cli/app.py node run
 ```
 
 ### Formatting and linting
-Install pre-commit hooks by running `pre-commit install` or run the following command to format the code:
 
 * Code formatting:
 

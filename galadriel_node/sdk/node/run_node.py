@@ -76,8 +76,6 @@ async def execute(
             # Initialize image generation engine with the specified model
             image_generation_engine = ImageGeneration(config.GALADRIEL_MODEL_ID)
             await report_hardware(api_url, api_key, node_id)
-            # TODO Need to report performance for image generation node
-            await _retry_connection(rpc_url, api_key, node_id)
         else:
             if llm_base_url:
                 result = await check_llm.execute(llm_base_url, config.GALADRIEL_MODEL_ID)
@@ -100,7 +98,7 @@ async def execute(
             await report_performance(
                 api_url, api_key, node_id, llm_base_url, config.GALADRIEL_MODEL_ID
             )
-            await _retry_connection(rpc_url, api_key, node_id)
+        await _retry_connection(rpc_url, api_key, node_id)
     except asyncio.CancelledError:
         logger.error("Stopping the node.")
 
@@ -161,7 +159,6 @@ async def _connect_and_process(
     """
     Establishes the WebSocket connection and processes incoming requests concurrently.
     """
-    send_lock = asyncio.Lock()
     async with websockets.connect(uri, extra_headers=headers) as websocket:
         # Initialize the protocol handler and register the protocols
         protocol_handler = ProtocolHandler(node_id, websocket)
@@ -173,92 +170,100 @@ async def _connect_and_process(
         protocol_handler.register(
             HealthCheckProtocol.PROTOCOL_NAME, health_check_protocol
         )
-        # TODO better handle the inference status and reconnection request with encapsulations
-        # Currently we have locks and counters all in the loop here, and it's really messy to handle
-        # these and it could easily go wrong if anyone touches these later. so my meaning is to
-        # encapsulate these stuff in functions or better classes so in this function _connect_and_process,
-        # we just simply instantiate an object and call the function it exposes, without worrying about
-        # all these low-level stuff.
-        inference_status_counter = LockedCounter()
-        while True:
-            try:
-                logger.info("Waiting for incoming messages...")
+        return await _handle_websocket_messages(websocket, protocol_handler, ping_pong_protocol)
 
-                # Create tasks for receiving messages and waiting for reconnect requests
-                reconnect_request_job = asyncio.create_task(
-                    wait_for_reconnect(
-                        inference_status_counter,
-                        image_generation_engine,
-                        ping_pong_protocol,
-                    )
+
+async def _handle_websocket_messages(websocket, protocol_handler, ping_pong_protocol) -> ConnectionResult:
+    """
+    Loops indefinitely, waiting for websocket messages
+    :returns ConnectionResult, if connection needs to be reset/stopped
+    """
+    reconnect_request_job = None
+    websocket_recv_job = None
+
+    send_lock = asyncio.Lock()
+    inference_status_counter = LockedCounter()
+    while True:
+        try:
+            logger.info("Waiting for incoming messages...")
+
+            # Create tasks for receiving messages and waiting for reconnect requests
+            reconnect_request_job = asyncio.create_task(
+                wait_for_reconnect(
+                    inference_status_counter,
+                    image_generation_engine,
+                    ping_pong_protocol,
                 )
-                websocket_recv_job = asyncio.create_task(websocket.recv())
+            )
+            websocket_recv_job = asyncio.create_task(websocket.recv())
 
-                # Wait for incoming messages or reconnect request
-                done, pending = await asyncio.wait(
-                    [websocket_recv_job, reconnect_request_job],
-                    return_when=asyncio.FIRST_COMPLETED,
+            # Wait for incoming messages or reconnect request
+            done, pending = await asyncio.wait(
+                [websocket_recv_job, reconnect_request_job],
+                return_when=asyncio.FIRST_COMPLETED,
+            )
+            # Cancel pending tasks
+            for task in pending:
+                task.cancel()
+
+            if reconnect_request_job in done:
+                logger.info("Reconnect requested. Closing the connection...")
+                await ping_pong_protocol.set_reconnect_requested(False)
+                return ConnectionResult(retry=True, reset_backoff=True)
+
+            if websocket_recv_job in done:
+                # Receive and parse incoming messages
+                data = await websocket_recv_job
+                parsed_data = json.loads(data)
+
+                # Check if the message is an inference request
+                inference_request = InferenceRequest.get_inference_request(
+                    parsed_data
                 )
-                # Cancel pending tasks
-                for task in pending:
-                    task.cancel()
-
-                if reconnect_request_job in done:
-                    logger.info("Reconnect requested. Closing the connection...")
-                    await ping_pong_protocol.set_reconnect_requested(False)
-                    return ConnectionResult(retry=True, reset_backoff=True)
-
-                if websocket_recv_job in done:
-                    # Receive and parse incoming messages
-                    data = await websocket_recv_job
-                    parsed_data = json.loads(data)
-
-                    # Check if the message is an inference request
-                    inference_request = InferenceRequest.get_inference_request(
-                        parsed_data
+                if inference_request is not None and llm is not None:
+                    asyncio.create_task(
+                        _process_request(
+                            inference_request,
+                            websocket,
+                            send_lock,
+                            inference_status_counter,
+                        )
                     )
-                    if inference_request is not None and llm is not None:
+                elif image_generation_engine is not None:
+                    image_request = validate_image_generation_request(
+                        data=parsed_data
+                    )
+                    if image_request is not None:
                         asyncio.create_task(
-                            _process_request(
-                                inference_request,
-                                websocket,
-                                send_lock,
-                                inference_status_counter,
+                            image_generation_engine.process_request(
+                                image_request, websocket, send_lock
                             )
                         )
-                    elif image_generation_engine is not None:
-                        image_request = validate_image_generation_request(
-                            data=parsed_data
-                        )
-                        if image_request is not None:
-                            asyncio.create_task(
-                                image_generation_engine.process_request(
-                                    image_request, websocket, send_lock
-                                )
-                            )
-                        else:
-                            await protocol_handler.handle(parsed_data, send_lock)
                     else:
                         await protocol_handler.handle(parsed_data, send_lock)
-            except json.JSONDecodeError:
-                logger.info("Error while parsing json message")
-                return ConnectionResult(
-                    retry=True, reset_backoff=True
-                )  # for now, just retry
-            except websockets.ConnectionClosed as e:
-                logger.info(f"Received error: {e}")
-                match e.code:
-                    case CloseCode.POLICY_VIOLATION:
-                        return ConnectionResult(retry=True, reset_backoff=False)
-                    case CloseCode.TRY_AGAIN_LATER:
-                        return ConnectionResult(retry=True, reset_backoff=False)
-                logger.info(f"Connection closed: {e}")
-                return ConnectionResult(retry=True, reset_backoff=True)
-            except Exception as _:
-                logger.error("Error occurred while processing message.", exc_info=True)
-                return ConnectionResult(retry=True, reset_backoff=True)
-            finally:
+                else:
+                    await protocol_handler.handle(parsed_data, send_lock)
+        except json.JSONDecodeError:
+            logger.info("Error while parsing json message")
+            return ConnectionResult(
+                retry=True, reset_backoff=True
+            )  # for now, just retry
+        except websockets.ConnectionClosed as e:
+            logger.info(f"Received error: {e}")
+            match e.code:
+                case CloseCode.POLICY_VIOLATION:
+                    return ConnectionResult(retry=True, reset_backoff=False)
+                case CloseCode.TRY_AGAIN_LATER:
+                    return ConnectionResult(retry=True, reset_backoff=False)
+            logger.info(f"Connection closed: {e}")
+            return ConnectionResult(retry=True, reset_backoff=True)
+        except Exception as _:
+            logger.error("Error occurred while processing message.", exc_info=True)
+            return ConnectionResult(retry=True, reset_backoff=True)
+        finally:
+            if reconnect_request_job:
                 reconnect_request_job.cancel()
+            if websocket_recv_job:
                 websocket_recv_job.cancel()
 
 

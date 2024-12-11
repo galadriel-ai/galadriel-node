@@ -133,7 +133,6 @@ class InferenceRequest:
     chat_request: Dict
     type: Optional[str] = None
 
-    # pylint: disable=too-many-boolean-expressions, no-else-return
     @staticmethod
     def get_inference_request(parsed_data):
         if (

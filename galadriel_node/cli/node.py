@@ -27,7 +27,6 @@ node_app = typer.Typer(
 logger = get_node_logger()
 
 
-# pylint: disable=R0917:
 @node_app.command("run", help="Run the Galadriel node")
 def node_run(
     api_url: str = typer.Option(config.GALADRIEL_API_URL, help="API url"),

@@ -44,14 +44,10 @@ class ConnectionResult:
 
 logger = get_node_logger()
 
-# pylint: disable=invalid-name
 llm: Optional[Llm] = None
-# pylint: disable=invalid-name
 image_generation_engine: Optional[ImageGeneration] = None
 
 
-# pylint: disable=R0917:
-# pylint: disable=W0603
 async def execute(
     api_url: str,
     rpc_url: str,
@@ -154,7 +150,6 @@ async def _retry_connection(rpc_url: str, api_key: str, node_id: str):
         )
 
 
-# pylint: disable=R0912, R0914
 async def _connect_and_process(
     uri: str, headers: dict, node_id: str, api_ping_job: ApiPingJob
 ) -> ConnectionResult:

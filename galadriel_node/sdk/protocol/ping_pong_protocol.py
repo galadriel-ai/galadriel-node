@@ -17,7 +17,6 @@ from galadriel_node.sdk.protocol.entities import (
 logger = get_node_logger()
 
 
-# pylint: disable=too-few-public-methods,
 class PingPongProtocol:
 
     def __init__(self, api_ping_job: ApiPingJob):
@@ -133,7 +132,6 @@ def _protocol_validations(my_node_id: str, ping_request: PingRequest) -> bool:
     return True
 
 
-# pylint: disable=too-many-boolean-expressions
 def _extract_and_validate_ping_request(data: Any) -> PingRequest | None:
     ping_request = PingRequest(
         protocol_version="",

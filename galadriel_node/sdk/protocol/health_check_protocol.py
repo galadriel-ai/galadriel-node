@@ -16,7 +16,6 @@ from galadriel_node.sdk.system.entities import NodeUtilization
 from galadriel_node.sdk.system.report_hardware import logger
 
 
-# pylint: disable=too-few-public-methods,
 class HealthCheckProtocol:
     PROTOCOL_NAME = "health-check"
     PROTOCOL_VERSION = "1.0"

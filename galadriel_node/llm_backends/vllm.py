@@ -41,7 +41,6 @@ def stop(pid: int) -> bool:
         return False
 
 
-# pylint: disable=R1732
 def start(model_name: str) -> Optional[int]:
     gpu_info = get_gpu_info()
     try:

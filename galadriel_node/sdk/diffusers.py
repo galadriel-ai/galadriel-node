@@ -10,7 +10,6 @@ from galadriel_node.config import config
 from galadriel_node.sdk.entities import SdkError
 
 
-# pylint: disable=too-few-public-methods
 class Diffusers:
     def __init__(self, model: str):
         try:

@@ -16,7 +16,6 @@ from galadriel_node.sdk.util.locked_counter import LockedCounter
 logger = get_node_logger()
 
 
-# pylint: disable=too-few-public-methods,
 def validate_image_generation_request(
     data: Any,
 ) -> Optional[ImageGenerationWebsocketRequest]:

@@ -39,7 +39,6 @@ def valid_production_url(url, expected_scheme):
 
 
 class Config:
-    # pylint: disable=C0103
     def __init__(
         self, is_load_env: bool = True, environment: str = DEFAULT_ENVIRONMENT
     ):

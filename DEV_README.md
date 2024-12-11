@@ -18,7 +18,7 @@ cd galadriel-node
 deactivate
 python3 -m venv venv
 source venv/bin/activate
-pip install -e '.[dev, image-generation]'
+pip install -e '.[dev]'
 ```
 
 #### Setup local env variables

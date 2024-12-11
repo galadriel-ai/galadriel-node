@@ -440,12 +440,15 @@ def node_run(
         asyncio.run(run_node(api_url, rpc_url, api_key, node_id, llm_base_url))
     except AuthenticationError:
         logger.error("Authentication failed. Please check your API key and try again.")
+        sys.exit(1)
     except SdkError as e:
         logger.error(f"Got an Exception when trying to run the node: {e}")
+        sys.exit(1)
     except Exception:
         logger.error(
             "Got an unexpected Exception when trying to run the node: ", exc_info=True
         )
+        sys.exit(1)
 
 
 @node_app.command("status", help="Get node status")

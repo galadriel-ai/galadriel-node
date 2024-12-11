@@ -8,22 +8,9 @@ on:
 jobs:
   notify_slack:
     runs-on: ubuntu-latest
+    name: Notify Slack on Release
     steps:
-      - name: Send Slack Notification
-        uses: slackapi/slack-github-action@v1.24.0
+      - name: Notify Slack on Release
+        uses: tryfabric/notify-slack-on-release@1.0.0
         with:
-          payload: |
-            {
-              "text": ":tada: A new release has been published!",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*New Release Published* :rocket:\nRepository: <${{ github.repository }}>\nTag: <${{ github.event.release.tag_name }}>\nRelease Notes: <${{ github.event.release.html_url }}>"
-                  }
-                }
-              ]
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_RELEASE_BOT_WEBHOOK_URL }}
+          slack_webhook_url: ${{ secrets.SLACK_RELEASE_BOT_WEBHOOK_URL }}

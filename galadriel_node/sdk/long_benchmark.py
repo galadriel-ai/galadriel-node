@@ -87,13 +87,12 @@ def _print_final_results(trackers: List[TimeTracker]) -> None:
     ttfts = []
     for tracker in trackers:
         ttfts.append(tracker.get_time_to_first_token())
-
     rprint(
         Panel.fit(
             f"[yellow]Prompt Tokens:[/yellow] {trackers[0].get_prompt_tokens()}\n"
-            f"[yellow]Min:[/yellow] {min(ttfts)}\n"
-            f"[yellow]Max:[/yellow] {max(ttfts)}\n"
-            f"[yellow]Avg:[/yellow] {sum(ttfts) / len(ttfts)}",
+            f"[yellow]Min:[/yellow] {round(min(ttfts), 2)}\n"
+            f"[yellow]Max:[/yellow] {round(max(ttfts), 2)}\n"
+            f"[yellow]Avg:[/yellow] {round(sum(ttfts) / len(ttfts), 2)}",
             title="Final Result",
             border_style="green",
         )

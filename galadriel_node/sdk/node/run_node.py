@@ -78,7 +78,9 @@ async def execute(
             await report_hardware(api_url, api_key, node_id)
         else:
             if llm_base_url:
-                result = await check_llm.execute(llm_base_url, config.GALADRIEL_MODEL_ID)
+                result = await check_llm.execute(
+                    llm_base_url, config.GALADRIEL_MODEL_ID
+                )
                 if not result:
                     raise SdkError(
                         'LLM check failed. Please make sure "GALADRIEL_LLM_BASE_URL" is correct.'
@@ -170,10 +172,14 @@ async def _connect_and_process(
         protocol_handler.register(
             HealthCheckProtocol.PROTOCOL_NAME, health_check_protocol
         )
-        return await _handle_websocket_messages(websocket, protocol_handler, ping_pong_protocol)
+        return await _handle_websocket_messages(
+            websocket, protocol_handler, ping_pong_protocol
+        )
 
 
-async def _handle_websocket_messages(websocket, protocol_handler, ping_pong_protocol) -> ConnectionResult:
+async def _handle_websocket_messages(
+    websocket, protocol_handler, ping_pong_protocol
+) -> ConnectionResult:
     """
     Loops indefinitely, waiting for websocket messages
     :returns ConnectionResult, if connection needs to be reset/stopped
@@ -217,9 +223,7 @@ async def _handle_websocket_messages(websocket, protocol_handler, ping_pong_prot
                 parsed_data = json.loads(data)
 
                 # Check if the message is an inference request
-                inference_request = InferenceRequest.get_inference_request(
-                    parsed_data
-                )
+                inference_request = InferenceRequest.get_inference_request(parsed_data)
                 if inference_request is not None and llm is not None:
                     asyncio.create_task(
                         _process_request(
@@ -230,9 +234,7 @@ async def _handle_websocket_messages(websocket, protocol_handler, ping_pong_prot
                         )
                     )
                 elif image_generation_engine is not None:
-                    image_request = validate_image_generation_request(
-                        data=parsed_data
-                    )
+                    image_request = validate_image_generation_request(data=parsed_data)
                     if image_request is not None:
                         asyncio.create_task(
                             image_generation_engine.process_request(
@@ -284,7 +286,9 @@ async def _run_llm(model_id: str) -> Optional[int]:
                 )
             rich.print(".", flush=True, end="")
             try:
-                response = await llm_http_check.execute(vllm.LLM_BASE_URL, total_timeout=1.0)
+                response = await llm_http_check.execute(
+                    vllm.LLM_BASE_URL, total_timeout=1.0
+                )
                 if response.ok:
                     logging.info("\nvLLM is ready.")
                     break

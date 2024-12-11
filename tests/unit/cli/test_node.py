@@ -43,7 +43,8 @@ async def test_retry_connection_with_exceptions():
             backoff_time = run_node.BACKOFF_MIN
             for attempt in range(1, 5):
                 backoff_time = min(
-                    run_node.BACKOFF_MIN + (run_node.BACKOFF_INCREMENT * (2 ** (attempt - 1))),
+                    run_node.BACKOFF_MIN
+                    + (run_node.BACKOFF_INCREMENT * (2 ** (attempt - 1))),
                     run_node.BACKOFF_MAX,
                 )
                 expected_backoff_times.append(backoff_time)

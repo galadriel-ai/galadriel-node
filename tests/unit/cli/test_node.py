@@ -138,11 +138,11 @@ async def test_run_node_with_llm_base_url():
     ) as mock_check_llm, patch(
         "galadriel_node.sdk.node.run_node.report_hardware", new_callable=AsyncMock
     ) as mock_report_hardware, patch(
-        "galadriel_node.sdk.system.report_performance", new_callable=AsyncMock
+        "galadriel_node.sdk.node.run_node.report_performance", new_callable=AsyncMock
     ) as mock_report_performance, patch(
         "galadriel_node.sdk.node.run_node._retry_connection", new_callable=AsyncMock
     ) as mock_retry_connection, patch(
-        "galadriel_node.cli.node.version_aware_get", new_callable=AsyncMock
+        "galadriel_node.sdk.node.run_node.version_aware_get", new_callable=AsyncMock
     ), patch(
         "galadriel_node.sdk.node.run_node._run_llm", new_callable=AsyncMock
     ) as mock_run_llm, patch(
@@ -173,17 +173,17 @@ async def test_run_node_without_llm_base_url():
     ) as mock_run_llm, patch(
         "galadriel_node.sdk.node.run_node.report_hardware", new_callable=AsyncMock
     ) as mock_report_hardware, patch(
-        "galadriel_node.sdk.system.report_performance", new_callable=AsyncMock
+        "galadriel_node.sdk.node.run_node.report_performance", new_callable=AsyncMock
     ) as mock_report_performance, patch(
         "galadriel_node.sdk.node.run_node._retry_connection", new_callable=AsyncMock
     ) as mock_retry_connection, patch(
-        "galadriel_node.cli.node.version_aware_get", new_callable=AsyncMock
+        "galadriel_node.sdk.node.run_node.version_aware_get", new_callable=AsyncMock
     ), patch(
         "galadriel_node.config.config.GALADRIEL_MODEL_TYPE", new="LLM"
     ):
         mock_run_llm.return_value = process_pid
 
-        await run_node(api_url, rpc_url, api_key, node_id, llm_base_url)
+        await run_node.execute(api_url, rpc_url, api_key, node_id, llm_base_url)
 
         mock_run_llm.assert_called_once_with(config.GALADRIEL_MODEL_ID)
 
@@ -202,14 +202,14 @@ async def test_run_node_with_llm_base_url_check_fails():
     with patch(
         "galadriel_node.sdk.node.check_llm.execute", new_callable=AsyncMock
     ) as mock_check_llm, patch(
-        "galadriel_node.cli.node.version_aware_get", new_callable=AsyncMock
+        "galadriel_node.sdk.node.run_node.version_aware_get", new_callable=AsyncMock
     ), patch(
         "galadriel_node.config.config.GALADRIEL_MODEL_TYPE", new="LLM"
     ):
         mock_check_llm.return_value = False
 
         with pytest.raises(SdkError, match="LLM check failed"):
-            await run_node(api_url, rpc_url, api_key, node_id, llm_base_url)
+            await run_node.execute(api_url, rpc_url, api_key, node_id, llm_base_url)
 
         mock_check_llm.assert_called_once_with(llm_base_url, config.GALADRIEL_MODEL_ID)
 
@@ -230,11 +230,11 @@ async def test_run_node_with_image_generation_model():
     ) as mock_check_llm, patch(
         "galadriel_node.sdk.node.run_node.report_hardware", new_callable=AsyncMock
     ) as mock_report_hardware, patch(
-        "galadriel_node.sdk.system.report_performance", new_callable=AsyncMock
+        "galadriel_node.sdk.node.run_node.report_performance", new_callable=AsyncMock
     ) as mock_report_performance, patch(
         "galadriel_node.sdk.node.run_node._retry_connection", new_callable=AsyncMock
     ) as mock_retry_connection, patch(
-        "galadriel_node.cli.node.version_aware_get", new_callable=AsyncMock
+        "galadriel_node.sdk.node.run_node.version_aware_get", new_callable=AsyncMock
     ), patch(
         "galadriel_node.config.config.GALADRIEL_MODEL_TYPE", new="DIFFUSION"
     ), patch(
@@ -243,7 +243,7 @@ async def test_run_node_with_image_generation_model():
         Diffusers, "__init__", mock_diffusers_init
     ):
 
-        await run_node(api_url, rpc_url, api_key, node_id, llm_base_url)
+        await run_node.execute(api_url, rpc_url, api_key, node_id, llm_base_url)
 
         mock_check_llm.assert_not_called()
         mock_report_hardware.assert_called_once()

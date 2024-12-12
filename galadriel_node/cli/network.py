@@ -16,6 +16,7 @@ network_app = typer.Typer(
 
 logger = get_node_logger()
 
+
 @network_app.command("stats", help="Get current network stats")
 def network_stats(
     api_url: str = typer.Option(config.GALADRIEL_API_URL, help="API url"),
@@ -32,6 +33,7 @@ def network_stats(
     else:
         # Using logger with rich formatting for error messages
         logger.error("[bold red]Failed to get node status..[/bold red]")
+
 
 def print_network_status(data):
     # Using logger with rich formatting for info messages

@@ -2,13 +2,11 @@ import asyncio
 from http import HTTPStatus
 
 import typer
-
-from rich.console import Console
 from rich.table import Table
-from rich import print as rprint
 
 from galadriel_node.config import config
 from galadriel_node.sdk.upgrade import version_aware_get
+from galadriel_node.sdk.logging_utils import get_node_logger
 
 network_app = typer.Typer(
     name="network",
@@ -16,8 +14,7 @@ network_app = typer.Typer(
     no_args_is_help=True,
 )
 
-console = Console()
-
+logger = get_node_logger()
 
 @network_app.command("stats", help="Get current network stats")
 def network_stats(
@@ -33,17 +30,16 @@ def network_stats(
     if status == HTTPStatus.OK and response_json:
         print_network_status(response_json)
     else:
-        rprint("[bold red]Failed to get node status..[/bold red]")
-
+        # Using logger with rich formatting for error messages
+        logger.error("[bold red]Failed to get node status..[/bold red]")
 
 def print_network_status(data):
-    console.print(f"[bold]nodes_count:[/bold] {data['nodes_count']}")
-    console.print(
-        f"[bold]connected_nodes_count:[/bold] {data['connected_nodes_count']}"
-    )
-    console.print(f"[bold]network_throughput:[/bold] {data['network_throughput']}")
+    # Using logger with rich formatting for info messages
+    logger.info("[bold]nodes_count:[/bold] %s", data["nodes_count"])
+    logger.info("[bold]connected_nodes_count:[/bold] %s", data["connected_nodes_count"])
+    logger.info("[bold]network_throughput:[/bold] %s", data["network_throughput"])
+    logger.info("[bold]throughput by model:[/bold]")
 
-    console.print("[bold]throughput by model:[/bold]")
     table = Table(show_header=True, header_style="bold magenta")
     table.add_column("Model Name", style="dim", width=20)
     table.add_column("Throughput", justify="right", style="dim", width=15)
@@ -51,4 +47,5 @@ def print_network_status(data):
     for model in data["network_models_stats"]:
         table.add_row(model["model_name"], str(model["throughput"]))
 
-    console.print(table)
+    # The RichHandler in the logger will handle the rendering of this table
+    logger.info(table)
